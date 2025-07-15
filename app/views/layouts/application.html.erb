@@ -22,34 +22,45 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <header class="bg-white shadow-md">
-      <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-        <img src="/quill-logo.png" alt="Quillify Logo" class="h-10 w-10 rounded-xl">
+  <body class="bg-gray-100 text-gray-900">
+    <% if Current.user %>
+      <div class="flex h-screen bg-gray-200">
+        <div class="w-64 bg-white shadow-md flex flex-col">
+          <div class="p-2">
+            <img
+              src="/quill-logo.png"
+              alt="Quillify Logo"
+              class="h-16 w-full object-cover rounded-xl"
+            >
+          </div>
 
-        <div class="flex items-center space-x-4">
-          <% if Current.user %>
-            <span class="text-gray-700">Welcome,
-              <%= Current.user.email_address %>!</span>
+          <nav class="mt-10">
+            <%= link_to "Dashboard",
+            dashboard_path,
+            class: "block px-6 py-2.5 text-gray-600 hover:bg-blue-500 hover:text-white" %>
 
             <%= button_to "Sign Out",
             session_path,
             method: :delete,
-            class: "text-gray-600 hover:text-blue-600" %>
-          <% else %>
-            <%= link_to "Log In", new_session_path, class: "text-gray-600 hover:text-blue-600" %>
-
-            <%= link_to "Sign Up",
-            register_path,
             class:
-              "bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700" %>
-          <% end %>
-        </div>
-      </nav>
-    </header>
+              "w-full text-left block px-6 py-2.5 text-gray-600 hover:bg-red-500 hover:text-white cursor-pointer" %>
+          </nav>
 
-    <main class="container mx-auto mt-28 px-5 flex">
-      <%= yield %>
-    </main>
+          <p class="text-gray-700 mt-auto p-6">
+            <%= Current.user.email_address %>
+          </p>
+        </div>
+
+        <div class="flex-1 flex flex-col overflow-hidden">
+          <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+            <%= yield %>
+          </main>
+        </div>
+      </div>
+    <% else %>
+      <main class="container mx-auto mt-28 px-5 flex flex-col items-center">
+        <%= yield %>
+      </main>
+    <% end %>
   </body>
 </html>

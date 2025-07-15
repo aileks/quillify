@@ -1,0 +1,16 @@
+<h1 class="text-4xl font-bold mb-5">Dashboard</h1>
+
+<div class="bg-white shadow-md rounded-lg p-6">
+  <h2 class="text-2xl font-semibold mb-4">My Books</h2>
+
+  <% if @books.empty? %>
+    <p class="text-gray-500">You don't have any books yet.</p>
+    <ul>
+      <% @books.each do |book| %>
+        <li class="border-b border-gray-200 py-2"><%= book.title %>
+          by
+          <%= book.author %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

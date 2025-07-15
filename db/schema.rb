@@ -16,12 +16,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_15_175527) do
   enable_extension "pgcrypto"
 
   create_table "books", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "title"
-    t.string "author"
+    t.string "title", null: false
+    t.string "author", null: false
     t.integer "publication_year"
     t.integer "pages"
-    t.string "genre"
-    t.boolean "read"
+    t.string "genre", null: false
+    t.boolean "read", default: false, null: false
     t.uuid "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -44,6 +44,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_15_175527) do
     t.datetime "updated_at", null: false
     t.string "username", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.index ["username"], name: "index_users_on_username", unique: true
   end
 
   add_foreign_key "books", "users"

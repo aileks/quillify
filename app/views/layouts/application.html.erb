@@ -23,6 +23,31 @@
   </head>
 
   <body>
+    <header class="bg-white shadow-md">
+      <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <img src="/quill-logo.png" alt="Quillify Logo" class="h-10 w-10 rounded-xl">
+
+        <div class="flex items-center space-x-4">
+          <% if Current.user %>
+            <span class="text-gray-700">Welcome,
+              <%= Current.user.email_address %>!</span>
+
+            <%= button_to "Sign Out",
+            session_path,
+            method: :delete,
+            class: "text-gray-600 hover:text-blue-600" %>
+          <% else %>
+            <%= link_to "Log In", new_session_path, class: "text-gray-600 hover:text-blue-600" %>
+
+            <%= link_to "Sign Up",
+            register_path,
+            class:
+              "bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700" %>
+          <% end %>
+        </div>
+      </nav>
+    </header>
+
     <main class="container mx-auto mt-28 px-5 flex">
       <%= yield %>
     </main>

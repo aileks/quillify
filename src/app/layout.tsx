@@ -1,22 +1,22 @@
-import type { Metadata } from "next";
-import { Merriweather, Inter } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Merriweather, Inter } from 'next/font/google';
+import '@/styles/globals.css';
 
 const merriweather = Merriweather({
-  variable: "--font-merriweather",
-  subsets: ["latin"],
+  variable: '--font-merriweather',
+  subsets: ['latin'],
 });
 
 const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+  variable: '--font-inter',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Quillify",
-  description: "Your Book Tracker",
+  title: 'Quillify',
+  description: 'Your Book Tracker',
   icons: {
-    icon: "favicon.ico",
+    icon: 'favicon.ico',
     apple: 'apple-touch-icon.ico',
   },
 };
@@ -27,12 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${merriweather.variable} ${inter.variable} antialiased`}
-      >
-        {children}
-      </body>
+    <html lang='en'>
+      <body className={`${merriweather.variable} ${inter.variable} antialiased`}>{children}</body>
     </html>
   );
 }

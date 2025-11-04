@@ -66,7 +66,11 @@
   h4,
   h5,
   h6 {
-    @apply font-serif text-ink-900 dark:text-parchment-100;
+    @apply font-serif text-ink-900 dark:text-parchment-100 font-bold;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl;
   }
 
   p,

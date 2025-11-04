@@ -15,6 +15,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Quillify",
   description: "Your Book Tracker",
+  icons: {
+    icon: "/favicon.ico",
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({

@@ -16,8 +16,8 @@ export const metadata: Metadata = {
   title: "Quillify",
   description: "Your Book Tracker",
   icons: {
-    icon: "/favicon.ico",
-    apple: '/apple-touch-icon.png',
+    icon: "favicon.ico",
+    apple: 'apple-touch-icon.ico',
   },
 };
 

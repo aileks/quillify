@@ -1,8 +1,11 @@
-import { pgTable, text, integer, boolean, timestamp, primaryKey } from 'drizzle-orm/pg-core';
+import { text, integer, boolean, timestamp, primaryKey, pgSchema } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import type { AdapterAccountType } from 'next-auth/adapters';
 
-export const users = pgTable('user', {
+// Define the Postgres schema
+const quillify = pgSchema('quillify');
+
+export const users = quillify.table('users', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -12,8 +15,8 @@ export const users = pgTable('user', {
   image: text('image'),
 });
 
-export const accounts = pgTable(
-  'account',
+export const accounts = quillify.table(
+  'accounts',
   {
     userId: text('userId')
       .notNull()
@@ -29,16 +32,14 @@ export const accounts = pgTable(
     id_token: text('id_token'),
     session_state: text('session_state'),
   },
-  (account) => [
-    {
-      compoundKey: primaryKey({
-        columns: [account.provider, account.providerAccountId],
-      }),
-    },
-  ]
+  (account) => ({
+    compoundKey: primaryKey({
+      columns: [account.provider, account.providerAccountId],
+    }),
+  })
 );
 
-export const books = pgTable('book', {
+export const books = quillify.table('books', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),

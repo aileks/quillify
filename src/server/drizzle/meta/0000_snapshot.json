@@ -1,12 +1,12 @@
 {
-  "id": "8eb23ddc-e178-4e18-825d-78dff300f7ec",
+  "id": "3305e0ea-173c-44aa-9077-10f9c15137d0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.account": {
-      "name": "account",
-      "schema": "",
+    "quillify.accounts": {
+      "name": "accounts",
+      "schema": "quillify",
       "columns": {
         "userId": {
           "name": "userId",
@@ -77,10 +77,11 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "account_userId_user_id_fk": {
-          "name": "account_userId_user_id_fk",
-          "tableFrom": "account",
-          "tableTo": "user",
+        "accounts_userId_users_id_fk": {
+          "name": "accounts_userId_users_id_fk",
+          "tableFrom": "accounts",
+          "tableTo": "users",
+          "schemaTo": "quillify",
           "columnsFrom": [
             "userId"
           ],
@@ -91,15 +92,23 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "accounts_provider_providerAccountId_pk": {
+          "name": "accounts_provider_providerAccountId_pk",
+          "columns": [
+            "provider",
+            "providerAccountId"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.book": {
-      "name": "book",
-      "schema": "",
+    "quillify.books": {
+      "name": "books",
+      "schema": "quillify",
       "columns": {
         "id": {
           "name": "id",
@@ -160,10 +169,11 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "book_user_id_user_id_fk": {
-          "name": "book_user_id_user_id_fk",
-          "tableFrom": "book",
-          "tableTo": "user",
+        "books_user_id_users_id_fk": {
+          "name": "books_user_id_users_id_fk",
+          "tableFrom": "books",
+          "tableTo": "users",
+          "schemaTo": "quillify",
           "columnsFrom": [
             "user_id"
           ],
@@ -180,9 +190,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.user": {
-      "name": "user",
-      "schema": "",
+    "quillify.users": {
+      "name": "users",
+      "schema": "quillify",
       "columns": {
         "id": {
           "name": "id",
@@ -219,8 +229,8 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "user_email_unique": {
-          "name": "user_email_unique",
+        "users_email_unique": {
+          "name": "users_email_unique",
           "nullsNotDistinct": false,
           "columns": [
             "email"

@@ -10,7 +10,7 @@ Stack
 Start development server
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Open http://localhost:3000 in your browser.

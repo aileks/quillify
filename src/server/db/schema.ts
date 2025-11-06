@@ -2,7 +2,6 @@ import { text, integer, boolean, timestamp, primaryKey, pgSchema } from 'drizzle
 import { relations } from 'drizzle-orm';
 import type { AdapterAccountType } from 'next-auth/adapters';
 
-// Define the Postgres schema
 const quillify = pgSchema('quillify');
 
 export const users = quillify.table('users', {

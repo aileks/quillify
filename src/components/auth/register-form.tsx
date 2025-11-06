@@ -96,9 +96,7 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
     <Card className='w-full max-w-md'>
       <CardHeader>
         <CardTitle>Register</CardTitle>
-        <CardDescription>
-          Enter your details to create a new account
-        </CardDescription>
+        <CardDescription>Enter your details to create a new account</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -181,15 +179,8 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
             <span className='bg-card px-2 text-muted-foreground'>Or</span>
           </div>
         </div>
-        <Button
-          type='button'
-          variant='outline'
-          className='w-full'
-          asChild
-        >
-          <Link href='/account/login'>
-            Already have an account? Log in
-          </Link>
+        <Button type='button' variant='outline' className='w-full' asChild>
+          <Link href='/account/login'>Already have an account? Log in</Link>
         </Button>
       </CardFooter>
     </Card>

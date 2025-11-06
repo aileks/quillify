@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { db } from '@/server/db';
 import { accounts, users } from '@/server/db/schema';
 import { createCaller } from '@/server/api/root';
+import type { AuthUser } from '@/types';
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -80,9 +81,10 @@ export const authConfig = {
               parsedCredentials.data.rememberMe === true ||
               parsedCredentials.data.rememberMe === 'true',
           };
-        } catch (error) {
+        } catch (error: unknown) {
           // Return null to indicate authentication failure
-          console.error('Authentication error:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error('Authentication error:', errorMessage);
           return null;
         }
       },
@@ -97,12 +99,13 @@ export const authConfig = {
       // On log in, store rememberMe preference
       if (user && trigger === 'signIn') {
         token.id = user.id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.rememberMe = (user as any).rememberMe ?? false;
+        // Store rememberMe as a custom property on the token
+        (token as { rememberMe?: boolean }).rememberMe = (user as AuthUser).rememberMe ?? false;
 
         // Set custom expiry based on rememberMe
         const now = Math.floor(Date.now() / 1000);
-        if (token.rememberMe) {
+        const rememberMe = (token as { rememberMe?: boolean }).rememberMe;
+        if (rememberMe) {
           // 30 days
           token.exp = now + 30 * 24 * 60 * 60;
         } else {

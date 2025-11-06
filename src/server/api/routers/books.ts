@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server';
 
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
 import { books } from '@/server/db/schema';
+import type { Book } from '@/types';
 
 export const booksRouter = createTRPCRouter({
   // List the current user's books (optionally filter by read status)
@@ -53,7 +54,7 @@ export const booksRouter = createTRPCRouter({
         })
         .returning();
 
-      return inserted;
+      return inserted as Book;
     }),
 
   // Update select fields on a book (owned by current user)
@@ -87,7 +88,7 @@ export const booksRouter = createTRPCRouter({
         .where(eq(books.id, input.id))
         .returning();
 
-      return updated;
+      return updated as Book;
     }),
 
   // Toggle or set read status
@@ -111,7 +112,7 @@ export const booksRouter = createTRPCRouter({
         .where(eq(books.id, input.id))
         .returning();
 
-      return updated;
+      return updated as Book;
     }),
 
   // Delete a book

@@ -2,10 +2,11 @@
 
 Stack
 
+- TypeScript end-to-end
 - Next.js (App Router)
-- TypeScript
 - Drizzle ORM
 - tRPC w/ TanStack Query
+- shadcn-ui
 
 Start development server
 

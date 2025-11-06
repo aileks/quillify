@@ -1,6 +1,6 @@
 # Quillify API Routes (tRPC + TanStack Query)
 
-This document enumerates the current tRPC procedures, their HTTP transport endpoint, and expected status codes. It also proposes a TBD RESTful surface for `books` based on the Drizzle schema.
+This document enumerates the current tRPC procedures, their HTTP transport endpoint, and expected status codes.
 
 Key files:
 - App router: `src/server/api/root.ts`

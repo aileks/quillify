@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Merriweather, Inter } from 'next/font/google';
+import { TRPCReactProvider } from '@/trpc/react';
 import '@/styles/globals.css';
 
 const merriweather = Merriweather({
@@ -28,7 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en'>
-      <body className={`${merriweather.variable} ${inter.variable} antialiased`}>{children}</body>
+      <body className={`${merriweather.variable} ${inter.variable} antialiased`}>
+        <TRPCReactProvider>{children}</TRPCReactProvider>
+      </body>
     </html>
   );
 }

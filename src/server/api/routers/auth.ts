@@ -117,7 +117,7 @@ export const authRouter = createTRPCRouter({
 
   // Check if an email is already registered
   checkEmail: publicProcedure
-    .input(z.object({ email: z.string().email() }))
+    .input(z.object({ email: z.email() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.query.users.findFirst({
         where: eq(users.email, input.email),

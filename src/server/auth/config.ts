@@ -47,7 +47,7 @@ export const authConfig = {
         // Validate credentials schema
         const parsedCredentials = z
           .object({
-            email: z.string().email(),
+            email: z.email(),
             password: z.string().min(1),
             rememberMe: z.union([z.boolean(), z.string()]).optional(),
           })

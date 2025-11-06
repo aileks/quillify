@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { auth } from '@/server/auth';
 import { RegisterForm } from '@/components/auth/register-form';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface RegisterPageProps {
   searchParams: Promise<{ callbackUrl?: string }>;
@@ -28,8 +29,24 @@ export default function RegisterPage({ searchParams }: RegisterPageProps) {
   return (
     <Suspense
       fallback={
-        <div className='flex min-h-screen items-center justify-center'>
-          <div className='h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent' />
+        <div className='flex min-h-screen items-center justify-center p-4'>
+          <div className='w-full max-w-md space-y-6'>
+            <div className='space-y-2 text-center'>
+              <Skeleton className='mx-auto h-8 w-48' />
+              <Skeleton className='mx-auto h-4 w-64' />
+            </div>
+            <div className='space-y-4'>
+              <div className='space-y-2'>
+                <Skeleton className='h-4 w-16' />
+                <Skeleton className='h-10 w-full' />
+              </div>
+              <div className='space-y-2'>
+                <Skeleton className='h-4 w-20' />
+                <Skeleton className='h-10 w-full' />
+              </div>
+              <Skeleton className='h-10 w-full' />
+            </div>
+          </div>
         </div>
       }
     >

@@ -1,8 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from '@/components/ui/navigation-menu';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,46 +30,73 @@ export function Navbar() {
           Quillify
         </Link>
 
-        <div className='flex items-center gap-4'>
-          {status === 'loading' ?
-            <div className='h-9 w-20 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800' />
-          : session?.user ?
-            <>
-              <Link href='/books'>
-                <Button variant='ghost'>Books</Button>
-              </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant='outline'>
-                    {session.user.name || session.user.email || 'Account'}
+        {status === 'loading' ?
+          <Skeleton className='h-9 w-32' />
+        : session?.user ?
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link href='/books' className={navigationMenuTriggerStyle()}>
+                    Books
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant='outline' className='ml-2'>
+                      {session.user.name || session.user.email || 'Account'}
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align='end'>
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem asChild>
+                      <Link href='/account'>Settings</Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem
+                      onClick={() => signOut({ callbackUrl: '/' })}
+                      className='cursor-pointer text-red-600 dark:text-red-400'
+                    >
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        : <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Button variant='secondary' asChild>
+                    <Link href='/account/login' className={navigationMenuTriggerStyle()}>
+                      Log In
+                    </Link>
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align='end'>
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href='/account'>Settings</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                    className='cursor-pointer text-red-600 dark:text-red-400'
-                  >
-                    Log Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          : <>
-              <Button variant='ghost' asChild>
-                <Link href='/account/login'>Log In</Link>
-              </Button>
-              <Button asChild>
-                <Link href='/account/register'>Get Started</Link>
-              </Button>
-            </>
-          }
-        </div>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Button asChild>
+                    <Link href='/account/register' className={navigationMenuTriggerStyle()}>
+                      Get Started
+                    </Link>
+                  </Button>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        }
       </div>
     </nav>
   );

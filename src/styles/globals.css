@@ -54,9 +54,6 @@
   html,
   body {
     @apply bg-background text-foreground font-serif;
-    font-feature-settings:
-      'liga' 1,
-      'kern' 1;
   }
 
   h1,
@@ -65,21 +62,19 @@
   h4,
   h5,
   h6 {
-    @apply font-serif text-ink-900 dark:text-parchment-100 font-bold;
+    @apply text-ink-900 dark:text-parchment-100 font-bold;
   }
 
   h1 {
     @apply text-4xl md:text-5xl;
   }
 
-  p,
-  li,
-  blockquote {
-    @apply font-serif;
+  h2 {
+    @apply text-3xl md:text-4xl;
   }
 
   a {
-    @apply cursor-pointer underline decoration-brass-500/40 hover:decoration-brass-500 text-ink-800 dark:text-parchment-100;
+    @apply cursor-pointer decoration-brass-500/40 hover:decoration-brass-500 text-ink-800 dark:text-parchment-100;
   }
 }
 
@@ -206,8 +201,9 @@
 }
 
 .bg-primary {
+  @apply font-semibold;
   background-color: var(--color-forest-600);
-  color: var(--color-parchment-50);
+  color: var(--color-parchment-100);
 }
 
 .bg-primary:hover {
@@ -223,8 +219,9 @@
 }
 
 .bg-secondary {
+  @apply font-semibold;
   background-color: var(--color-brass-500);
-  color: var(--color-ink-900);
+  color: var(--color-parchment-100);
 }
 
 .bg-secondary:hover {

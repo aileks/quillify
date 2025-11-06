@@ -74,6 +74,24 @@ export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
 
   const isLoading = form.formState.isSubmitting;
 
+  const handleDemoLogin = async () => {
+    setError('');
+
+    const result = await signIn('credentials', {
+      email: 'demo@quillify.com',
+      password: 'P@ssW0rd',
+      rememberMe: false,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError('Failed to log in with demo account');
+    } else if (result?.ok) {
+      router.push(callbackUrl);
+      router.refresh();
+    }
+  };
+
   return (
     <Card className='w-full max-w-md'>
       <CardHeader>
@@ -153,6 +171,16 @@ export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
                   Logging in...
                 </>
               : <>Log In</>}
+            </Button>
+
+            <Button
+              type='button'
+              variant='outline'
+              className='w-full'
+              onClick={handleDemoLogin}
+              disabled={isLoading}
+            >
+              Demo Login
             </Button>
           </form>
         </Form>

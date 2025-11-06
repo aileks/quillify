@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { api } from '@/trpc/react';
+import Loading from './loading';
 
 export default function BooksPage() {
   const utils = api.useUtils();
@@ -25,7 +26,7 @@ export default function BooksPage() {
   const [author, setAuthor] = useState('');
   const [pages, setPages] = useState<number>(300);
 
-  if (isLoading) return <div className='p-6'>Loading…</div>;
+  if (isLoading) return <Loading />;
   if (error) {
     // If not signed in, protectedProcedure will throw UNAUTHORIZED
     return (

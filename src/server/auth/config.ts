@@ -94,7 +94,7 @@ export const authConfig = {
   }),
   callbacks: {
     jwt: ({ token, user, trigger }) => {
-      // On sign in, store rememberMe preference
+      // On log in, store rememberMe preference
       if (user && trigger === 'signIn') {
         token.id = user.id;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

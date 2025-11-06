@@ -37,10 +37,6 @@
   --color-primary: var(--color-ink-900);
   --color-accent: var(--color-forest-600);
   --color-ring: var(--color-brass-500);
-
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
 }
 
 :root.dark {
@@ -83,23 +79,8 @@
   }
 
   a {
-    @apply underline decoration-brass-500/40 hover:decoration-brass-500 text-ink-800 dark:text-parchment-100;
+    @apply cursor-pointer underline decoration-brass-500/40 hover:decoration-brass-500 text-ink-800 dark:text-parchment-100;
   }
-}
-
-.card {
-  @apply bg-card border border-border rounded-[var(--radius-lg)] shadow-sm;
-}
-
-.btn-primary {
-  @apply inline-flex items-center gap-2 rounded-[var(--radius-md)] px-4 py-2
-         bg-forest-600 text-parchment-50 hover:bg-forest-700
-         ring-1 ring-transparent focus:outline-none focus:ring-2 focus:ring-ring;
-}
-
-.badge {
-  @apply inline-flex items-center rounded-full px-2 py-0.5 text-sm
-         bg-sepia-300 text-ink-800 dark:bg-ink-800 dark:text-parchment-100;
 }
 
 @theme inline {

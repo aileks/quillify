@@ -11,8 +11,8 @@ export const createQueryClient = () =>
         retry(failureCount, error) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const e = error as any;
-          const code = e?.data?.code; // tRPC code (e.g., 'UNAUTHORIZED')
-          const httpStatus = e?.data?.httpStatus; // tRPC http status (e.g., 401)
+          const code = e?.data?.code;
+          const httpStatus = e?.data?.httpStatus;
           if (code === 'UNAUTHORIZED' || httpStatus === 401) return false;
           return failureCount < 3;
         },

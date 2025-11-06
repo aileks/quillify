@@ -29,6 +29,7 @@ CREATE TABLE "quillify"."users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
 	"email" text,
+	"password" text,
 	"emailVerified" timestamp,
 	"image" text,
 	CONSTRAINT "users_email_unique" UNIQUE("email")

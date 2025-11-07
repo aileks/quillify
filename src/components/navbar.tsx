@@ -24,7 +24,7 @@ export function Navbar() {
   const { data: session, status } = useSession();
 
   return (
-    <nav className='border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
+    <nav>
       <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
         <Link href='/' className='text-xl font-bold'>
           Quillify

@@ -101,6 +101,7 @@ export default function BooksPage() {
                 </div>
                 <div className='text-sm text-zinc-500'>{b.numberOfPages} pages</div>
               </div>
+
               <div className='flex gap-2'>
                 <button
                   className='rounded border px-2 py-1'
@@ -109,6 +110,7 @@ export default function BooksPage() {
                 >
                   Mark {b.isRead ? 'Unread' : 'Read'}
                 </button>
+
                 <button
                   className='rounded bg-red-600 px-2 py-1 text-white disabled:opacity-50'
                   onClick={() => remove.mutate({ id: b.id })}

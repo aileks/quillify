@@ -2,9 +2,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Loading() {
   return (
-    <div className='min-h-screen bg-zinc-50 dark:bg-black'>
+    <div className='min-h-screen'>
       {/* Navbar skeleton */}
-      <div className='border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
+      <div>
         <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
           <Skeleton className='h-8 w-24' />
           <div className='flex items-center gap-4'>
@@ -24,10 +24,7 @@ export default function Loading() {
         {/* Book grid skeleton */}
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
           {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className='rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950'
-            >
+            <div key={i} className='rounded-lg'>
               <Skeleton className='mb-4 h-48 w-full' />
               <Skeleton className='mb-2 h-6 w-3/4' />
               <Skeleton className='mb-2 h-4 w-1/2' />

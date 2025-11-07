@@ -2,9 +2,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Loading() {
   return (
-    <div className='min-h-screen bg-zinc-50 dark:bg-black'>
+    <div className='min-h-screen'>
       {/* Navbar skeleton */}
-      <nav className='border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
+      <nav>
         <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
           <Skeleton className='h-8 w-24' />
           <div className='flex items-center gap-4'>

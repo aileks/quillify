@@ -77,6 +77,7 @@ export const authRouter = createTRPCRouter({
    */
   verifyCredentials: publicProcedure.input(loginSchema).mutation(async ({ ctx, input }) => {
     const { email, password } = input;
+    console.log(password);
 
     // Find user by email
     const user = await ctx.db.query.users.findFirst({
@@ -97,7 +98,12 @@ export const authRouter = createTRPCRouter({
       });
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    // Migration from Laravel means having to normalize hashes
+    const passwordHash = user.password;
+    const normalizedHash =
+      passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
+
+    const isValidPassword = await bcrypt.compare(normalizedHash, password);
 
     if (!isValidPassword) {
       throw new TRPCError({

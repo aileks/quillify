@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { BookOpen, CheckCircle2, Tag, Edit3, Lock, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { auth } from '@/server/auth';
 
 export default async function Home() {
@@ -12,10 +10,10 @@ export default async function Home() {
     redirect('/books');
   }
   return (
-    <div className='min-h-screen'>
+    <div className='flex min-h-screen flex-col'>
       {/* Hero Section */}
-      <section className='border-b py-20 sm:py-32'>
-        <div className='container mx-auto px-4'>
+      <section className='flex flex-1 items-center justify-center border-b px-4'>
+        <div className='container mx-auto'>
           <div className='mx-auto max-w-3xl text-center'>
             <h1 className='mb-6 text-4xl font-bold tracking-tight sm:text-6xl'>
               Your Personal Library, Beautifully Organized
@@ -30,8 +28,8 @@ export default async function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className='border-t py-20'>
-        <div className='container mx-auto px-4'>
+      <section className='flex flex-1 items-center justify-center border-t px-4'>
+        <div className='container mx-auto'>
           <div className='mx-auto max-w-3xl text-center'>
             <h2 className='mb-4 text-3xl font-bold sm:text-4xl'>
               Start Organizing Your Library Today

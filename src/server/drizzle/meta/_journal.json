@@ -43,6 +43,13 @@
       "when": 1762630975828,
       "tag": "0005_steady_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1762631822910,
+      "tag": "0006_loose_manta",
+      "breakpoints": true
     }
   ]
 }

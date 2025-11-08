@@ -26,8 +26,7 @@ export interface AuthUser {
   id: string;
   email: string | null;
   name: string | null;
-  // FIXME: Migrate DB to rename column on prod
-  emailVerified: Date | null;
+  emailVerifiedAt: Date | null;
   rememberMe?: boolean;
 }
 

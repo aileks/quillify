@@ -175,7 +175,7 @@ tRPC path prefix: `auth.*`
 - Purpose: Verify email/password (used by NextAuth credentials flow).
 - Input (required): `{ email: string (email), password: string }`
 - Success:
-  - 200 OK - Returns the user without password (`{ id, email, name, emailVerified }`).
+  - 200 OK - Returns the user without password (`{ id, email, name, emailVerifiedAt }`).
 - Errors:
   - 400 BAD_REQUEST - Validation error.
   - 400 BAD_REQUEST - Account uses a different sign-in method (no stored password).

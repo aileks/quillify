@@ -11,6 +11,8 @@ export const users = quillify.table('users', {
   email: text('email').unique(),
   password: text('password'),
   emailVerifiedAt: timestamp('emailVerifiedAt', { mode: 'date', withTimezone: true }),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const books = quillify.table('books', {
@@ -26,7 +28,8 @@ export const books = quillify.table('books', {
   genre: text('genre'),
   publishYear: integer('publishYear').notNull(),
   isRead: boolean('isRead').notNull().default(false),
-  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({

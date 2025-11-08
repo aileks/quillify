@@ -98,11 +98,11 @@ export const authRouter = createTRPCRouter({
     }
 
     // Migration from Laravel means having to normalize hashes
-    // const passwordHash = user.password;
-    // const normalizedHash =
-    //   passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
+    const passwordHash = user.password;
+    const normalizedHash =
+      passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
 
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(password, normalizedHash);
 
     if (!isValidPassword) {
       throw new TRPCError({
@@ -115,8 +115,7 @@ export const authRouter = createTRPCRouter({
       id: user.id,
       email: user.email,
       name: user.name,
-      // FIXME: Migrate DB to rename column on prod
-      emailVerified: user.email_verified_at,
+      emailVerifiedAt: user.emailVerifiedAt,
     };
   }),
 

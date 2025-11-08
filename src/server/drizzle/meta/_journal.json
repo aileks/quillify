@@ -36,6 +36,13 @@
       "when": 1762629695458,
       "tag": "0004_sparkling_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1762630975828,
+      "tag": "0005_steady_madame_masque",
+      "breakpoints": true
     }
   ]
 }

@@ -10,24 +10,23 @@ export const users = quillify.table('users', {
   name: text('name'),
   email: text('email').unique(),
   password: text('password'),
-  // FIXME: Migrate DB to rename column on prod
-  email_verified_at: timestamp('email_verified_at', { mode: 'date', withTimezone: true }),
+  emailVerifiedAt: timestamp('emailVerifiedAt', { mode: 'date', withTimezone: true }),
 });
 
 export const books = quillify.table('books', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  userId: text('user_id')
+  userId: text('userId')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   author: text('author').notNull(),
-  numberOfPages: integer('number_of_pages').notNull(),
+  numberOfPages: integer('numberOfPages').notNull(),
   genre: text('genre'),
-  publishYear: integer('publish_year').notNull(),
-  isRead: boolean('is_read').notNull().default(false),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  publishYear: integer('publishYear').notNull(),
+  isRead: boolean('isRead').notNull().default(false),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({

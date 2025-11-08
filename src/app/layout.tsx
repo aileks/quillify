@@ -31,7 +31,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en'>
-      <body className={`${merriweather.variable} ${inter.variable} antialiased`}>
+      <body
+        className={`${merriweather.variable} ${inter.variable} bg-background text-foreground antialiased`}
+      >
         <SessionProvider>
           <Navbar />
           <TRPCReactProvider>{children}</TRPCReactProvider>

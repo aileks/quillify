@@ -37,18 +37,18 @@ export function Navbar() {
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href='/books' className={navigationMenuTriggerStyle()}>
-                    Books
-                  </Link>
+                  <Button variant='link' asChild>
+                    <Link href='/books' className={navigationMenuTriggerStyle()}>
+                      Books
+                    </Link>
+                  </Button>
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant='outline' className='ml-2'>
-                      {session.user.name || session.user.email || 'Account'}
-                    </Button>
+                    <Button>{session.user.name || session.user.email || 'Account'}</Button>
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent align='end'>

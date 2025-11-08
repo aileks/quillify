@@ -1,0 +1,1 @@
+ALTER TABLE "quillify"."users" RENAME COLUMN "emailVerified" TO "email_verified_at";

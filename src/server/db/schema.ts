@@ -10,7 +10,8 @@ export const users = quillify.table('users', {
   name: text('name'),
   email: text('email').unique(),
   password: text('password'),
-  emailVerified: timestamp('emailVerified', { mode: 'date' }),
+  // FIXME: Migrate DB to rename column on prod
+  emailVerified: timestamp('email_verified_at', { mode: 'date', withTimezone: true }),
   image: text('image'),
 });
 

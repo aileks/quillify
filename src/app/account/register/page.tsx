@@ -11,7 +11,7 @@ interface RegisterPageProps {
 async function RegisterContent({ searchParams }: RegisterPageProps) {
   const session = await auth();
   const resolvedParams = await searchParams;
-  const callbackUrl = resolvedParams.callbackUrl || '/';
+  const callbackUrl = resolvedParams.callbackUrl || '/books';
 
   // If user is already logged in, redirect to callback URL
   if (session?.user) {

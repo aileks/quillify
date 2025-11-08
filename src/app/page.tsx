@@ -1,8 +1,15 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { auth } from '@/server/auth';
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
+  if (session?.user) {
+    redirect('/books');
+  }
   return (
     <div className='min-h-screen'>
       {/* Hero Section */}

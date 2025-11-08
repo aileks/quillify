@@ -1,6 +1,43 @@
-# Quillify API Routes (tRPC + TanStack Query)
+# Quillify Routes
 
-This document enumerates the current tRPC procedures, their HTTP transport endpoint, and expected status codes.
+This document enumerates the current app routes and tRPC procedures, their HTTP transport endpoint, and expected status codes.
+
+## App Routes
+
+### Public Routes
+- `/` - Landing page
+  - **Authenticated users**: Automatically redirected to `/books`
+  - **Unauthenticated users**: See marketing/landing page
+- `/account/login` - User login page
+  - **Authenticated users**: Automatically redirected to `/books`
+  - **After successful login**: Redirected to `/books` (or `callbackUrl` if provided)
+- `/account/register` - User registration page
+  - **Authenticated users**: Automatically redirected to `/books`
+  - **After successful registration**: Redirected to `/books` (or `callbackUrl` if provided)
+
+### Protected Routes (require authentication)
+- `/books` - List all books for the current user (grid view)
+  - **Unauthenticated users**: Redirected to `/` (landing page)
+- `/books/new` - Create a new book form
+  - **Unauthenticated users**: Redirected to `/` (landing page)
+- `/books/[id]` - View and edit a specific book (details page)
+  - **Unauthenticated users**: Handled by client-side (shows error/redirects via tRPC)
+
+### API Routes
+- `/api/auth/[...nextauth]` - NextAuth.js authentication endpoints
+- `/api/trpc/[trpc]` - tRPC HTTP handler (all tRPC procedures)
+
+### Authentication Flow
+- **NextAuth sign-in page**: `/` (landing page with login/register CTAs)
+- **Default redirect after login**: `/books`
+- **Default redirect after logout**: `/`
+- **Unauthorized access**: Redirected to `/`
+
+---
+
+## tRPC API Routes
+
+This section enumerates the current tRPC procedures, their HTTP transport endpoint, and expected status codes.
 
 Key files:
 - App router: `src/server/api/root.ts`
@@ -55,25 +92,35 @@ All procedures are protected and require a valid session.
   - 400 BAD_REQUEST - Validation error.
   - 401 UNAUTHORIZED - Not authenticated.
 
-2) books.create (mutation)
+2) books.getById (query)
+- Purpose: Get a single book by ID (must be owned by the current user).
+- Input (required): `{ id: string }`
+- Success:
+  - 200 OK - Returns the book object.
+- Errors:
+  - 400 BAD_REQUEST - Validation error.
+  - 401 UNAUTHORIZED - Not authenticated.
+  - 404 NOT_FOUND - Book not found or not owned by the user.
+
+3) books.create (mutation)
 - Purpose: Create a new book for the current user.
 - Input (required):
   - `title: string`
   - `author: string`
   - `numberOfPages: number (int, > 0)`
   - `genre?: string`
-  - `publishYear?: number (int)`
+  - `publishYear: number (int, > >= 1500)`
 - Success:
   - 200 OK - Returns the inserted book row.
 - Errors:
   - 400 BAD_REQUEST - Validation error.
   - 401 UNAUTHORIZED - Not authenticated.
 
-3) books.update (mutation)
+4) books.update (mutation)
 - Purpose: Update selected fields of a book owned by the current user.
 - Input (required):
   - `id: string`
-  - Optional fields: `title?: string`, `author?: string`, `numberOfPages?: number (int, > 0)`, `genre?: string | null`, `publishYear?: number | null`
+  - Optional fields: `title?: string`, `author?: string`, `numberOfPages?: number (int, > 0)`, `genre?: string | null`, `publishYear?: number (int, > 0)`
 - Success:
   - 200 OK - Returns the updated book row.
 - Errors:
@@ -81,7 +128,7 @@ All procedures are protected and require a valid session.
   - 401 UNAUTHORIZED - Not authenticated.
   - 404 NOT_FOUND - Book not found or not owned by the user.
 
-4) books.setRead (mutation)
+5) books.setRead (mutation)
 - Purpose: Set/toggle the read status of a book owned by the current user.
 - Input (required): `{ id: string, isRead: boolean }`
 - Success:
@@ -91,7 +138,7 @@ All procedures are protected and require a valid session.
   - 401 UNAUTHORIZED - Not authenticated.
   - 404 NOT_FOUND - Book not found or not owned by the user.
 
-5) books.remove (mutation)
+6) books.remove (mutation)
 - Purpose: Delete a book owned by the current user.
 - Input (required): `{ id: string }`
 - Success:

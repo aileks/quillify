@@ -122,6 +122,6 @@ export const authConfig = {
     maxAge: 30 * 24 * 60 * 60, // 30 days maximum (will be overridden by JWT exp)
   },
   pages: {
-    signIn: '/account/login',
+    signIn: '/',
   },
 } satisfies NextAuthConfig;

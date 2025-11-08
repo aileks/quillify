@@ -62,7 +62,7 @@ src/
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm
+- Node.js 21+ and pnpm
 - PostgreSQL database
 
 ### Installation

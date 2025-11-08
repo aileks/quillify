@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, or, ilike, count, asc, desc } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
@@ -7,27 +7,64 @@ import { books } from '@/server/db/schema';
 import type { Book } from '@/types';
 
 export const booksRouter = createTRPCRouter({
-  // List the current user's books (optionally filter by read status)
   list: protectedProcedure
     .input(
-      z
-        .object({
-          isRead: z.boolean().optional(),
-        })
-        .optional()
+      z.object({
+        isRead: z.boolean().optional(),
+        search: z.string().optional(),
+        sortBy: z.enum(['title', 'author', 'createdAt']).default('title'),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        page: z.number().int().positive().default(1),
+        pageSize: z.number().int().positive().max(100).default(12),
+      })
     )
     .query(async ({ ctx, input }) => {
-      const where =
-        input?.isRead !== undefined ?
-          and(eq(books.userId, ctx.session.user.id), eq(books.isRead, input.isRead))
-        : eq(books.userId, ctx.session.user.id);
+      const { isRead, search, sortBy, sortOrder, page, pageSize } = input;
 
-      const rows = await ctx.db.query.books.findMany({
-        where,
-        orderBy: (b, { desc }) => [desc(b.createdAt)],
-      });
+      const conditions = [eq(books.userId, ctx.session.user.id)];
 
-      return rows;
+      if (isRead !== undefined) {
+        conditions.push(eq(books.isRead, isRead));
+      }
+
+      if (search && search.trim()) {
+        conditions.push(
+          or(
+            ilike(books.title, `%${search}%`),
+            ilike(books.author, `%${search}%`),
+            ilike(books.genre, `%${search}%`)
+          )!
+        );
+      }
+
+      const where = and(...conditions);
+
+      // Get total count for pagination
+      const countResult = await ctx.db.select({ totalCount: count() }).from(books).where(where);
+      const totalCount = countResult[0]?.totalCount ?? 0;
+
+      // Get paginated results
+      const orderByColumn =
+        sortBy === 'title' ? books.title
+        : sortBy === 'author' ? books.author
+        : books.createdAt;
+      const orderByFn = sortOrder === 'asc' ? asc : desc;
+
+      const rows = await ctx.db
+        .select()
+        .from(books)
+        .where(where)
+        .orderBy(orderByFn(orderByColumn))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize);
+
+      return {
+        items: rows as Book[],
+        totalCount,
+        page,
+        pageSize,
+        totalPages: Math.ceil(totalCount / pageSize),
+      };
     }),
 
   // Get a single book by ID (owned by current user)

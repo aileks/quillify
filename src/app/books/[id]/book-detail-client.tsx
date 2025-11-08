@@ -137,29 +137,39 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
   }
 
   return (
-    <div className='container mx-auto max-w-3xl space-y-6 py-10'>
+    <div className='container mx-auto max-w-3xl space-y-6 px-4 py-6 md:px-6 md:py-10'>
       <div className='flex items-center gap-4'>
-        <Button variant='outline' onClick={() => router.push('/books')}>
+        <Button
+          variant='outline'
+          onClick={() => router.push('/books')}
+          className='w-full sm:w-auto'
+        >
           ← Back
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <div className='flex items-start justify-between'>
-            <div>
-              <CardTitle className='text-3xl'>{book.title}</CardTitle>
-              <CardDescription className='text-lg'>by {book.author}</CardDescription>
+          <div className='flex flex-col items-start justify-between gap-4 sm:flex-row'>
+            <div className='flex-1'>
+              <CardTitle className='text-2xl sm:text-3xl'>{book.title}</CardTitle>
+              <CardDescription className='text-base sm:text-lg'>by {book.author}</CardDescription>
             </div>
-            <div className='flex gap-2'>
+            <div className='flex w-full gap-2 sm:w-auto'>
               {!isEditing && (
                 <>
-                  <Button variant='outline' onClick={() => setIsEditing(true)}>
+                  <Button
+                    variant='outline'
+                    onClick={() => setIsEditing(true)}
+                    className='flex-1 sm:flex-none'
+                  >
                     Edit Book
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant='destructive'>Delete</Button>
+                      <Button variant='destructive' className='flex-1 sm:flex-none'>
+                        Delete
+                      </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
@@ -290,8 +300,12 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                   )}
                 />
 
-                <div className='flex gap-4'>
-                  <Button type='submit' disabled={updateBook.isPending}>
+                <div className='flex flex-col gap-4 sm:flex-row'>
+                  <Button
+                    type='submit'
+                    disabled={updateBook.isPending}
+                    className='w-full sm:w-auto'
+                  >
                     {updateBook.isPending ? 'Saving...' : 'Save Changes'}
                   </Button>
                   <Button
@@ -302,6 +316,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                       form.reset();
                     }}
                     disabled={updateBook.isPending}
+                    className='w-full sm:w-auto'
                   >
                     Cancel
                   </Button>
@@ -328,7 +343,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                 </div>
                 <div>
                   <h3 className='text-muted-foreground mb-2 text-sm font-medium'>Status</h3>
-                  <div className='flex items-center gap-2'>
+                  <div className='flex flex-col items-start gap-2 sm:flex-row sm:items-center'>
                     <p
                       className={`text-lg font-semibold ${
                         book.isRead ? 'text-green-600' : 'text-amber-600'
@@ -341,6 +356,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                       size='sm'
                       onClick={() => toggleRead.mutate({ id: book.id, isRead: !book.isRead })}
                       disabled={toggleRead.isPending}
+                      className='w-full sm:w-auto'
                     >
                       {toggleRead.isPending ?
                         'Updating...'

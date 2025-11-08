@@ -87,7 +87,7 @@ export function NewBookForm() {
   }
 
   return (
-    <div className='container mx-auto max-w-2xl py-10'>
+    <div className='container mx-auto max-w-2xl px-4 py-6 md:px-6 md:py-10'>
       <Card>
         <CardHeader>
           <CardTitle>Add New Book</CardTitle>
@@ -200,8 +200,8 @@ export function NewBookForm() {
                 )}
               />
 
-              <div className='flex gap-4'>
-                <Button type='submit' disabled={createBook.isPending}>
+              <div className='flex flex-col gap-4 sm:flex-row'>
+                <Button type='submit' disabled={createBook.isPending} className='w-full sm:w-auto'>
                   {createBook.isPending ? 'Adding...' : 'Add Book'}
                 </Button>
                 <Button
@@ -209,6 +209,7 @@ export function NewBookForm() {
                   variant='outline'
                   onClick={() => router.push('/books')}
                   disabled={createBook.isPending}
+                  className='w-full sm:w-auto'
                 >
                   Cancel
                 </Button>

@@ -57,7 +57,7 @@ export function Navbar() {
                     <DropdownMenuSeparator />
 
                     <DropdownMenuItem asChild>
-                      <Link href='/account'>Settings</Link>
+                      <Link href='/account/settings'>Settings</Link>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />

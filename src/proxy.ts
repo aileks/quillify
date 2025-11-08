@@ -2,9 +2,9 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 /**
- * Middleware: Redirect browser navigations to /api* back to home.
+ * Proxy: Redirect browser navigations to /api* back to home.
  */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { method, headers } = req;
 
   // Only consider true document requests
@@ -29,6 +29,6 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Run this middleware for all /api routes
+  // Run this proxy for all /api routes
   matcher: ['/api/:path*'],
 };

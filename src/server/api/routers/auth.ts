@@ -77,7 +77,6 @@ export const authRouter = createTRPCRouter({
    */
   verifyCredentials: publicProcedure.input(loginSchema).mutation(async ({ ctx, input }) => {
     const { email, password } = input;
-    console.log(password);
 
     // Find user by email
     const user = await ctx.db.query.users.findFirst({
@@ -103,7 +102,7 @@ export const authRouter = createTRPCRouter({
     const normalizedHash =
       passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
 
-    const isValidPassword = await bcrypt.compare(normalizedHash, password);
+    const isValidPassword = await bcrypt.compare(password, normalizedHash);
 
     if (!isValidPassword) {
       throw new TRPCError({

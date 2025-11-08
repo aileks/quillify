@@ -1,5 +1,5 @@
 import type { TRPC_ERROR_CODE_KEY } from '@trpc/server/rpc';
-import type { users, books, accounts } from '@/server/db/schema';
+import type { users, books } from '@/server/db/schema';
 
 /**
  * tRPC error structure based on the error format returned by tRPC procedures
@@ -39,6 +39,3 @@ export type NewUser = typeof users.$inferInsert;
 
 export type Book = typeof books.$inferSelect;
 export type NewBook = typeof books.$inferInsert;
-
-export type Account = typeof accounts.$inferSelect;
-export type NewAccount = typeof accounts.$inferInsert;

@@ -1,10 +1,8 @@
-import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { type DefaultSession, type NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
 
 import { db } from '@/server/db';
-import { accounts, users } from '@/server/db/schema';
 import { createCaller } from '@/server/api/root';
 import type { AuthUser } from '@/types';
 
@@ -90,10 +88,6 @@ export const authConfig = {
       },
     }),
   ],
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-  }),
   callbacks: {
     jwt: ({ token, user, trigger }) => {
       // On log in, store rememberMe preference

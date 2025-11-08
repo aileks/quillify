@@ -79,7 +79,7 @@ export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
 
     const result = await signIn('credentials', {
       email: 'demo@quillify.com',
-      password: 'P@ssW0rd',
+      password: 'demo123',
       rememberMe: false,
       redirect: false,
     });

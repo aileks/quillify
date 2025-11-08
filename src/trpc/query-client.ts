@@ -13,8 +13,11 @@ export const createQueryClient = () =>
           const e = error as TRPCErrorShape;
           const code = e?.data?.code;
           const httpStatus = e?.data?.httpStatus;
+          // Don't retry on UNAUTHORIZED or NOT_FOUND errors
           if (code === 'UNAUTHORIZED' || httpStatus === 401) return false;
-          return failureCount < 3;
+          if (code === 'NOT_FOUND' || httpStatus === 404) return false;
+          // Retry up to 2 times (3 total attempts -> 2 retries)
+          return failureCount < 2;
         },
       },
       dehydrate: {

@@ -1,0 +1,1 @@
+ALTER TABLE "quillify"."books" ALTER COLUMN "publish_year" SET NOT NULL;

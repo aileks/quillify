@@ -30,6 +30,20 @@ export const booksRouter = createTRPCRouter({
       return rows;
     }),
 
+  // Get a single book by ID (owned by current user)
+  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const [book] = await ctx.db
+      .select()
+      .from(books)
+      .where(and(eq(books.id, input.id), eq(books.userId, ctx.session.user.id)));
+
+    if (!book) {
+      throw new TRPCError({ code: 'NOT_FOUND' });
+    }
+
+    return book as Book;
+  }),
+
   // Create a new book for the current user
   create: protectedProcedure
     .input(
@@ -38,7 +52,7 @@ export const booksRouter = createTRPCRouter({
         author: z.string().min(1),
         numberOfPages: z.number().int().positive(),
         genre: z.string().optional(),
-        publishYear: z.number().int().optional(),
+        publishYear: z.number().int().positive(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -66,7 +80,7 @@ export const booksRouter = createTRPCRouter({
         author: z.string().min(1).optional(),
         numberOfPages: z.number().int().positive().optional(),
         genre: z.string().nullable().optional(),
-        publishYear: z.number().int().nullable().optional(),
+        publishYear: z.number().int().positive().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -83,7 +97,7 @@ export const booksRouter = createTRPCRouter({
           author: input.author ?? existing.author,
           numberOfPages: input.numberOfPages ?? existing.numberOfPages,
           genre: input.genre === undefined ? existing.genre : input.genre,
-          publishYear: input.publishYear === undefined ? existing.publishYear : input.publishYear,
+          publishYear: input.publishYear ?? existing.publishYear,
         })
         .where(eq(books.id, input.id))
         .returning();

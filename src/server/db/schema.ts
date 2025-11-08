@@ -50,7 +50,7 @@ export const books = quillify.table('books', {
   author: text('author').notNull(),
   numberOfPages: integer('number_of_pages').notNull(),
   genre: text('genre'),
-  publishYear: integer('publish_year'),
+  publishYear: integer('publish_year').notNull(),
   isRead: boolean('is_read').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });

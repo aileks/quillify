@@ -1,127 +1,98 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { api } from '@/trpc/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Loading from './loading';
 
 export default function BooksPage() {
-  const utils = api.useUtils();
-
-  // Queries
   const { data: books, isLoading, error } = api.books.list.useQuery();
 
-  // Mutations
-  const create = api.books.create.useMutation({
-    onSuccess: () => void utils.books.list.invalidate(),
-  });
-  const setRead = api.books.setRead.useMutation({
-    onSuccess: () => void utils.books.list.invalidate(),
-  });
-  const remove = api.books.remove.useMutation({
-    onSuccess: () => void utils.books.list.invalidate(),
-  });
-
-  // Local form state
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [pages, setPages] = useState<number>(300);
-
   if (isLoading) return <Loading />;
+
   if (error) {
-    // If not signed in, protectedProcedure will throw UNAUTHORIZED
     return (
-      <div className='p-6'>
-        <p className='text-red-600'>Error: {error.message}</p>
-        <p className='text-sm text-zinc-600'>Are you signed in?</p>
+      <div className='container mx-auto p-6'>
+        <Card>
+          <CardContent className='pt-6'>
+            <p className='text-destructive font-semibold'>Error: {error.message}</p>
+            <p className='text-muted-foreground text-sm'>Are you signed in?</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className='mx-auto max-w-2xl space-y-6 p-6'>
-      <h1 className='text-2xl font-bold'>My Books</h1>
+    <div className='container mx-auto space-y-6 p-6'>
+      <div className='flex items-center justify-between'>
+        <div>
+          <h1 className='text-3xl font-bold'>My Books</h1>
+          <p className='text-muted-foreground'>
+            {books?.length === 0 ?
+              'No books yet'
+            : `${books?.length} book${books?.length === 1 ? '' : 's'} in your collection`}
+          </p>
+        </div>
+        <Button asChild>
+          <Link href='/books/new'>Add Book</Link>
+        </Button>
+      </div>
 
-      {/* Create form */}
-      <form
-        className='flex flex-wrap items-end gap-2'
-        onSubmit={(e) => {
-          e.preventDefault();
-          create.mutate({ title, author, numberOfPages: pages });
-        }}
-      >
-        <label className='flex flex-col'>
-          <span className='text-sm text-zinc-600'>Title</span>
-          <input
-            className='rounded border px-2 py-1'
-            placeholder='The Pragmatic Programmer'
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </label>
-        <label className='flex flex-col'>
-          <span className='text-sm text-zinc-600'>Author</span>
-          <input
-            className='rounded border px-2 py-1'
-            placeholder='Andrew Hunt'
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            required
-          />
-        </label>
-        <label className='flex flex-col'>
-          <span className='text-sm text-zinc-600'>Pages</span>
-          <input
-            className='w-24 rounded border px-2 py-1'
-            type='number'
-            min={1}
-            value={pages}
-            onChange={(e) => setPages(Number(e.target.value))}
-            required
-          />
-        </label>
-        <button
-          className='rounded bg-black px-3 py-2 text-white disabled:opacity-50'
-          type='submit'
-          disabled={create.isPending}
-        >
-          {create.isPending ? 'Adding…' : 'Add Book'}
-        </button>
-      </form>
-
-      {/* List */}
       {!books?.length ?
-        <p className='text-zinc-600'>No books yet</p>
-      : <ul className='space-y-2'>
-          {books.map((b) => (
-            <li key={b.id} className='flex items-center justify-between rounded border p-2'>
-              <div>
-                <div className={b.isRead ? 'line-through' : ''}>
-                  <strong>{b.title}</strong> by {b.author}
-                </div>
-                <div className='text-sm text-zinc-500'>{b.numberOfPages} pages</div>
-              </div>
-
-              <div className='flex gap-2'>
-                <button
-                  className='rounded border px-2 py-1'
-                  onClick={() => setRead.mutate({ id: b.id, isRead: !b.isRead })}
-                  disabled={setRead.isPending}
-                >
-                  Mark {b.isRead ? 'Unread' : 'Read'}
-                </button>
-
-                <button
-                  className='rounded bg-red-600 px-2 py-1 text-white disabled:opacity-50'
-                  onClick={() => remove.mutate({ id: b.id })}
-                  disabled={remove.isPending}
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
+        <Card>
+          <CardContent className='flex flex-col items-center justify-center py-12'>
+            <p className='text-muted-foreground mb-4 text-center'>
+              You haven&apos;t added any books yet. Start building your library!
+            </p>
+            <Button asChild>
+              <Link href='/books/new'>Add Your First Book</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      : <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+          {books.map((book) => (
+            <Link key={book.id} href={`/books/${book.id}`} className='group'>
+              <Card className='h-full transition-shadow hover:shadow-lg'>
+                <CardHeader>
+                  <CardTitle className='group-hover:text-primary line-clamp-2 transition-colors'>
+                    {book.title}
+                  </CardTitle>
+                  <CardDescription className='line-clamp-1'>by {book.author}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex justify-between'>
+                      <span className='text-muted-foreground'>Pages:</span>
+                      <span className='font-medium'>{book.numberOfPages}</span>
+                    </div>
+                    {book.genre && (
+                      <div className='flex justify-between'>
+                        <span className='text-muted-foreground'>Genre:</span>
+                        <span className='font-medium'>{book.genre}</span>
+                      </div>
+                    )}
+                    <div className='flex justify-between'>
+                      <span className='text-muted-foreground'>Published:</span>
+                      <span className='font-medium'>{book.publishYear}</span>
+                    </div>
+                    <div className='flex justify-between pt-2'>
+                      <span className='text-muted-foreground'>Status:</span>
+                      <span
+                        className={`font-medium ${
+                          book.isRead ? 'text-green-600' : 'text-amber-600'
+                        }`}
+                      >
+                        {book.isRead ? '✓ Read' : 'Unread'}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
-        </ul>
+        </div>
       }
     </div>
   );

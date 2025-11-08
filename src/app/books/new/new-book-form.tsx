@@ -47,7 +47,7 @@ export function NewBookForm() {
       author: '',
       numberOfPages: '',
       genre: undefined,
-      publishYear: String(new Date().getFullYear()),
+      publishYear: '',
     },
   });
 
@@ -70,9 +70,9 @@ export function NewBookForm() {
       form.setError('numberOfPages', { message: 'Must be a positive number' });
       return;
     }
-    if (isNaN(publishYear) || publishYear < 1000 || publishYear > new Date().getFullYear() + 10) {
+    if (isNaN(publishYear) || publishYear < 1000 || publishYear > new Date().getFullYear() + 5) {
       form.setError('publishYear', {
-        message: `Year must be between 1000 and ${new Date().getFullYear() + 10}`,
+        message: `Year must be between 1000 and ${new Date().getFullYear() + 5}`,
       });
       return;
     }
@@ -105,7 +105,11 @@ export function NewBookForm() {
                   <FormItem>
                     <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder='Jane Eyre' {...field} />
+                      <Input
+                        placeholder='Jane Eyre'
+                        className='placeholder:text-muted-foreground'
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -119,7 +123,11 @@ export function NewBookForm() {
                   <FormItem>
                     <FormLabel>Author</FormLabel>
                     <FormControl>
-                      <Input placeholder='Charlotte Brontë' {...field} />
+                      <Input
+                        placeholder='Charlotte Brontë'
+                        className='placeholder:text-muted-foreground'
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -134,7 +142,12 @@ export function NewBookForm() {
                     <FormItem>
                       <FormLabel>Number of Pages</FormLabel>
                       <FormControl>
-                        <Input type='number' placeholder='352' {...field} />
+                        <Input
+                          type='number'
+                          placeholder='352'
+                          className='placeholder:text-muted-foreground'
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -148,7 +161,12 @@ export function NewBookForm() {
                     <FormItem>
                       <FormLabel>Publish Year</FormLabel>
                       <FormControl>
-                        <Input type='number' placeholder='1999' {...field} />
+                        <Input
+                          type='number'
+                          placeholder='1999'
+                          className='placeholder:text-muted-foreground'
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

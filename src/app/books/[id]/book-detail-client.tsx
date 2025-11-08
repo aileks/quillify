@@ -66,8 +66,9 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
-    values: book
-      ? {
+    values:
+      book ?
+        {
           title: book.title,
           author: book.author,
           numberOfPages: String(book.numberOfPages),
@@ -114,9 +115,9 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
       form.setError('numberOfPages', { message: 'Must be a positive number' });
       return;
     }
-    if (isNaN(publishYear) || publishYear < 1000 || publishYear > new Date().getFullYear() + 10) {
+    if (isNaN(publishYear) || publishYear < 1000 || publishYear > new Date().getFullYear() + 5) {
       form.setError('publishYear', {
-        message: `Year must be between 1000 and ${new Date().getFullYear() + 10}`,
+        message: `Year must be between 1000 and ${new Date().getFullYear() + 5}`,
       });
       return;
     }
@@ -185,7 +186,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
           </div>
         </CardHeader>
         <CardContent>
-          {isEditing ? (
+          {isEditing ?
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
                 <FormField
@@ -195,7 +196,11 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                     <FormItem>
                       <FormLabel>Title</FormLabel>
                       <FormControl>
-                        <Input placeholder='The Pragmatic Programmer' {...field} />
+                        <Input
+                          placeholder='The Pragmatic Programmer'
+                          className='placeholder:text-muted-foreground'
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -209,7 +214,11 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                     <FormItem>
                       <FormLabel>Author</FormLabel>
                       <FormControl>
-                        <Input placeholder='Andrew Hunt, David Thomas' {...field} />
+                        <Input
+                          placeholder='Andrew Hunt, David Thomas'
+                          className='placeholder:text-muted-foreground'
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -224,7 +233,12 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                       <FormItem>
                         <FormLabel>Number of Pages</FormLabel>
                         <FormControl>
-                          <Input type='number' placeholder='352' {...field} />
+                          <Input
+                            type='number'
+                            placeholder='352'
+                            className='placeholder:text-muted-foreground'
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -238,7 +252,12 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                       <FormItem>
                         <FormLabel>Publish Year</FormLabel>
                         <FormControl>
-                          <Input type='number' placeholder='1999' {...field} />
+                          <Input
+                            type='number'
+                            placeholder='1999'
+                            className='placeholder:text-muted-foreground'
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -289,8 +308,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                 </div>
               </form>
             </Form>
-          ) : (
-            <div className='space-y-6'>
+          : <div className='space-y-6'>
               <div className='grid gap-4 sm:grid-cols-2'>
                 <div>
                   <h3 className='text-muted-foreground mb-2 text-sm font-medium'>
@@ -305,9 +323,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                   </div>
                 )}
                 <div>
-                  <h3 className='text-muted-foreground mb-2 text-sm font-medium'>
-                    Published Year
-                  </h3>
+                  <h3 className='text-muted-foreground mb-2 text-sm font-medium'>Published Year</h3>
                   <p className='text-lg font-semibold'>{book.publishYear}</p>
                 </div>
                 <div>
@@ -326,11 +342,9 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                       onClick={() => toggleRead.mutate({ id: book.id, isRead: !book.isRead })}
                       disabled={toggleRead.isPending}
                     >
-                      {toggleRead.isPending ? (
+                      {toggleRead.isPending ?
                         'Updating...'
-                      ) : (
-                        `Mark as ${book.isRead ? 'Unread' : 'Read'}`
-                      )}
+                      : `Mark as ${book.isRead ? 'Unread' : 'Read'}`}
                     </Button>
                   </div>
                 </div>
@@ -348,7 +362,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                 )}
               </div>
             </div>
-          )}
+          }
         </CardContent>
       </Card>
     </div>

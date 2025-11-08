@@ -41,7 +41,7 @@ export default function BookNotFound() {
 
         <div className='mt-12 text-xs text-muted-foreground'>
           <p>
-            Need help?{' '}
+            or{' '}
             <Link href='/' className='underline hover:text-foreground'>
               Return to home
             </Link>

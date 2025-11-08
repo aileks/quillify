@@ -98,11 +98,11 @@ export const authRouter = createTRPCRouter({
     }
 
     // Migration from Laravel means having to normalize hashes
-    const passwordHash = user.password;
-    const normalizedHash =
-      passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
+    // const passwordHash = user.password;
+    // const normalizedHash =
+    //   passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
 
-    const isValidPassword = await bcrypt.compare(password, normalizedHash);
+    const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
       throw new TRPCError({

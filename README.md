@@ -2,7 +2,7 @@
 
 A modern, full-stack book tracking application built with Next.js 16.
 
-![Quillify Screenshot](./docs/screenshot.png)
+![Quillify Screenshot](./docs/showcase.gif)
 
 ## Features
 

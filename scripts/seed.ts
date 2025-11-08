@@ -14,6 +14,7 @@ const db = drizzle(pool);
 const DEMO_USER = {
   email: 'demo@quillify.com',
   password: 'demo123',
+  confirmPassword: 'demo123',
   name: 'Demo User',
 };
 
@@ -154,7 +155,7 @@ async function seed() {
       demoUser = existingUser;
     } else {
       // Create demo user
-      const hashedPassword = await bcrypt.hash(DEMO_USER.password, 10);
+      const hashedPassword = await bcrypt.hash(DEMO_USER.password, 12);
       const [newUser] = await db
         .insert(users)
         .values({

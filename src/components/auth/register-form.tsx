@@ -29,17 +29,23 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-const registerSchema = z.object({
-  email: z.email('Invalid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    ),
-  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
-});
+const registerSchema = z
+  .object({
+    email: z.email('Invalid email address'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+      ),
+    confirmPassword: z.string(),
+    name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
@@ -56,6 +62,7 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
     defaultValues: {
       email: '',
       password: '',
+      confirmPassword: '',
       name: '',
     },
   });
@@ -144,6 +151,25 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
                     <Input
                       type='password'
                       placeholder='Create a strong password'
+                      {...field}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='confirmPassword'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='password'
+                      placeholder='Re-enter your password'
                       {...field}
                       disabled={isLoading}
                     />

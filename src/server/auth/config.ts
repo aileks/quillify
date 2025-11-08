@@ -74,7 +74,6 @@ export const authConfig = {
             id: user.id,
             email: user.email,
             name: user.name,
-            image: user.image,
             rememberMe:
               parsedCredentials.data.rememberMe === true ||
               parsedCredentials.data.rememberMe === 'true',

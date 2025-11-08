@@ -117,8 +117,7 @@ export const authRouter = createTRPCRouter({
       email: user.email,
       name: user.name,
       // FIXME: Migrate DB to rename column on prod
-      emailVerified: user.emailVerified,
-      image: user.image,
+      emailVerified: user.email_verified_at,
     };
   }),
 

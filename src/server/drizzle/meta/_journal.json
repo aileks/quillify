@@ -29,6 +29,13 @@
       "when": 1762629304060,
       "tag": "0003_real_drax",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1762629695458,
+      "tag": "0004_sparkling_major_mapleleaf",
+      "breakpoints": true
     }
   ]
 }

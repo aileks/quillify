@@ -1,0 +1,1 @@
+ALTER TABLE "quillify"."users" DROP COLUMN "image";

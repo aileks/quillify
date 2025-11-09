@@ -98,6 +98,7 @@ export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
         <CardTitle>Log In</CardTitle>
         <CardDescription>Enter your credentials to access your account</CardDescription>
       </CardHeader>
+
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className='grid gap-4'>
@@ -185,6 +186,7 @@ export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
           </form>
         </Form>
       </CardContent>
+
       <CardFooter className='flex flex-col gap-4'>
         <div className='relative w-full'>
           <div className='absolute inset-0 flex items-center'>
@@ -194,6 +196,7 @@ export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
             <span className='bg-card text-muted-foreground px-2'>Or</span>
           </div>
         </div>
+
         <Button type='button' variant='outline' className='w-full' asChild>
           <Link href='/account/register'>Don&apos;t have an account? Register</Link>
         </Button>

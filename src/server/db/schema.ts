@@ -25,7 +25,7 @@ export const books = quillify.table('books', {
   title: text('title').notNull(),
   author: text('author').notNull(),
   numberOfPages: integer('numberOfPages').notNull(),
-  genre: text('genre'),
+  genre: text('genre').default('Other'),
   publishYear: integer('publishYear').notNull(),
   isRead: boolean('isRead').notNull().default(false),
   createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),

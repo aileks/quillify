@@ -53,17 +53,20 @@ interface BookDetailClientProps {
   initialBook: Book;
 }
 
+/**
+ * Client component for displaying and editing book details.
+ * Supports optimistic updates for read status and real-time data synchronization.
+ */
 export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps) {
   const router = useRouter();
   const utils = api.useUtils();
   const [isEditing, setIsEditing] = useState(false);
 
-  // Use the initial book data, but allow real-time updates
   const { data: book } = api.books.getById.useQuery(
     { id: bookId },
     {
       initialData: initialBook,
-      staleTime: 60 * 1000, // Consider data fresh for 60 seconds
+      staleTime: 60 * 1000,
     }
   );
 
@@ -94,28 +97,22 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
 
   const toggleRead = api.books.setRead.useMutation({
     onMutate: async (newData) => {
-      // Cancel outgoing refetches
       await utils.books.getById.cancel({ id: bookId });
 
-      // Snapshot previous value
       const previousBook = utils.books.getById.getData({ id: bookId });
 
-      // Optimistically update to the new value
       utils.books.getById.setData({ id: bookId }, (old) =>
         old ? { ...old, isRead: newData.isRead } : old
       );
 
-      // Return context with the snapshot
       return { previousBook };
     },
     onError: (err, newData, context) => {
-      // Rollback on error
       if (context?.previousBook) {
         utils.books.getById.setData({ id: bookId }, context.previousBook);
       }
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure data consistency
       void utils.books.getById.invalidate({ id: bookId });
       void utils.books.list.invalidate();
     },
@@ -135,7 +132,6 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
     const numberOfPages = Number(data.numberOfPages);
     const publishYear = Number(data.publishYear);
 
-    // Validate numbers
     if (isNaN(numberOfPages) || numberOfPages <= 0) {
       form.setError('numberOfPages', { message: 'Must be a positive number' });
       return;
@@ -313,6 +309,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                   >
                     {updateBook.isPending ? 'Saving...' : 'Save Changes'}
                   </Button>
+
                   <Button
                     type='button'
                     variant='outline'
@@ -349,12 +346,14 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                   </span>
                   <span className='text-base font-medium'>{book.publishYear}</span>
                 </div>
+
                 <div className='flex items-start gap-3'>
                   <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
                     Pages:
                   </span>
                   <span className='text-base font-medium'>{book.numberOfPages}</span>
                 </div>
+
                 {book.genre && (
                   <div className='flex items-start gap-3'>
                     <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
@@ -363,6 +362,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                     <span className='text-base font-medium'>{book.genre}</span>
                   </div>
                 )}
+
                 {book.createdAt && (
                   <div className='flex items-start gap-3'>
                     <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
@@ -403,6 +403,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                       </span>
                     </div>
                   </div>
+
                   <Button
                     variant='outline'
                     size='sm'
@@ -427,6 +428,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                 >
                   Edit Book
                 </Button>
+
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
@@ -437,6 +439,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                       Delete
                     </Button>
                   </AlertDialogTrigger>
+
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete this book?</AlertDialogTitle>
@@ -445,8 +448,10 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                         {book.title}&quot; from your collection.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
+
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
+
                       <AlertDialogAction
                         onClick={() => deleteBook.mutate({ id: book.id })}
                         className='bg-destructive text-destructive-foreground hover:bg-destructive/90'

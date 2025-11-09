@@ -65,7 +65,6 @@ export function NewBookForm() {
     const numberOfPages = Number(data.numberOfPages);
     const publishYear = Number(data.publishYear);
 
-    // Validate numbers
     if (isNaN(numberOfPages) || numberOfPages <= 0) {
       form.setError('numberOfPages', { message: 'Must be a positive number' });
       return;
@@ -81,20 +80,21 @@ export function NewBookForm() {
       title: data.title,
       author: data.author,
       numberOfPages,
-      genre: data.genre || undefined,
+      genre: data.genre || 'Other',
       publishYear,
     });
   }
 
   return (
-    <div className='container mx-auto max-w-2xl px-4 py-6 md:px-6 md:py-10'>
-      <Card>
+    <div className='container mx-auto max-w-4xl space-y-6 px-4 py-6 md:px-6 md:py-10'>
+      <Card className='rounded-sm'>
         <CardHeader>
-          <CardTitle>Add New Book</CardTitle>
+          <CardTitle className='font-serif text-2xl font-bold'>Add New Book</CardTitle>
           <CardDescription>
             Fill in the details of the book you want to add to your collection.
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
@@ -107,7 +107,7 @@ export function NewBookForm() {
                     <FormControl>
                       <Input
                         placeholder='Jane Eyre'
-                        className='placeholder:text-muted-foreground'
+                        className='placeholder:text-muted-foreground rounded-sm'
                         {...field}
                       />
                     </FormControl>
@@ -125,7 +125,7 @@ export function NewBookForm() {
                     <FormControl>
                       <Input
                         placeholder='Charlotte Brontë'
-                        className='placeholder:text-muted-foreground'
+                        className='placeholder:text-muted-foreground rounded-sm'
                         {...field}
                       />
                     </FormControl>
@@ -145,7 +145,7 @@ export function NewBookForm() {
                         <Input
                           type='number'
                           placeholder='352'
-                          className='placeholder:text-muted-foreground'
+                          className='placeholder:text-muted-foreground rounded-sm'
                           {...field}
                         />
                       </FormControl>
@@ -164,7 +164,7 @@ export function NewBookForm() {
                         <Input
                           type='number'
                           placeholder='1999'
-                          className='placeholder:text-muted-foreground'
+                          className='placeholder:text-muted-foreground rounded-sm'
                           {...field}
                         />
                       </FormControl>
@@ -182,7 +182,7 @@ export function NewBookForm() {
                     <FormLabel>Genre (optional)</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className='cursor-pointer rounded-sm'>
                           <SelectValue placeholder='Select a genre' />
                         </SelectTrigger>
                       </FormControl>
@@ -194,7 +194,6 @@ export function NewBookForm() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>The genre or category of the book</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -209,6 +208,7 @@ export function NewBookForm() {
                 >
                   {createBook.isPending ? 'Adding...' : 'Add Book'}
                 </Button>
+
                 <Button
                   type='button'
                   variant='outline'

@@ -114,6 +114,7 @@ export function SettingsForm() {
               Update your email address. Your current email is: <strong>{currentEmail}</strong>
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <Form {...emailForm}>
               <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className='space-y-4'>
@@ -176,6 +177,7 @@ export function SettingsForm() {
               Update your password. You'll need to enter your current password to confirm the change.
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <Form {...passwordForm}>
               <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className='space-y-4'>

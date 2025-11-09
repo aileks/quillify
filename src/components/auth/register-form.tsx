@@ -105,6 +105,7 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
         <CardTitle>Register</CardTitle>
         <CardDescription>Enter your details to create a new account</CardDescription>
       </CardHeader>
+
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className='grid gap-4'>
@@ -196,6 +197,7 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
           </form>
         </Form>
       </CardContent>
+
       <CardFooter className='flex flex-col gap-4'>
         <div className='relative w-full'>
           <div className='absolute inset-0 flex items-center'>
@@ -205,6 +207,7 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
             <span className='bg-card text-muted-foreground px-2'>Or</span>
           </div>
         </div>
+
         <Button type='button' variant='outline' className='w-full' asChild>
           <Link href='/account/login'>Already have an account? Log in</Link>
         </Button>

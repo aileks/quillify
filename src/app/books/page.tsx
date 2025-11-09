@@ -49,6 +49,7 @@ export default function BooksPage() {
             : `${totalCount} catalog entry${totalCount === 1 ? '' : 'ies'}`}
           </p>
         </div>
+
         <Button asChild className='w-full rounded-sm sm:w-auto'>
           <Link href='/books/new'>Add Book</Link>
         </Button>
@@ -65,12 +66,13 @@ export default function BooksPage() {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  setPage(1); // Reset to first page on search
+                  setPage(1);
                 }}
                 className='w-full rounded-sm'
                 aria-label='Search books'
               />
             </div>
+
             <Select
               value={
                 isRead === undefined ? 'all'
@@ -80,10 +82,13 @@ export default function BooksPage() {
               }
               onValueChange={(value) => {
                 setIsRead(value === 'all' ? undefined : value === 'read');
-                setPage(1); // Reset to first page on filter change
+                setPage(1);
               }}
             >
-              <SelectTrigger className='rounded-sm' aria-label='Filter books by read status'>
+              <SelectTrigger
+                className='cursor-pointer rounded-sm'
+                aria-label='Filter books by read status'
+              >
                 <SelectValue placeholder='Filter by status' />
               </SelectTrigger>
               <SelectContent className='rounded-sm'>
@@ -98,12 +103,13 @@ export default function BooksPage() {
 
       {/* Error State */}
       {error && (
-        <Card role='alert' aria-live='assertive'>
+        <Card role='alert' aria-live='assertive' className='rounded-sm'>
           <CardContent className='flex flex-col items-center justify-center py-8 md:py-12'>
             <p className='text-destructive mb-4 text-center font-semibold'>Failed to load books</p>
             <p className='text-muted-foreground mb-4 text-center text-sm'>
               {error.message || 'An unexpected error occurred'}
             </p>
+
             <Button
               variant='outline'
               onClick={() => window.location.reload()}
@@ -132,15 +138,18 @@ export default function BooksPage() {
             >
               <div className='space-y-3'>
                 <Skeleton className='h-5 w-3/4' />
+
                 <div className='border-primary/20 border-l-2 pl-3'>
                   <Skeleton className='mb-1 h-3 w-16' />
                   <Skeleton className='h-4 w-2/3' />
                 </div>
+
                 <div className='space-y-2'>
                   <Skeleton className='h-3 w-full' />
                   <Skeleton className='h-3 w-full' />
                   <Skeleton className='h-3 w-3/4' />
                 </div>
+
                 <div className='border-foreground/10 border-t pt-3'>
                   <Skeleton className='h-3 w-20' />
                 </div>
@@ -152,18 +161,20 @@ export default function BooksPage() {
 
       {/* Empty State */}
       {!isLoading && !error && books.length === 0 && (
-        <Card>
+        <Card className='rounded-sm'>
           <CardContent className='flex flex-col items-center justify-center py-8 md:py-12'>
             <p className='text-muted-foreground mb-4 text-center'>
               {search || isRead !== undefined ?
                 'No books found matching your filters.'
               : "You haven't added any books yet. Start building your library!"}
             </p>
+
             {!search && isRead === undefined && (
               <Button asChild className='w-full sm:w-auto'>
                 <Link href='/books/new'>Add Your First Book</Link>
               </Button>
             )}
+
             {(search || isRead !== undefined) && (
               <Button
                 variant='outline'
@@ -259,12 +270,14 @@ export default function BooksPage() {
                         </span>
                         <span className='font-medium'>{book.publishYear}</span>
                       </div>
+
                       <div className='flex items-start gap-2'>
                         <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
                           Pages:
                         </span>
                         <span className='font-medium'>{book.numberOfPages}</span>
                       </div>
+
                       {book.genre && (
                         <div className='flex items-start gap-2'>
                           <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>

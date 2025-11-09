@@ -49,6 +49,7 @@ export default async function Home() {
             <p className='text-muted-foreground text-sm'>
               © {new Date().getFullYear()} Quillify. All rights reserved.
             </p>
+
             <div className='flex gap-6'>
               <Link
                 href='/account/login'
@@ -56,6 +57,7 @@ export default async function Home() {
               >
                 Sign In
               </Link>
+
               <Link
                 href='/account/register'
                 className='text-muted-foreground hover:text-foreground text-sm transition-colors'

@@ -5,6 +5,7 @@ This document enumerates the current app routes and tRPC procedures, their HTTP 
 ## App Routes
 
 ### Public Routes
+
 - `/` - Landing page
   - **Authenticated users**: Automatically redirected to `/books`
   - **Unauthenticated users**: See marketing/landing page
@@ -16,18 +17,23 @@ This document enumerates the current app routes and tRPC procedures, their HTTP 
   - **After successful registration**: Redirected to `/books` (or `callbackUrl` if provided)
 
 ### Protected Routes (require authentication)
+
 - `/books` - List all books for the current user (grid view)
   - **Unauthenticated users**: Redirected to `/` (landing page)
 - `/books/new` - Create a new book form
   - **Unauthenticated users**: Redirected to `/` (landing page)
 - `/books/[id]` - View and edit a specific book (details page)
   - **Unauthenticated users**: Handled by client-side (shows error/redirects via tRPC)
+- `/account/settings` - User account settings page (email and password management)
+  - **Unauthenticated users**: Redirected to `/account/login`
 
 ### API Routes
+
 - `/api/auth/[...nextauth]` - NextAuth.js authentication endpoints
 - `/api/trpc/[trpc]` - tRPC HTTP handler (all tRPC procedures)
 
 ### Authentication Flow
+
 - **NextAuth sign-in page**: `/` (landing page with login/register CTAs)
 - **Default redirect after login**: `/books`
 - **Default redirect after logout**: `/`
@@ -40,6 +46,7 @@ This document enumerates the current app routes and tRPC procedures, their HTTP 
 This section enumerates the current tRPC procedures, their HTTP transport endpoint, and expected status codes.
 
 Key files:
+
 - App router: `src/server/api/root.ts`
 - tRPC context/procedures: `src/server/api/trpc.ts`
 - Books router: `src/server/api/routers/books.ts`
@@ -73,6 +80,7 @@ Note: Protected procedures require an authenticated session (`protectedProcedure
 ## Routers and Procedures
 
 App router registrations:
+
 - `books: booksRouter` - `src/server/api/routers/books.ts`
 - `auth: authRouter` - `src/server/api/routers/auth.ts`
 - Declared in `src/server/api/root.ts`
@@ -83,16 +91,33 @@ File: `src/server/api/routers/books.ts`
 tRPC path prefix: `books.*`
 All procedures are protected and require a valid session.
 
-1) books.list (query)
-- Purpose: List the current user's books, optionally filtered by read status.
-- Input (optional): `{ isRead?: boolean }`
+1. books.list (query)
+
+- Purpose: List the current user's books with pagination, search, filtering, and sorting.
+- Input (optional):
+  - `isRead?: boolean` - Filter by read status
+  - `search?: string` - Search across title, author, and genre fields (case-insensitive)
+  - `sortBy?: 'title' | 'author' | 'createdAt'` - Sort column (default: 'title')
+  - `sortOrder?: 'asc' | 'desc'` - Sort direction (default: 'asc')
+  - `page?: number` - Page number (default: 1, must be positive)
+  - `pageSize?: number` - Items per page (default: 12, max: 100, must be positive)
 - Success:
-  - 200 OK - Returns an array of the user's books (ordered by `createdAt` desc).
+  - 200 OK - Returns paginated result:
+    ```typescript
+    {
+      items: Book[],
+      totalCount: number,
+      page: number,
+      pageSize: number,
+      totalPages: number
+    }
+    ```
 - Errors:
   - 400 BAD_REQUEST - Validation error.
   - 401 UNAUTHORIZED - Not authenticated.
 
-2) books.getById (query)
+2. books.getById (query)
+
 - Purpose: Get a single book by ID (must be owned by the current user).
 - Input (required): `{ id: string }`
 - Success:
@@ -102,25 +127,32 @@ All procedures are protected and require a valid session.
   - 401 UNAUTHORIZED - Not authenticated.
   - 404 NOT_FOUND - Book not found or not owned by the user.
 
-3) books.create (mutation)
+3. books.create (mutation)
+
 - Purpose: Create a new book for the current user.
 - Input (required):
-  - `title: string`
-  - `author: string`
-  - `numberOfPages: number (int, > 0)`
-  - `genre?: string`
-  - `publishYear: number (int, > >= 1500)`
+  - `title: string` (min 1 char)
+  - `author: string` (min 1 char)
+  - `numberOfPages: number` (integer, > 0)
+  - `genre?: string` (optional)
+  - `publishYear: number` (integer, > 0)
 - Success:
   - 200 OK - Returns the inserted book row.
 - Errors:
   - 400 BAD_REQUEST - Validation error.
   - 401 UNAUTHORIZED - Not authenticated.
 
-4) books.update (mutation)
+4. books.update (mutation)
+
 - Purpose: Update selected fields of a book owned by the current user.
 - Input (required):
   - `id: string`
-  - Optional fields: `title?: string`, `author?: string`, `numberOfPages?: number (int, > 0)`, `genre?: string | null`, `publishYear?: number (int, > 0)`
+  - Optional fields:
+    - `title?: string` (min 1 char if provided)
+    - `author?: string` (min 1 char if provided)
+    - `numberOfPages?: number` (integer, > 0 if provided)
+    - `genre?: string | null` (null to clear, undefined to keep unchanged)
+    - `publishYear?: number` (integer, > 0 if provided)
 - Success:
   - 200 OK - Returns the updated book row.
 - Errors:
@@ -128,7 +160,8 @@ All procedures are protected and require a valid session.
   - 401 UNAUTHORIZED - Not authenticated.
   - 404 NOT_FOUND - Book not found or not owned by the user.
 
-5) books.setRead (mutation)
+5. books.setRead (mutation)
+
 - Purpose: Set/toggle the read status of a book owned by the current user.
 - Input (required): `{ id: string, isRead: boolean }`
 - Success:
@@ -138,7 +171,8 @@ All procedures are protected and require a valid session.
   - 401 UNAUTHORIZED - Not authenticated.
   - 404 NOT_FOUND - Book not found or not owned by the user.
 
-6) books.remove (mutation)
+6. books.remove (mutation)
+
 - Purpose: Delete a book owned by the current user.
 - Input (required): `{ id: string }`
 - Success:
@@ -149,7 +183,7 @@ All procedures are protected and require a valid session.
   - 404 NOT_FOUND - Book not found or not owned by the user.
 
 Schema reference (for context): `src/server/db/schema.ts` → `books` table
-Fields: `id`, `userId`, `title`, `author`, `numberOfPages`, `genre?`, `publishYear?`, `isRead (default false)`, `createdAt`.
+Fields: `id`, `userId`, `title`, `author`, `numberOfPages`, `genre?` (default: 'Other'), `publishYear`, `isRead` (default: false), `createdAt`, `updatedAt`.
 
 ---
 
@@ -157,8 +191,10 @@ Fields: `id`, `userId`, `title`, `author`, `numberOfPages`, `genre?`, `publishYe
 
 File: `src/server/api/routers/auth.ts`
 tRPC path prefix: `auth.*`
+Mix of public and protected procedures.
 
-1) auth.register (mutation)
+1. auth.register (mutation)
+
 - Purpose: Register a new user with email/password.
 - Input (required):
   - `email: string (email)`
@@ -171,7 +207,8 @@ tRPC path prefix: `auth.*`
   - 409 CONFLICT - Email already exists.
   - 500 INTERNAL_SERVER_ERROR - Unexpected error during creation.
 
-2) auth.verifyCredentials (mutation)
+2. auth.verifyCredentials (mutation)
+
 - Purpose: Verify email/password (used by NextAuth credentials flow).
 - Input (required): `{ email: string (email), password: string }`
 - Success:
@@ -181,13 +218,43 @@ tRPC path prefix: `auth.*`
   - 400 BAD_REQUEST - Account uses a different sign-in method (no stored password).
   - 401 UNAUTHORIZED - Invalid email or password.
 
-3) auth.checkEmail (query)
+3. auth.checkEmail (query)
+
 - Purpose: Check if an email is registered.
 - Input (required): `{ email: string (email) }`
 - Success:
   - 200 OK - Returns `{ exists: boolean }`.
 - Errors:
   - 400 BAD_REQUEST - Validation error.
+
+4. auth.updateEmail (mutation) - Protected
+
+- Purpose: Update the current user's email address (requires password verification).
+- Input (required):
+  - `newEmail: string (email)` - New email address
+  - `currentPassword: string` - Current password for verification
+- Success:
+  - 200 OK - Returns `{ success: true, message: 'Email updated successfully' }`.
+- Errors:
+  - 400 BAD_REQUEST - Validation error or account uses different sign-in method.
+  - 401 UNAUTHORIZED - Not authenticated or current password is incorrect.
+  - 404 NOT_FOUND - User not found.
+  - 409 CONFLICT - Email already exists.
+  - 500 INTERNAL_SERVER_ERROR - Failed to update email.
+
+5. auth.updatePassword (mutation) - Protected
+
+- Purpose: Update the current user's password (requires current password verification).
+- Input (required):
+  - `currentPassword: string` - Current password for verification
+  - `newPassword: string` - New password (>= 8 chars, 1 upper, 1 lower, 1 number)
+- Success:
+  - 200 OK - Returns `{ success: true, message: 'Password updated successfully' }`.
+- Errors:
+  - 400 BAD_REQUEST - Validation error or account uses different sign-in method.
+  - 401 UNAUTHORIZED - Not authenticated or current password is incorrect.
+  - 404 NOT_FOUND - User not found.
+  - 500 INTERNAL_SERVER_ERROR - Failed to update password.
 
 ---
 
@@ -200,45 +267,3 @@ tRPC path prefix: `auth.*`
   - `src/trpc/server.ts` (RSC `api` and `HydrateClient`)
 
 Both clients set the `x-trpc-source` header for tracing.
-
----
-
-## TBD
-### Books Routes
-
-These are WIP endpoints that mirror the existing tRPC `books` procedures and the `books` table in `src/server/db/schema.ts`. When implemented, they should be protected (require auth) and enforce ownership on all item-specific routes.
-
-- GET `/api/books`
-  - Purpose: List current user's books; optionally filter by `?isRead=true|false`.
-  - Success: 200 OK
-  - Errors: 401 UNAUTHORIZED
-
-- POST `/api/books`
-  - Purpose: Create a new book.
-  - Body: `{ title: string, author: string, numberOfPages: number, genre?: string, publishYear?: number }`
-  - Success: 201 CREATED (returns created resource)
-  - Errors: 400 BAD_REQUEST, 401 UNAUTHORIZED
-
-- GET `/api/books/:id`
-  - Purpose: Get a book by ID (must belong to current user).
-  - Success: 200 OK
-  - Errors: 401 UNAUTHORIZED, 404 NOT_FOUND
-
-- PATCH `/api/books/:id`
-  - Purpose: Update selected fields on a book.
-  - Body: Any subset of `{ title, author, numberOfPages, genre, publishYear }`
-  - Success: 200 OK
-  - Errors: 400 BAD_REQUEST, 401 UNAUTHORIZED, 404 NOT_FOUND
-
-- PATCH `/api/books/:id/read`
-  - Purpose: Set/toggle read status.
-  - Body: `{ isRead: boolean }`
-  - Success: 200 OK
-  - Errors: 400 BAD_REQUEST, 401 UNAUTHORIZED, 404 NOT_FOUND
-
-- DELETE `/api/books/:id`
-  - Purpose: Delete a book by ID.
-  - Success: 204 NO_CONTENT
-  - Errors: 401 UNAUTHORIZED, 404 NOT_FOUND
-
-Status codes above reflect conventional REST semantics (201/204) rather than tRPC’s default 200 for successes.

@@ -9,7 +9,7 @@ export const users = quillify.table('users', {
     .$defaultFn(() => crypto.randomUUID()),
   name: text('name'),
   email: text('email').unique(),
-  password: text('password'),
+  password: text('password').notNull(),
   emailVerifiedAt: timestamp('emailVerifiedAt', { mode: 'date', withTimezone: true }),
   createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),

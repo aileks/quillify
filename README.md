@@ -152,12 +152,12 @@ For a complete list of available endpoints and procedures, see **[ROUTES.md](./d
 
 Tables are organized under the `quillify` PostgreSQL schema:
 
-- **users** — User accounts with authentication
+- **users** — User accounts with authentication (email/password)
 - **books** — Book entries linked to users
-- **accounts** — OAuth account linkage (NextAuth)
-- **sessions** — User session management (NextAuth)
 
 All tables include `createdAt` and `updatedAt` timestamps with timezone support.
+
+For detailed schema documentation, see **[SCHEMA.md](./docs/SCHEMA.md)**.
 
 ### Migrations
 
@@ -180,8 +180,9 @@ The UI uses [shadcn/ui](https://ui.shadcn.com/) components with Tailwind CSS v4:
 NextAuth v5 (beta) provides authentication with:
 
 - Credentials provider (email/password)
-- DrizzleAdapter for database session storage
+- JWT-based session strategy (no database session storage)
 - Protected routes via middleware
 - Type—safe session management
+- Session expiry: 1 day (default) or 30 days (with "Remember Me")
 
 Session data is injected into tRPC context for authenticated procedures.

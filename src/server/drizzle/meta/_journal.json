@@ -50,6 +50,13 @@
       "when": 1762631822910,
       "tag": "0006_loose_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1762726564046,
+      "tag": "0007_gray_sally_floyd",
+      "breakpoints": true
     }
   ]
 }

@@ -24,9 +24,12 @@ export function Navbar() {
   const { data: session, status } = useSession();
 
   return (
-    <nav className='border-sidebar-accent border-b-2 text-sidebar-foreground mx-auto bg-sidebar sticky top-0'>
+    <nav
+      className='border-sidebar-accent border-b-2 text-sidebar-foreground mx-auto bg-sidebar sticky top-0'
+      aria-label='Main navigation'
+    >
       <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
-        <Link href='/' className='text-xl font-bold'>
+        <Link href='/' className='text-xl font-bold' aria-label='Quillify home'>
           Quillify
         </Link>
 

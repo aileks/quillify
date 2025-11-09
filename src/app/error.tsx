@@ -35,11 +35,11 @@ export default function Error({
         </div>
 
         <div className='flex flex-col gap-3 sm:flex-row sm:justify-center'>
-          <Button onClick={reset} size='lg'>
+          <Button onClick={reset} size='lg' aria-label='Try again to load the page'>
             Try Again
           </Button>
 
-          <Button asChild variant='outline' size='lg'>
+          <Button asChild variant='outline' size='lg' aria-label='Go back to books list'>
             <Link href='/books'>Go Back</Link>
           </Button>
         </div>

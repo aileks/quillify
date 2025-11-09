@@ -168,6 +168,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
           variant='outline'
           onClick={() => router.push('/books')}
           className='w-full sm:w-auto'
+          aria-label='Return to books list'
         >
           ← Back
         </Button>
@@ -187,12 +188,17 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
                     variant='outline'
                     onClick={() => setIsEditing(true)}
                     className='flex-1 sm:flex-none'
+                    aria-label={`Edit ${book.title}`}
                   >
                     Edit Book
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant='destructive' className='flex-1 sm:flex-none'>
+                      <Button
+                        variant='destructive'
+                        className='flex-1 sm:flex-none'
+                        aria-label={`Delete ${book.title}`}
+                      >
                         Delete
                       </Button>
                     </AlertDialogTrigger>

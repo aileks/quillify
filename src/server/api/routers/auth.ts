@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import bcrypt from 'bcryptjs';
-import { createTRPCRouter, publicProcedure } from '@/server/api/trpc';
+import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc';
 import { users } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -130,5 +130,168 @@ export const authRouter = createTRPCRouter({
       return {
         exists: !!user,
       };
+    }),
+
+  /**
+   * Update user email (requires current password verification)
+   */
+  updateEmail: protectedProcedure
+    .input(
+      z.object({
+        newEmail: z.email('Invalid email address'),
+        currentPassword: z.string().min(1, 'Current password is required'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { newEmail, currentPassword } = input;
+      const userId = ctx.session.user.id;
+
+      // Get current user
+      const user = await ctx.db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      if (!user.password) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This account uses a different sign-in method',
+        });
+      }
+
+      // Verify current password
+      const passwordHash = user.password;
+      const normalizedHash =
+        passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
+
+      const isValidPassword = await bcrypt.compare(currentPassword, normalizedHash);
+
+      if (!isValidPassword) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Current password is incorrect',
+        });
+      }
+
+      // Check if new email is already taken
+      const existingUser = await ctx.db.query.users.findFirst({
+        where: eq(users.email, newEmail),
+      });
+
+      if (existingUser && existingUser.id !== userId) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'A user with this email already exists',
+        });
+      }
+
+      // Update email
+      try {
+        await ctx.db
+          .update(users)
+          .set({
+            email: newEmail,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId));
+
+        return {
+          success: true,
+          message: 'Email updated successfully',
+        };
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Error updating email:', errorMessage);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update email',
+        });
+      }
+    }),
+
+  /**
+   * Update user password (requires current password verification)
+   */
+  updatePassword: protectedProcedure
+    .input(
+      z.object({
+        currentPassword: z.string().min(1, 'Current password is required'),
+        newPassword: z
+          .string()
+          .min(8, 'Password must be at least 8 characters')
+          .regex(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+            'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+          ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { currentPassword, newPassword } = input;
+      const userId = ctx.session.user.id;
+
+      // Get current user
+      const user = await ctx.db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      if (!user.password) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This account uses a different sign-in method',
+        });
+      }
+
+      // Verify current password
+      const passwordHash = user.password;
+      const normalizedHash =
+        passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
+
+      const isValidPassword = await bcrypt.compare(currentPassword, normalizedHash);
+
+      if (!isValidPassword) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Current password is incorrect',
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+      // Update password
+      try {
+        await ctx.db
+          .update(users)
+          .set({
+            password: hashedPassword,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId));
+
+        return {
+          success: true,
+          message: 'Password updated successfully',
+        };
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Error updating password:', errorMessage);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update password',
+        });
+      }
     }),
 });

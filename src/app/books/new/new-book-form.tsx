@@ -201,7 +201,12 @@ export function NewBookForm() {
               />
 
               <div className='flex flex-col gap-4 sm:flex-row'>
-                <Button type='submit' disabled={createBook.isPending} className='w-full sm:w-auto'>
+                <Button
+                  type='submit'
+                  disabled={createBook.isPending}
+                  className='w-full sm:w-auto'
+                  aria-label={createBook.isPending ? 'Adding book...' : 'Add book to library'}
+                >
                   {createBook.isPending ? 'Adding...' : 'Add Book'}
                 </Button>
                 <Button
@@ -210,6 +215,7 @@ export function NewBookForm() {
                   onClick={() => router.push('/books')}
                   disabled={createBook.isPending}
                   className='w-full sm:w-auto'
+                  aria-label='Cancel adding book and return to books list'
                 >
                   Cancel
                 </Button>

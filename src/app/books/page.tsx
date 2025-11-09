@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -40,11 +40,11 @@ export default function BooksPage() {
     <div className='container mx-auto space-y-6 px-4 py-6 md:px-6'>
       <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
         <div>
-          <h1 className='text-3xl font-bold'>My Books</h1>
-          <p className='text-muted-foreground'>
+          <h1 className='font-serif text-3xl font-bold tracking-tight'>Library Catalog</h1>
+          <p className='text-muted-foreground mt-1 font-mono text-xs uppercase tracking-wider'>
             {totalCount === 0 ?
-              'No books yet'
-            : `${totalCount} book${totalCount === 1 ? '' : 's'} in your collection`}
+              'No entries'
+            : `${totalCount} catalog entry${totalCount === 1 ? '' : 'ies'}`}
           </p>
         </div>
         <Button asChild className='w-full sm:w-auto'>
@@ -58,6 +58,7 @@ export default function BooksPage() {
           <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
             <div className='sm:col-span-2'>
               <Input
+                type='search'
                 placeholder='Search books by title, author, or genre...'
                 value={search}
                 onChange={(e) => {
@@ -65,6 +66,7 @@ export default function BooksPage() {
                   setPage(1); // Reset to first page on search
                 }}
                 className='w-full'
+                aria-label='Search books'
               />
             </div>
             <Select
@@ -79,7 +81,7 @@ export default function BooksPage() {
                 setPage(1); // Reset to first page on filter change
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label='Filter books by read status'>
                 <SelectValue placeholder='Filter by status' />
               </SelectTrigger>
               <SelectContent>
@@ -94,7 +96,7 @@ export default function BooksPage() {
 
       {/* Error State */}
       {error && (
-        <Card>
+        <Card role='alert' aria-live='assertive'>
           <CardContent className='flex flex-col items-center justify-center py-8 md:py-12'>
             <p className='text-destructive mb-4 text-center font-semibold'>Failed to load books</p>
             <p className='text-muted-foreground mb-4 text-center text-sm'>
@@ -104,6 +106,7 @@ export default function BooksPage() {
               variant='outline'
               onClick={() => window.location.reload()}
               className='w-full sm:w-auto'
+              aria-label='Retry loading books'
             >
               Retry
             </Button>
@@ -113,21 +116,30 @@ export default function BooksPage() {
 
       {/* Loading State */}
       {isLoading && !error && (
-        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+        <div
+          className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+          role='status'
+          aria-live='polite'
+          aria-label='Loading books'
+        >
           {Array.from({ length: pageSize }).map((_, i) => (
-            <Card key={i} className='h-full'>
-              <CardHeader>
-                <Skeleton className='h-6 w-3/4' />
-                <Skeleton className='h-4 w-1/2' />
-              </CardHeader>
-              <CardContent>
-                <div className='space-y-2'>
-                  <Skeleton className='h-4 w-full' />
-                  <Skeleton className='h-4 w-full' />
-                  <Skeleton className='h-4 w-full' />
+            <div key={i} className='bg-card rounded-sm border-2 border-foreground/10 p-4' aria-hidden='true'>
+              <div className='space-y-3'>
+                <Skeleton className='h-5 w-3/4' />
+                <div className='border-l-2 border-primary/20 pl-3'>
+                  <Skeleton className='h-3 w-16 mb-1' />
+                  <Skeleton className='h-4 w-2/3' />
                 </div>
-              </CardContent>
-            </Card>
+                <div className='space-y-2'>
+                  <Skeleton className='h-3 w-full' />
+                  <Skeleton className='h-3 w-full' />
+                  <Skeleton className='h-3 w-3/4' />
+                </div>
+                <div className='border-t border-foreground/10 pt-3'>
+                  <Skeleton className='h-3 w-20' />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -176,6 +188,7 @@ export default function BooksPage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
               className='w-24 disabled:opacity-50 disabled:cursor-not-allowed'
+              aria-label={`Go to previous page, page ${page - 1}`}
             >
               Previous
             </Button>
@@ -185,6 +198,7 @@ export default function BooksPage() {
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
               className='w-24 disabled:opacity-50 disabled:cursor-not-allowed'
+              aria-label={`Go to next page, page ${page + 1}`}
             >
               Next
             </Button>
@@ -192,48 +206,98 @@ export default function BooksPage() {
         </div>
       )}
 
-      {/* Books Grid */}
+      {/* Books Catalog Grid */}
       {!isLoading && !error && books.length > 0 && (
         <>
-          <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+          <div
+            className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+            role='list'
+            aria-label='Library catalog entries'
+          >
             {books.map((book) => (
-              <Link key={book.id} href={`/books/${book.id}`} className='group'>
-                <Card className='h-full transition-shadow hover:shadow-lg'>
-                  <CardHeader>
-                    <CardTitle className='group-hover:text-primary line-clamp-2 transition-colors'>
-                      {book.title}
-                    </CardTitle>
-                    <CardDescription className='line-clamp-1'>by {book.author}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='space-y-2 text-sm'>
-                      <div className='flex justify-between'>
-                        <span className='text-muted-foreground'>Pages:</span>
+              <Link
+                key={book.id}
+                href={`/books/${book.id}`}
+                className='group'
+                role='listitem'
+                aria-label={`${book.title} by ${book.author} - ${book.isRead ? 'Read' : 'Unread'}`}
+              >
+                <div className='relative h-full'>
+                  {/* Library Catalog Card */}
+                  <article className='bg-card text-card-foreground relative h-full rounded-sm border-2 border-foreground/10 p-4 shadow-sm transition-all hover:border-primary/30 hover:shadow-md group-hover:scale-[1.02] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2'>
+                    {/* Card Number / Call Number Style */}
+                    <div className='absolute right-2 top-2 text-[10px] font-mono text-muted-foreground/50'>
+                      #{book.id.slice(0, 8).toUpperCase()}
+                    </div>
+
+                    {/* Title - Main Entry */}
+                    <div className='mb-3 pr-12'>
+                      <h3 className='font-serif text-base font-bold leading-tight group-hover:text-primary transition-colors'>
+                        {book.title}
+                      </h3>
+                    </div>
+
+                    {/* Author - Secondary Entry */}
+                    <div className='mb-4 border-l-2 border-primary/20 pl-3'>
+                      <div className='text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1'>
+                        Author
+                      </div>
+                      <div className='font-serif text-sm leading-snug'>
+                        {book.author}
+                      </div>
+                    </div>
+
+                    {/* Publication Details */}
+                    <div className='mb-3 space-y-1.5 text-xs'>
+                      <div className='flex items-start gap-2'>
+                        <span className='font-mono text-[10px] uppercase tracking-wider text-muted-foreground min-w-[60px]'>
+                          Pub:
+                        </span>
+                        <span className='font-medium'>{book.publishYear}</span>
+                      </div>
+                      <div className='flex items-start gap-2'>
+                        <span className='font-mono text-[10px] uppercase tracking-wider text-muted-foreground min-w-[60px]'>
+                          Pages:
+                        </span>
                         <span className='font-medium'>{book.numberOfPages}</span>
                       </div>
                       {book.genre && (
-                        <div className='flex justify-between'>
-                          <span className='text-muted-foreground'>Genre:</span>
+                        <div className='flex items-start gap-2'>
+                          <span className='font-mono text-[10px] uppercase tracking-wider text-muted-foreground min-w-[60px]'>
+                            Subject:
+                          </span>
                           <span className='font-medium'>{book.genre}</span>
                         </div>
                       )}
-                      <div className='flex justify-between'>
-                        <span className='text-muted-foreground'>Published:</span>
-                        <span className='font-medium'>{book.publishYear}</span>
-                      </div>
-                      <div className='flex justify-between pt-2'>
-                        <span className='text-muted-foreground'>Status:</span>
-                        <span
-                          className={`font-medium ${
-                            book.isRead ? 'text-green-600' : 'text-amber-600'
-                          }`}
-                        >
-                          {book.isRead ? '✓ Read' : 'Unread'}
+                    </div>
+
+                    {/* Status Indicator - Library Card Style */}
+                    <div className='mt-4 border-t border-foreground/10 pt-3'>
+                      <div className='flex items-center justify-between'>
+                        <span className='font-mono text-[10px] uppercase tracking-wider text-muted-foreground'>
+                          Status
                         </span>
+                        <div className='flex items-center gap-1.5'>
+                          <div
+                            className={`h-2 w-2 rounded-full ${
+                              book.isRead ? 'bg-green-600' : 'bg-amber-500'
+                            }`}
+                          />
+                          <span
+                            className={`text-xs font-semibold uppercase tracking-wider ${
+                              book.isRead ? 'text-green-700 dark:text-green-500' : 'text-amber-700 dark:text-amber-500'
+                            }`}
+                          >
+                            {book.isRead ? 'Read' : 'Unread'}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+
+                    {/* Bottom Edge - Catalog Card Style */}
+                    <div className='absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-foreground/5 to-transparent' />
+                  </article>
+                </div>
               </Link>
             ))}
           </div>

@@ -40,22 +40,24 @@ export default function BooksPage() {
     <div className='container mx-auto space-y-6 px-4 py-6 md:px-6'>
       <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
         <div>
-          <h1 className='font-serif text-3xl font-bold tracking-tight'>Library Catalog</h1>
-          <p className='text-muted-foreground mt-1 font-mono text-xs uppercase tracking-wider'>
+          <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
+            Library Catalog
+          </h1>
+          <p className='text-muted-foreground mt-1 font-mono text-xs tracking-wider uppercase'>
             {totalCount === 0 ?
               'No entries'
             : `${totalCount} catalog entry${totalCount === 1 ? '' : 'ies'}`}
           </p>
         </div>
-        <Button asChild className='w-full sm:w-auto'>
+        <Button asChild className='w-full rounded-sm sm:w-auto'>
           <Link href='/books/new'>Add Book</Link>
         </Button>
       </div>
 
       {/* Search and Filter Controls */}
-      <Card>
+      <Card className='rounded-sm'>
         <CardContent className='pt-6'>
-          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+          <div className='grid gap-4 rounded-sm sm:grid-cols-2 lg:grid-cols-3'>
             <div className='sm:col-span-2'>
               <Input
                 type='search'
@@ -65,7 +67,7 @@ export default function BooksPage() {
                   setSearch(e.target.value);
                   setPage(1); // Reset to first page on search
                 }}
-                className='w-full'
+                className='w-full rounded-sm'
                 aria-label='Search books'
               />
             </div>
@@ -81,10 +83,10 @@ export default function BooksPage() {
                 setPage(1); // Reset to first page on filter change
               }}
             >
-              <SelectTrigger aria-label='Filter books by read status'>
+              <SelectTrigger className='rounded-sm' aria-label='Filter books by read status'>
                 <SelectValue placeholder='Filter by status' />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className='rounded-sm'>
                 <SelectItem value='all'>All Books</SelectItem>
                 <SelectItem value='read'>Read</SelectItem>
                 <SelectItem value='unread'>Unread</SelectItem>
@@ -123,11 +125,15 @@ export default function BooksPage() {
           aria-label='Loading books'
         >
           {Array.from({ length: pageSize }).map((_, i) => (
-            <div key={i} className='bg-card rounded-sm border-2 border-foreground/10 p-4' aria-hidden='true'>
+            <div
+              key={i}
+              className='bg-card border-foreground/10 rounded-sm border-2 p-4'
+              aria-hidden='true'
+            >
               <div className='space-y-3'>
                 <Skeleton className='h-5 w-3/4' />
-                <div className='border-l-2 border-primary/20 pl-3'>
-                  <Skeleton className='h-3 w-16 mb-1' />
+                <div className='border-primary/20 border-l-2 pl-3'>
+                  <Skeleton className='mb-1 h-3 w-16' />
                   <Skeleton className='h-4 w-2/3' />
                 </div>
                 <div className='space-y-2'>
@@ -135,7 +141,7 @@ export default function BooksPage() {
                   <Skeleton className='h-3 w-full' />
                   <Skeleton className='h-3 w-3/4' />
                 </div>
-                <div className='border-t border-foreground/10 pt-3'>
+                <div className='border-foreground/10 border-t pt-3'>
                   <Skeleton className='h-3 w-20' />
                 </div>
               </div>
@@ -177,7 +183,7 @@ export default function BooksPage() {
 
       {/* Pagination */}
       {!isLoading && !error && books.length > 0 && totalPages > 1 && (
-        <div className='flex flex-col items-center gap-4 justify-end sm:flex-row'>
+        <div className='flex flex-col items-center justify-end gap-4 sm:flex-row'>
           <p className='text-muted-foreground font-bold'>
             Page {page} of {totalPages}
           </p>
@@ -187,7 +193,7 @@ export default function BooksPage() {
               variant='secondary'
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className='w-24 disabled:opacity-50 disabled:cursor-not-allowed'
+              className='w-24 rounded-sm disabled:cursor-not-allowed disabled:opacity-50'
               aria-label={`Go to previous page, page ${page - 1}`}
             >
               Previous
@@ -197,7 +203,7 @@ export default function BooksPage() {
               variant='secondary'
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className='w-24 disabled:opacity-50 disabled:cursor-not-allowed'
+              className='w-24 rounded-sm disabled:cursor-not-allowed disabled:opacity-50'
               aria-label={`Go to next page, page ${page + 1}`}
             >
               Next
@@ -224,46 +230,44 @@ export default function BooksPage() {
               >
                 <div className='relative h-full'>
                   {/* Library Catalog Card */}
-                  <article className='bg-card text-card-foreground relative h-full rounded-sm border-2 border-foreground/10 p-4 shadow-sm transition-all hover:border-primary/30 hover:shadow-md group-hover:scale-[1.02] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2'>
+                  <article className='bg-card text-card-foreground border-foreground/10 hover:border-primary/30 focus-within:ring-ring relative h-full rounded-sm border-2 p-4 shadow-sm transition-all group-hover:scale-[1.02] focus-within:ring-2 focus-within:ring-offset-2 hover:shadow-md'>
                     {/* Card Number / Call Number Style */}
-                    <div className='absolute right-2 top-2 text-[10px] font-mono text-muted-foreground/50'>
+                    <div className='text-muted-foreground/50 absolute top-2 right-2 font-mono text-[10px]'>
                       #{book.id.slice(0, 8).toUpperCase()}
                     </div>
 
                     {/* Title - Main Entry */}
                     <div className='mb-3 pr-12'>
-                      <h3 className='font-serif text-base font-bold leading-tight group-hover:text-primary transition-colors'>
+                      <h3 className='group-hover:text-primary font-serif text-base leading-tight font-bold transition-colors sm:text-lg'>
                         {book.title}
                       </h3>
                     </div>
 
                     {/* Author - Secondary Entry */}
-                    <div className='mb-4 border-l-2 border-primary/20 pl-3'>
-                      <div className='text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1'>
+                    <div className='border-primary/20 mb-4 border-l-2 pl-3'>
+                      <div className='text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase'>
                         Author
                       </div>
-                      <div className='font-serif text-sm leading-snug'>
-                        {book.author}
-                      </div>
+                      <div className='font-serif text-sm leading-snug'>{book.author}</div>
                     </div>
 
                     {/* Publication Details */}
                     <div className='mb-3 space-y-1.5 text-xs'>
                       <div className='flex items-start gap-2'>
-                        <span className='font-mono text-[10px] uppercase tracking-wider text-muted-foreground min-w-[60px]'>
+                        <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
                           Pub:
                         </span>
                         <span className='font-medium'>{book.publishYear}</span>
                       </div>
                       <div className='flex items-start gap-2'>
-                        <span className='font-mono text-[10px] uppercase tracking-wider text-muted-foreground min-w-[60px]'>
+                        <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
                           Pages:
                         </span>
                         <span className='font-medium'>{book.numberOfPages}</span>
                       </div>
                       {book.genre && (
                         <div className='flex items-start gap-2'>
-                          <span className='font-mono text-[10px] uppercase tracking-wider text-muted-foreground min-w-[60px]'>
+                          <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
                             Subject:
                           </span>
                           <span className='font-medium'>{book.genre}</span>
@@ -271,10 +275,10 @@ export default function BooksPage() {
                       )}
                     </div>
 
-                    {/* Status Indicator - Library Card Style */}
-                    <div className='mt-4 border-t border-foreground/10 pt-3'>
+                    {/* Status Indicator */}
+                    <div className='border-foreground/10 mt-4 border-t pt-3'>
                       <div className='flex items-center justify-between'>
-                        <span className='font-mono text-[10px] uppercase tracking-wider text-muted-foreground'>
+                        <span className='text-muted-foreground font-mono text-[10px] tracking-wider uppercase'>
                           Status
                         </span>
                         <div className='flex items-center gap-1.5'>
@@ -284,8 +288,10 @@ export default function BooksPage() {
                             }`}
                           />
                           <span
-                            className={`text-xs font-semibold uppercase tracking-wider ${
-                              book.isRead ? 'text-green-700 dark:text-green-500' : 'text-amber-700 dark:text-amber-500'
+                            className={`text-xs font-semibold tracking-wider uppercase ${
+                              book.isRead ?
+                                'text-green-700 dark:text-green-500'
+                              : 'text-amber-700 dark:text-amber-500'
                             }`}
                           >
                             {book.isRead ? 'Read' : 'Unread'}
@@ -295,7 +301,7 @@ export default function BooksPage() {
                     </div>
 
                     {/* Bottom Edge - Catalog Card Style */}
-                    <div className='absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-foreground/5 to-transparent' />
+                    <div className='via-foreground/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r from-transparent to-transparent' />
                   </article>
                 </div>
               </Link>

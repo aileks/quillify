@@ -7,13 +7,13 @@ import { Navbar } from '@/components/navbar';
 import { Toaster } from 'sonner';
 
 const merriweather = Merriweather({
-  variable: '--font-sans',
+  variable: '--font-serif',
   subsets: ['latin'],
   weight: ['300', '400', '700', '900'],
 });
 
 const workSans = Work_Sans({
-  variable: '--font-secondary',
+  variable: '--font-sans',
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
 });
@@ -41,13 +41,13 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body
-        className={`${merriweather.variable} ${workSans.variable} ${courierPrime.variable} bg-background text-foreground antialiased`}
+        className={`${merriweather.variable} ${workSans.variable} ${courierPrime.variable} bg-background text-foreground font-serif antialiased`}
       >
         <SessionProvider>
           {/* Skip to main content link */}
           <a
             href='#main-content'
-            className='sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+            className='focus:bg-primary focus:text-primary-foreground focus-visible:ring-ring focus:rounded-sm-md sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
           >
             Skip to main content
           </a>

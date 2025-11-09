@@ -19,8 +19,10 @@ export default function Error({
     <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center px-4'>
       <div className='mx-auto max-w-md text-center'>
         <div className='mb-8 space-y-3'>
-          <h1 className='text-9xl font-bold tracking-tight text-destructive'>500</h1>
-          <h2 className='text-2xl font-semibold tracking-tight text-foreground'>
+          <h1 className='text-6xl sm:text-7xl md:text-9xl font-bold tracking-tight text-destructive'>
+            500
+          </h1>
+          <h2 className='text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-foreground'>
             Something Went Wrong
           </h2>
 

@@ -6,14 +6,14 @@ export default function BookNotFound() {
     <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center px-4'>
       <div className='mx-auto max-w-md text-center'>
         <div className='mb-8 space-y-3'>
-          <div className='mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-muted'>
+          <div className='rounded-sm-full bg-muted mx-auto mb-6 flex h-24 w-24 items-center justify-center'>
             <svg
               xmlns='http://www.w3.org/2000/svg'
               fill='none'
               viewBox='0 0 24 24'
               strokeWidth={1.5}
               stroke='currentColor'
-              className='h-12 w-12 text-muted-foreground'
+              className='text-muted-foreground h-12 w-12'
             >
               <path
                 strokeLinecap='round'
@@ -22,8 +22,10 @@ export default function BookNotFound() {
               />
             </svg>
           </div>
-          <h2 className='text-2xl font-semibold tracking-tight text-foreground'>Book Not Found</h2>
-          <p className='text-sm text-muted-foreground'>
+          <h2 className='text-foreground text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl'>
+            Book Not Found
+          </h2>
+          <p className='text-muted-foreground text-sm'>
             The book you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to
             view it.
           </p>
@@ -39,10 +41,10 @@ export default function BookNotFound() {
           </Button>
         </div>
 
-        <div className='mt-12 text-xs text-muted-foreground'>
+        <div className='text-muted-foreground mt-12 text-xs'>
           <p>
             or{' '}
-            <Link href='/' className='underline hover:text-foreground'>
+            <Link href='/' className='hover:text-foreground underline'>
               Return to home
             </Link>
           </p>

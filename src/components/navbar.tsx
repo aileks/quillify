@@ -25,7 +25,7 @@ export function Navbar() {
 
   return (
     <nav
-      className='border-sidebar-accent border-b-2 text-sidebar-foreground mx-auto bg-sidebar sticky top-0'
+      className='border-sidebar-accent text-sidebar-foreground bg-sidebar sticky top-0 mx-auto border-b-2 font-serif'
       aria-label='Main navigation'
     >
       <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
@@ -55,7 +55,9 @@ export function Navbar() {
               <NavigationMenuItem>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button>{session.user.name || session.user.email || 'Account'}</Button>
+                    <Button className='rounded-sm'>
+                      {session.user.name || session.user.email || 'Account'}
+                    </Button>
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent align='end'>
@@ -84,7 +86,11 @@ export function Navbar() {
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Button variant='secondary' asChild>
+                  <Button
+                    variant='outline'
+                    asChild
+                    className='text-background hover:text-background'
+                  >
                     <Link href='/account/login' className={navigationMenuTriggerStyle()}>
                       Log In
                     </Link>

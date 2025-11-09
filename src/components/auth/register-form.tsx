@@ -180,7 +180,7 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
             />
 
             {error && (
-              <div className='rounded-md bg-destructive/10 p-3 text-sm text-destructive'>
+              <div className='rounded-sm-md bg-destructive/10 text-destructive p-3 text-sm'>
                 {error}
               </div>
             )}
@@ -202,7 +202,7 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
             <span className='w-full border-t' />
           </div>
           <div className='relative flex justify-center text-xs uppercase'>
-            <span className='bg-card px-2 text-muted-foreground'>Or</span>
+            <span className='bg-card text-muted-foreground px-2'>Or</span>
           </div>
         </div>
         <Button type='button' variant='outline' className='w-full' asChild>

@@ -110,7 +110,7 @@ export function NewBookForm() {
                     <FormControl>
                       <Input
                         placeholder='Jane Eyre'
-                        className='placeholder:text-muted-foreground rounded-sm'
+                        className='placeholder:text-muted-foreground'
                         {...field}
                       />
                     </FormControl>
@@ -128,7 +128,7 @@ export function NewBookForm() {
                     <FormControl>
                       <Input
                         placeholder='Charlotte Brontë'
-                        className='placeholder:text-muted-foreground rounded-sm'
+                        className='placeholder:text-muted-foreground'
                         {...field}
                       />
                     </FormControl>
@@ -148,7 +148,7 @@ export function NewBookForm() {
                         <Input
                           type='number'
                           placeholder='352'
-                          className='placeholder:text-muted-foreground rounded-sm'
+                          className='placeholder:text-muted-foreground'
                           {...field}
                         />
                       </FormControl>
@@ -167,7 +167,7 @@ export function NewBookForm() {
                         <Input
                           type='number'
                           placeholder='1999'
-                          className='placeholder:text-muted-foreground rounded-sm'
+                          className='placeholder:text-muted-foreground'
                           {...field}
                         />
                       </FormControl>

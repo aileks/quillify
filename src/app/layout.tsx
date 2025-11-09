@@ -3,7 +3,7 @@ import '@/styles/globals.css';
 import { Merriweather, Work_Sans, Courier_Prime } from 'next/font/google';
 import { TRPCReactProvider } from '@/trpc/react';
 import { SessionProvider } from '@/components/auth';
-import { Navbar } from '@/components/navbar';
+import { Sidebar } from '@/components/sidebar';
 import { Toaster } from 'sonner';
 
 const merriweather = Merriweather({
@@ -47,12 +47,12 @@ export default function RootLayout({
           {/* Skip to main content link */}
           <a
             href='#main-content'
-            className='focus:bg-primary focus:text-primary-foreground focus-visible:ring-ring focus:rounded-sm-md sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
+            className='focus:bg-primary focus:text-primary-foreground focus-visible:ring-ring focus:rounded-sm-md sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 md:focus:left-[280px] focus:z-50 focus:px-4 focus:py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
           >
             Skip to main content
           </a>
-          <Navbar />
-          <main id='main-content'>
+          <Sidebar />
+          <main id='main-content' className='md:ml-64'>
             <TRPCReactProvider>{children}</TRPCReactProvider>
           </main>
           <Toaster />

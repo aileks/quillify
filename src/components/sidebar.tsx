@@ -59,14 +59,9 @@ export function Sidebar() {
         aria-label='Sidebar navigation'
       >
         <div className='border-sidebar-border flex flex-col border-b px-6 py-4'>
-          <Link
-            href='/'
-            onClick={() => setIsMobileOpen(false)}
-            className='text-sidebar-foreground hover:text-sidebar-primary-foreground text-xl font-bold transition-colors'
-            aria-label='Quillify home'
-          >
+          <div className='text-sidebar-foreground text-xl font-bold'>
             Quillify
-          </Link>
+          </div>
           {status === 'loading' ?
             <Skeleton className='mt-2 h-4 w-32' />
           : session?.user ?

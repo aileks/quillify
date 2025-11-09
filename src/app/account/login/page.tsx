@@ -13,7 +13,6 @@ async function LoginContent({ searchParams }: LoginPageProps) {
   const resolvedParams = await searchParams;
   const callbackUrl = resolvedParams.callbackUrl || '/books';
 
-  // If user is already logged in, redirect to callback URL
   if (session?.user) {
     redirect(callbackUrl);
   }

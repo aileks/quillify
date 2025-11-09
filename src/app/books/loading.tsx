@@ -7,6 +7,7 @@ export default function Loading() {
       <div>
         <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
           <Skeleton className='h-8 w-24' />
+
           <div className='flex items-center gap-4'>
             <Skeleton className='h-9 w-20' />
             <Skeleton className='h-9 w-28' />

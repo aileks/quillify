@@ -8,7 +8,6 @@ export default async function BooksLayout({
 }) {
   const session = await auth();
 
-  // Redirect unauthenticated users to landing page
   if (!session?.user) {
     redirect('/');
   }

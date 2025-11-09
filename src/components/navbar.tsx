@@ -24,7 +24,7 @@ export function Navbar() {
   const { data: session, status } = useSession();
 
   return (
-    <nav>
+    <nav className='border-sidebar-accent border-b-2 text-sidebar-foreground mx-auto bg-sidebar sticky top-0'>
       <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
         <Link href='/' className='text-xl font-bold'>
           Quillify
@@ -37,7 +37,11 @@ export function Navbar() {
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Button variant='link' asChild>
+                  <Button
+                    variant='outline'
+                    asChild
+                    className='text-background hover:text-background'
+                  >
                     <Link href='/books' className={navigationMenuTriggerStyle()}>
                       Books
                     </Link>

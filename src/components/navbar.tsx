@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -20,12 +21,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export function Navbar() {
+interface NavbarProps {
+  className?: string;
+}
+
+export function Navbar({ className }: NavbarProps) {
   const { data: session, status } = useSession();
 
   return (
     <nav
-      className='border-sidebar-accent text-sidebar-foreground bg-sidebar sticky top-0 mx-auto border-b-2 font-serif'
+      className={cn(
+        'border-sidebar-accent text-sidebar-foreground bg-sidebar sticky top-0 z-50 mx-auto border-b-2 font-serif',
+        className
+      )}
       aria-label='Main navigation'
     >
       <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
@@ -61,10 +69,6 @@ export function Navbar() {
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent align='end'>
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-
-                    <DropdownMenuSeparator />
-
                     <DropdownMenuItem asChild>
                       <Link href='/account/settings'>Settings</Link>
                     </DropdownMenuItem>

@@ -61,7 +61,7 @@ export default async function Home() {
                 href='/account/login'
                 className='text-muted-foreground hover:text-foreground text-sm transition-colors'
               >
-                Sign In
+                Log In
               </Link>
 
               <Link

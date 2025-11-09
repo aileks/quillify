@@ -4,6 +4,7 @@ import { Merriweather, Work_Sans, Courier_Prime } from 'next/font/google';
 import { TRPCReactProvider } from '@/trpc/react';
 import { SessionProvider } from '@/components/auth';
 import { Sidebar } from '@/components/sidebar';
+import { Navbar } from '@/components/navbar';
 import { Toaster } from 'sonner';
 
 const merriweather = Merriweather({
@@ -51,7 +52,8 @@ export default function RootLayout({
           >
             Skip to main content
           </a>
-          <Sidebar />
+          <Navbar className='md:hidden' />
+          <Sidebar className='hidden md:flex' />
           <main id='main-content' className='md:ml-64'>
             <TRPCReactProvider>{children}</TRPCReactProvider>
           </main>

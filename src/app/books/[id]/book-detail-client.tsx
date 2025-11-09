@@ -61,7 +61,10 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
   // Use the initial book data, but allow real-time updates
   const { data: book } = api.books.getById.useQuery(
     { id: bookId },
-    { initialData: initialBook, refetchOnMount: false }
+    {
+      initialData: initialBook,
+      staleTime: 60 * 1000, // Consider data fresh for 60 seconds
+    }
   );
 
   const form = useForm<BookFormValues>({
@@ -90,7 +93,29 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
   });
 
   const toggleRead = api.books.setRead.useMutation({
-    onSuccess: () => {
+    onMutate: async (newData) => {
+      // Cancel outgoing refetches
+      await utils.books.getById.cancel({ id: bookId });
+
+      // Snapshot previous value
+      const previousBook = utils.books.getById.getData({ id: bookId });
+
+      // Optimistically update to the new value
+      utils.books.getById.setData({ id: bookId }, (old) =>
+        old ? { ...old, isRead: newData.isRead } : old
+      );
+
+      // Return context with the snapshot
+      return { previousBook };
+    },
+    onError: (err, newData, context) => {
+      // Rollback on error
+      if (context?.previousBook) {
+        utils.books.getById.setData({ id: bookId }, context.previousBook);
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure data consistency
       void utils.books.getById.invalidate({ id: bookId });
       void utils.books.list.invalidate();
     },

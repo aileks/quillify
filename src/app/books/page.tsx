@@ -23,7 +23,7 @@ export default function BooksPage() {
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
-  const { data, isLoading } = api.books.list.useQuery({
+  const { data, isLoading, error } = api.books.list.useQuery({
     search,
     isRead,
     sortBy,
@@ -92,8 +92,27 @@ export default function BooksPage() {
         </CardContent>
       </Card>
 
+      {/* Error State */}
+      {error && (
+        <Card>
+          <CardContent className='flex flex-col items-center justify-center py-8 md:py-12'>
+            <p className='text-destructive mb-4 text-center font-semibold'>Failed to load books</p>
+            <p className='text-muted-foreground mb-4 text-center text-sm'>
+              {error.message || 'An unexpected error occurred'}
+            </p>
+            <Button
+              variant='outline'
+              onClick={() => window.location.reload()}
+              className='w-full sm:w-auto'
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Loading State */}
-      {isLoading && (
+      {isLoading && !error && (
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           {Array.from({ length: pageSize }).map((_, i) => (
             <Card key={i} className='h-full'>
@@ -114,7 +133,7 @@ export default function BooksPage() {
       )}
 
       {/* Empty State */}
-      {!isLoading && books.length === 0 && (
+      {!isLoading && !error && books.length === 0 && (
         <Card>
           <CardContent className='flex flex-col items-center justify-center py-8 md:py-12'>
             <p className='text-muted-foreground mb-4 text-center'>
@@ -145,7 +164,7 @@ export default function BooksPage() {
       )}
 
       {/* Pagination */}
-      {!isLoading && books.length > 0 && totalPages > 1 && (
+      {!isLoading && !error && books.length > 0 && totalPages > 1 && (
         <div className='flex flex-col items-center gap-4 justify-end sm:flex-row'>
           <p className='text-muted-foreground font-bold'>
             Page {page} of {totalPages}
@@ -174,7 +193,7 @@ export default function BooksPage() {
       )}
 
       {/* Books Grid */}
-      {!isLoading && books.length > 0 && (
+      {!isLoading && !error && books.length > 0 && (
         <>
           <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
             {books.map((book) => (

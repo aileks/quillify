@@ -43,10 +43,10 @@ export default function BooksPage() {
           <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
             Library Catalog
           </h1>
-          <p className='text-muted-foreground mt-1 font-mono text-xs tracking-wider uppercase'>
+          <p className='text-muted-foreground mt-2 font-mono text-xs tracking-wider uppercase'>
             {totalCount === 0 ?
               'No entries'
-            : `${totalCount} catalog entry${totalCount === 1 ? '' : 'ies'}`}
+            : `${totalCount} catalog entr${totalCount === 1 ? 'y' : 'ies'}`}
           </p>
         </div>
 

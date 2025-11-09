@@ -17,33 +17,29 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const emailFormSchema = z.object({
   newEmail: z.email('Invalid email address'),
   currentPassword: z.string().min(1, 'Current password is required'),
 });
 
-const passwordFormSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-    ),
-  confirmPassword: z.string().min(1, 'Please confirm your password'),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
+const passwordFormSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+      ),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
 
 type EmailFormValues = z.infer<typeof emailFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
@@ -174,7 +170,8 @@ export function SettingsForm() {
           <CardHeader>
             <CardTitle>Change Password</CardTitle>
             <CardDescription>
-              Update your password. You'll need to enter your current password to confirm the change.
+              Update your password. You'll need to enter your current password to confirm the
+              change.
             </CardDescription>
           </CardHeader>
 
@@ -255,4 +252,3 @@ export function SettingsForm() {
     </div>
   );
 }
-

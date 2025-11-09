@@ -19,20 +19,20 @@ export default function Error({
     <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center px-4'>
       <div className='mx-auto max-w-md text-center'>
         <div className='mb-8 space-y-3'>
-          <h1 className='text-6xl sm:text-7xl md:text-9xl font-bold tracking-tight text-destructive'>
+          <h1 className='text-destructive text-6xl font-bold tracking-tight sm:text-7xl md:text-9xl'>
             500
           </h1>
-          <h2 className='text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-foreground'>
+          <h2 className='text-foreground text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl'>
             Something Went Wrong
           </h2>
 
-          <p className='text-sm text-muted-foreground'>
+          <p className='text-muted-foreground text-sm'>
             An unexpected error occurred while processing your request. Please try again or contact
             support if the problem persists.
           </p>
 
           {error.digest && (
-            <p className='mt-4 text-xs font-mono text-muted-foreground'>Error ID: {error.digest}</p>
+            <p className='text-muted-foreground mt-4 font-mono text-xs'>Error ID: {error.digest}</p>
           )}
         </div>
 

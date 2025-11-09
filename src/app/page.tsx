@@ -12,7 +12,10 @@ export default async function Home() {
   return (
     <div className='flex min-h-screen flex-col'>
       {/* Hero Section */}
-      <section className='flex flex-1 items-center justify-center border-b px-4' aria-label='Hero section'>
+      <section
+        className='flex flex-1 items-center justify-center border-b px-4'
+        aria-label='Hero section'
+      >
         <div className='container mx-auto'>
           <div className='mx-auto max-w-3xl text-center'>
             <h1 className='mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl'>
@@ -28,7 +31,10 @@ export default async function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className='flex flex-1 items-center justify-center border-t px-4' aria-label='Call to action'>
+      <section
+        className='flex flex-1 items-center justify-center border-t px-4'
+        aria-label='Call to action'
+      >
         <div className='container mx-auto'>
           <div className='mx-auto max-w-3xl text-center'>
             <h2 className='mb-4 text-2xl font-bold sm:text-3xl md:text-4xl'>

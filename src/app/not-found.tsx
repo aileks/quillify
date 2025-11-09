@@ -6,15 +6,15 @@ export default function NotFound() {
     <div className='flex min-h-[calc(100vh-4rem)] items-center justify-center px-4'>
       <div className='mx-auto max-w-md text-center'>
         <div className='mb-8 space-y-3'>
-          <h1 className='text-6xl sm:text-7xl md:text-9xl font-bold tracking-tight text-primary'>
+          <h1 className='text-primary text-6xl font-bold tracking-tight sm:text-7xl md:text-9xl'>
             404
           </h1>
 
-          <h2 className='text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-foreground'>
+          <h2 className='text-foreground text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl'>
             Page Not Found
           </h2>
 
-          <p className='text-sm text-muted-foreground'>
+          <p className='text-muted-foreground text-sm'>
             Sorry, we couldn&apos;t find the page you&apos;re looking for. It might have been moved
             or deleted.
           </p>

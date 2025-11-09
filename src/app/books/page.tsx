@@ -75,12 +75,14 @@ export default function BooksPage() {
 
             <Select
               value={
+                // Convert boolean | undefined to string for Select component
                 isRead === undefined ? 'all'
                 : isRead ?
                   'read'
                 : 'unread'
               }
               onValueChange={(value) => {
+                // Convert string back to boolean | undefined
                 setIsRead(value === 'all' ? undefined : value === 'read');
                 setPage(1);
               }}

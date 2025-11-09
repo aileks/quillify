@@ -21,6 +21,7 @@ export const booksRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { isRead, search, sortBy, sortOrder, page, pageSize } = input;
 
+      // Build dynamic WHERE conditions array
       const conditions = [eq(books.userId, ctx.session.user.id)];
 
       if (isRead !== undefined) {
@@ -28,6 +29,7 @@ export const booksRouter = createTRPCRouter({
       }
 
       if (search && search.trim()) {
+        // Search across title, author, and genre fields using case-insensitive LIKE
         conditions.push(
           or(
             ilike(books.title, `%${search}%`),
@@ -37,13 +39,14 @@ export const booksRouter = createTRPCRouter({
         );
       }
 
+      // Combine all conditions with AND logic
       const where = and(...conditions);
 
-      // Get total count for pagination
+      // Get total count for pagination (must run before pagination to get accurate count)
       const countResult = await ctx.db.select({ totalCount: count() }).from(books).where(where);
       const totalCount = countResult[0]?.totalCount ?? 0;
 
-      // Get paginated results
+      // Dynamically select sort column and direction
       const orderByColumn =
         sortBy === 'title' ? books.title
         : sortBy === 'author' ? books.author
@@ -133,6 +136,7 @@ export const booksRouter = createTRPCRouter({
           title: input.title ?? existing.title,
           author: input.author ?? existing.author,
           numberOfPages: input.numberOfPages ?? existing.numberOfPages,
+          // Special handling: undefined means "don't change", null means "set to null"
           genre: input.genre === undefined ? existing.genre : input.genre,
           publishYear: input.publishYear ?? existing.publishYear,
         })

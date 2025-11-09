@@ -62,6 +62,7 @@ export function NewBookForm() {
   });
 
   function onSubmit(data: BookFormValues) {
+    // Convert form strings to numbers and validate
     const numberOfPages = Number(data.numberOfPages);
     const publishYear = Number(data.publishYear);
 
@@ -69,6 +70,7 @@ export function NewBookForm() {
       form.setError('numberOfPages', { message: 'Must be a positive number' });
       return;
     }
+    // Allow future years up to 5 years ahead for pre-orders
     if (isNaN(publishYear) || publishYear < 1000 || publishYear > new Date().getFullYear() + 5) {
       form.setError('publishYear', {
         message: `Year must be between 1000 and ${new Date().getFullYear() + 5}`,
@@ -80,6 +82,7 @@ export function NewBookForm() {
       title: data.title,
       author: data.author,
       numberOfPages,
+      // Default to 'Other' if no genre selected (required by database schema)
       genre: data.genre || 'Other',
       publishYear,
     });

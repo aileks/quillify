@@ -66,17 +66,20 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
     { id: bookId },
     {
       initialData: initialBook,
+      // Consider data fresh for 60s to avoid unnecessary refetches when navigating back
       staleTime: 60 * 1000,
     }
   );
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
+    // Use `values` instead of `defaultValues` to keep form in sync with real-time data updates
     values:
       book ?
         {
           title: book.title,
           author: book.author,
+          // Convert numbers to strings for form inputs (HTML inputs return strings)
           numberOfPages: String(book.numberOfPages),
           genre: book.genre || undefined,
           publishYear: String(book.publishYear),
@@ -95,12 +98,19 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
     },
   });
 
+  /**
+   * Optimistic update mutation for toggling read status.
+   * Updates the UI immediately before the server responds, then rolls back on error.
+   */
   const toggleRead = api.books.setRead.useMutation({
     onMutate: async (newData) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
       await utils.books.getById.cancel({ id: bookId });
 
+      // Snapshot the previous value for potential rollback
       const previousBook = utils.books.getById.getData({ id: bookId });
 
+      // Optimistically update the cache
       utils.books.getById.setData({ id: bookId }, (old) =>
         old ? { ...old, isRead: newData.isRead } : old
       );
@@ -108,11 +118,13 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
       return { previousBook };
     },
     onError: (err, newData, context) => {
+      // Rollback to previous value on error
       if (context?.previousBook) {
         utils.books.getById.setData({ id: bookId }, context.previousBook);
       }
     },
     onSettled: () => {
+      // Always refetch to ensure server and client are in sync
       void utils.books.getById.invalidate({ id: bookId });
       void utils.books.list.invalidate();
     },
@@ -129,6 +141,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
   });
 
   function onSubmit(data: BookFormValues) {
+    // Convert form strings to numbers and validate
     const numberOfPages = Number(data.numberOfPages);
     const publishYear = Number(data.publishYear);
 
@@ -136,6 +149,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
       form.setError('numberOfPages', { message: 'Must be a positive number' });
       return;
     }
+    // Allow future years up to 5 years ahead for pre-orders
     if (isNaN(publishYear) || publishYear < 1000 || publishYear > new Date().getFullYear() + 5) {
       form.setError('publishYear', {
         message: `Year must be between 1000 and ${new Date().getFullYear() + 5}`,
@@ -148,6 +162,7 @@ export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps)
       title: data.title,
       author: data.author,
       numberOfPages,
+      // Use null instead of 'Other' for updates to allow clearing genre
       genre: data.genre || null,
       publishYear,
     });

@@ -97,7 +97,8 @@ export const authRouter = createTRPCRouter({
       });
     }
 
-    // Migration from Laravel means having to normalize hashes
+    // Normalize bcrypt hash format: Laravel uses $2y$ prefix, Node.js bcrypt uses $2b$
+    // Both are compatible, but bcrypt.compare requires matching prefix format
     const passwordHash = user.password;
     const normalizedHash =
       passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
@@ -165,7 +166,7 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // Verify current password
+      // Verify current password (normalize hash format for Laravel compatibility)
       const passwordHash = user.password;
       const normalizedHash =
         passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
@@ -254,7 +255,7 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // Verify current password
+      // Verify current password (normalize hash format for Laravel compatibility)
       const passwordHash = user.password;
       const normalizedHash =
         passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;

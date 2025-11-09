@@ -11,12 +11,17 @@ import { type AppRouter } from '@/server/api/root';
 import { createQueryClient } from './query-client';
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
+/**
+ * Get or create a QueryClient instance.
+ * Uses singleton pattern in browser to preserve cache across re-renders,
+ * but creates fresh instances on server for each request to avoid data leakage.
+ */
 const getQueryClient = () => {
   if (typeof window === 'undefined') {
-    // Server: always make a new query client
+    // Server: always make a new query client to avoid sharing state between requests
     return createQueryClient();
   }
-  // Browser: use singleton pattern to keep the same query client
+  // Browser: use singleton pattern to keep the same query client across re-renders
   clientQueryClientSingleton ??= createQueryClient();
 
   return clientQueryClientSingleton;

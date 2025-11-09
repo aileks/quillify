@@ -69,7 +69,8 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
 
   const registerMutation = api.auth.register.useMutation({
     onSuccess: async () => {
-      // After successful registration, automatically log in the user
+      // Automatically log in the user after successful registration for better UX
+      // Use redirect: false to handle navigation manually and show errors if login fails
       const result = await signIn('credentials', {
         email: form.getValues('email'),
         password: form.getValues('password'),

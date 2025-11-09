@@ -13,7 +13,7 @@ export const createQueryClient = () =>
           const e = error as TRPCErrorShape;
           const code = e?.data?.code;
           const httpStatus = e?.data?.httpStatus;
-          // Don't retry on UNAUTHORIZED or NOT_FOUND errors
+          // Don't retry on UNAUTHORIZED or NOT_FOUND errors (these won't succeed on retry)
           if (code === 'UNAUTHORIZED' || httpStatus === 401) return false;
           if (code === 'NOT_FOUND' || httpStatus === 404) return false;
           // Retry up to 2 times (3 total attempts -> 2 retries)
@@ -22,6 +22,7 @@ export const createQueryClient = () =>
       },
       dehydrate: {
         serializeData: SuperJSON.serialize,
+        // Include pending queries in SSR hydration to avoid loading states on initial render
         shouldDehydrateQuery: (query) =>
           defaultShouldDehydrateQuery(query) || query.state.status === 'pending',
       },

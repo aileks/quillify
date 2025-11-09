@@ -142,9 +142,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 Quillify uses [tRPC v11](https://trpc.io/) for type-safe client-server communication with automatic type inference from server to client.
 
-For detailed API architecture and usage patterns, see **[API.md](./API.md)**.
+For detailed API architecture and usage patterns, see **[API.md](./docs/API.md)**.
 
-For a complete list of available endpoints and procedures, see **[ROUTES.md](./ROUTES.md)**.
+For a complete list of available endpoints and procedures, see **[ROUTES.md](./docs/ROUTES.md)**.
 
 ## Database
 

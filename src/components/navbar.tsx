@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function Navbar() {
-  // Session
   const { data: session, status } = useSession();
 
   return (

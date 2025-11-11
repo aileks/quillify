@@ -1,6 +1,6 @@
 # Quillify
 
-A modern, full-stack book tracking application built with Next.js 16.
+Digitize your TBR lists and track your library.
 
 ![Quillify Screenshot](./docs/showcase.png)
 

@@ -103,9 +103,7 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-This creates a demo user with 15 books across various genres:
-— **Email**: demo@quillify.com
-— **Password**: demo123
+This creates a demo user with 15 books across various genres.
 
 ### Development
 
@@ -132,6 +130,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Docs
 
-- **[API.md](./docs/API.md)** — API architecture, tRPC setup, and client usage patterns
-- **[ROUTES.md](./docs/ROUTES.md)** — Complete list of tRPC procedures and endpoints
-- **[SCHEMA.md](./docs/SCHEMA.md)** — Database schema documentation with tables, relationships, and constraints
+- **[API.md](./docs/API.md)**: API architecture, tRPC setup, and client usage patterns
+- **[ROUTES.md](./docs/ROUTES.md)**: Complete list of tRPC procedures and endpoints
+- **[SCHEMA.md](./docs/SCHEMA.md)**: Database schema documentation with tables, relationships, and constraints

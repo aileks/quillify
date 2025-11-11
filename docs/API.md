@@ -18,10 +18,10 @@ Quillify uses two tRPC clients for different contexts:
 
 - Uses `createCaller` for direct server-to-server calls
 - No React Query wrapper needed
-- Ideal for Server Components
 - Defined in `src/trpc/server.ts`
 
 **Example usage**:
+
 ```typescript
 import { api } from '@/trpc/server';
 
@@ -31,7 +31,7 @@ export default async function BooksPage() {
 }
 ```
 
-### 2. Client-side (React Query)
+### 2. Client-side (Tanstack Query)
 
 **Import**: `import { api } from '@/trpc/react'`
 
@@ -41,6 +41,7 @@ export default async function BooksPage() {
 - Defined in `src/trpc/react.tsx`
 
 **Example usage**:
+
 ```typescript
 'use client';
 import { api } from '@/trpc/react';
@@ -72,6 +73,7 @@ All tRPC procedures are defined in `src/server/api/trpc.ts` and organized into f
 - Automatically returns 401 UNAUTHORIZED if not authenticated
 
 **Example**:
+
 ```typescript
 export const booksRouter = createTRPCRouter({
   list: protectedProcedure
@@ -95,13 +97,6 @@ Both procedure types include timing middleware for performance monitoring, which
 ## Router Organization
 
 Routers are organized by feature in `src/server/api/routers/` and composed in `src/server/api/root.ts`:
-
-```typescript
-export const appRouter = createTRPCRouter({
-  books: booksRouter,    // src/server/api/routers/books.ts
-  auth: authRouter,      // src/server/api/routers/auth.ts
-});
-```
 
 See [ROUTES.md](./ROUTES.md) for a complete list of available procedures and their endpoints.
 
@@ -147,7 +142,7 @@ Success responses default to HTTP 200 OK (even for mutations).
 2. **Define the procedure** using `publicProcedure` or `protectedProcedure`
 3. **Register the router** in `src/server/api/root.ts`
 4. **Use from RSC** via `import { api } from '@/trpc/server'`
-5. **Use from client** via `import { api } from '@/trpc/react'` (requires `TRPCReactProvider`)
+5. **Use from client** via `import { api } from '@/trpc/react'`
 
 ## Related Files
 

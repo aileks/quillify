@@ -12,8 +12,6 @@ This document describes the complete database schema for Quillify, including tab
 
 All tables are organized under the `quillify` PostgreSQL schema to avoid conflicts with other schemas in the same database.
 
----
-
 ## Tables
 
 ### users
@@ -46,8 +44,6 @@ User accounts with authentication credentials.
 - Email verification is optional (nullable `emailVerifiedAt`)
 - All timestamps use timezone-aware `timestamp with time zone` type
 
----
-
 ### books
 
 Book entries linked to users in their personal library.
@@ -74,46 +70,6 @@ Book entries linked to users in their personal library.
 **Foreign Keys:**
 
 - `books.userId` → `users.id` (ON DELETE CASCADE, ON UPDATE NO ACTION)
-
-**Relationships:**
-
-- Many-to-one with `users` (many books belong to one user)
-
-**Notes:**
-
-- Cascade delete: When a user is deleted, all their books are automatically deleted
-- Genre defaults to 'Other' if not specified
-- `isRead` defaults to `false` for new books
-- All timestamps use timezone-aware `timestamp with time zone` type
-
----
-
-## Relationships
-
-### users ↔ books
-
-- **Type**: One-to-many
-- **Direction**: One user has many books
-- **Foreign Key**: `books.userId` references `users.id`
-- **Cascade**: ON DELETE CASCADE (deleting a user deletes all their books)
-- **Drizzle Relations**: Defined in `src/server/db/schema.ts`
-
-```typescript
-// Users can have many books
-usersRelations = relations(users, ({ many }) => ({
-  books: many(books),
-}));
-
-// Books belong to one user
-booksRelations = relations(books, ({ one }) => ({
-  user: one(users, {
-    fields: [books.userId],
-    references: [users.id],
-  }),
-}));
-```
-
----
 
 ## Schema Definition
 
@@ -155,27 +111,13 @@ export const books = quillify.table('books', {
 });
 ```
 
----
-
 ## Migrations
 
 Schema changes are managed through Drizzle Kit migrations:
 
-- **Migration Files**: `src/server/drizzle/0000_*.sql` through `0006_*.sql`
+- **Migration Files**: `src/server/drizzle/XXXX_*.sql`
 - **Configuration**: `drizzle.config.ts`
 - **Schema Filter**: Only `quillify` schema tables are managed
-
-### Migration History
-
-1. **0000_short_wraith.sql** - Initial schema creation (users, books, accounts)
-2. **0001_wakeful_mephisto.sql** - Schema updates
-3. **0002_high_purple_man.sql** - Removed accounts table (switched to JWT sessions)
-4. **0003_real_drax.sql** - Renamed `emailVerified` to `emailVerifiedAt`
-5. **0004_sparkling_major_mapleleaf.sql** - Schema updates
-6. **0005_steady_madame_masque.sql** - Renamed snake_case columns to camelCase
-7. **0006_loose_manta.sql** - Added `updatedAt` columns and NOT NULL constraints
-
----
 
 ## TypeScript Types
 
@@ -193,10 +135,6 @@ type NewUser = typeof users.$inferInsert;
 type NewBook = typeof books.$inferInsert;
 ```
 
-These types are used throughout the application for type-safe database operations.
-
----
-
 ## Constraints and Validation
 
 ### Application-Level Validation
@@ -205,34 +143,16 @@ While the database schema provides basic constraints, additional validation is e
 
 - **Email**: Must be valid email format
 - **Password**: Minimum 8 characters, must contain uppercase, lowercase, and number
-- **Name**: Minimum 2 characters (if provided)
+- **Name**: Minimum 2 characters
 - **Book Title/Author**: Minimum 1 character
 - **NumberOfPages**: Must be positive integer
-- **PublishYear**: Must be positive integer
-
-### Database-Level Constraints
-
-- **Primary Keys**: All tables use UUID text primary keys
-- **Foreign Keys**: `books.userId` references `users.id` with CASCADE delete
-- **Unique Constraints**: `users.email` must be unique
-- **NOT NULL**: Required fields are enforced at the database level
-- **Defaults**: `books.genre` defaults to 'Other', `books.isRead` defaults to `false`
-
----
+- **PublishYear**: Must be positive integer of 1500 or greater
 
 ## Notes
 
 ### Authentication Tables
 
-Quillify uses **JWT-based sessions** (not database sessions), so there are no `sessions` or `accounts` tables. The `accounts` table was removed in migration `0002_high_purple_man.sql` when switching from database sessions to JWT sessions.
-
-### Future Considerations
-
-- **OAuth Support**: The `password` field is nullable to support future OAuth providers
-- **Email Verification**: `emailVerifiedAt` is nullable and can be used for email verification workflows
-- **Soft Deletes**: Currently using hard deletes (CASCADE), but soft deletes could be added with a `deletedAt` timestamp column
-
----
+Quillify uses _JWT-based sessions_, so there are no `sessions` or `accounts` tables.
 
 ## Related Documentation
 

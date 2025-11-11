@@ -4,14 +4,6 @@ Digitize your TBR lists and track your library.
 
 ![Quillify Screenshot](./docs/showcase.png)
 
-## Features
-
-- **Personal Library Management** — Track your reading list with detailed book information
-- **Reading Progress** — Mark books as read/unread and monitor your reading journey
-- **Secure Authentication** — Protected user accounts with NextAuth v5
-- **Responsive Design** — Beautiful UI that works seamlessly across all devices
-- **Type—Safe API** — End—to—end type safety from database to UI
-
 ## Architecture
 
 ### Tech Stack
@@ -127,62 +119,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Available Scripts
 
-- `pnpm dev` — Start development server with Turbo
-- `pnpm build` — Build production bundle
-- `pnpm start` — Start production server
-- `pnpm lint` — Run ESLint
-- `pnpm format:check` — Check code formatting
-- `pnpm format:write` — Format code with Prettier
-- `pnpm db:generate` — Generate migration files from schema
-- `pnpm db:migrate` — Apply migrations to database
-- `pnpm db:push` — Push schema changes directly (dev only)
-- `pnpm db:studio` — Open Drizzle Studio (database GUI)
+- `pnpm dev`: Start development server with Turbo
+- `pnpm build`: Build production bundle
+- `pnpm start`: Start production server
+- `pnpm lint`: Run ESLint
+- `pnpm format:check`: Check code formatting
+- `pnpm format:write`: Format code with Prettier
+- `pnpm db:generate`: Generate migration files from schema
+- `pnpm db:migrate`: Apply migrations to database
+- `pnpm db:push`: Push schema changes directly (dev only)
+- `pnpm db:studio`: Open Drizzle Studio (database GUI)
 
-## API Architecture
+## Docs
 
-Quillify uses [tRPC v11](https://trpc.io/) for type-safe client-server communication with automatic type inference from server to client.
-
-For detailed API architecture and usage patterns, see **[API.md](./docs/API.md)**.
-
-For a complete list of available endpoints and procedures, see **[ROUTES.md](./docs/ROUTES.md)**.
-
-## Database
-
-### Schema
-
-Tables are organized under the `quillify` PostgreSQL schema:
-
-- **users** — User accounts with authentication (email/password)
-- **books** — Book entries linked to users
-
-All tables include `createdAt` and `updatedAt` timestamps with timezone support.
-
-For detailed schema documentation, see **[SCHEMA.md](./docs/SCHEMA.md)**.
-
-### Migrations
-
-Drizzle Kit manages schema migrations. Configuration in `drizzle.config.ts`:
-
-- Migration files: `src/server/drizzle/`
-- Schema filter: `quillify` schema only
-
-## Styling
-
-The UI uses [shadcn/ui](https://ui.shadcn.com/) components with Tailwind CSS v4:
-
-- **Accessible Components** — Pre—built components using Radix UI primitives
-- **Customizable** — Full control over component styling and behavior
-- **CSS Variables** — Theme customization with light/dark mode support
-- **Type—Safe** — TypeScript definitions for all components
-
-## Authentication
-
-NextAuth v5 (beta) provides authentication with:
-
-- Credentials provider (email/password)
-- JWT-based session strategy (no database session storage)
-- Protected routes via middleware
-- Type—safe session management
-- Session expiry: 1 day (default) or 30 days (with "Remember Me")
-
-Session data is injected into tRPC context for authenticated procedures.
+- **[API.md](./docs/API.md)** — API architecture, tRPC setup, and client usage patterns
+- **[ROUTES.md](./docs/ROUTES.md)** — Complete list of tRPC procedures and endpoints
+- **[SCHEMA.md](./docs/SCHEMA.md)** — Database schema documentation with tables, relationships, and constraints

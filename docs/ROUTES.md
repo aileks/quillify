@@ -39,8 +39,6 @@ This document enumerates the current app routes and tRPC procedures, their HTTP 
 - **Default redirect after logout**: `/`
 - **Unauthorized access**: Redirected to `/`
 
----
-
 ## tRPC API Routes
 
 This section enumerates the current tRPC procedures, their HTTP transport endpoint, and expected status codes.
@@ -58,25 +56,6 @@ Key files:
   - React Query config: `src/trpc/query-client.ts`
 - Drizzle schema (for reference): `src/server/db/schema.ts`
 
-## Transport
-
-- HTTP endpoint: `/api/trpc` (supports GET and POST in the route handler)
-  - Implemented in `src/app/api/trpc/[trpc]/route.ts`
-  - Clients in this app send POST requests via `httpBatchStreamLink` (see `src/trpc/react.tsx`).
-  - Serialization: SuperJSON end-to-end.
-- Success responses from tRPC are HTTP 200 OK by default (even for “create/update/delete” mutations).
-- Errors use tRPC error codes mapped to HTTP status:
-  - BAD_REQUEST → 400
-  - UNAUTHORIZED → 401
-  - FORBIDDEN → 403
-  - NOT_FOUND → 404
-  - CONFLICT → 409
-  - INTERNAL_SERVER_ERROR → 500
-
-Note: Protected procedures require an authenticated session (`protectedProcedure` in `src/server/api/trpc.ts`). Missing auth yields 401.
-
----
-
 ## Routers and Procedures
 
 App router registrations:
@@ -84,6 +63,8 @@ App router registrations:
 - `books: booksRouter` - `src/server/api/routers/books.ts`
 - `auth: authRouter` - `src/server/api/routers/auth.ts`
 - Declared in `src/server/api/root.ts`
+
+For transport details, error handling, and HTTP status codes, see [API.md](./API.md).
 
 ### books router (protected)
 
@@ -185,8 +166,6 @@ All procedures are protected and require a valid session.
 Schema reference (for context): `src/server/db/schema.ts` → `books` table
 Fields: `id`, `userId`, `title`, `author`, `numberOfPages`, `genre?` (default: 'Other'), `publishYear`, `isRead` (default: false), `createdAt`, `updatedAt`.
 
----
-
 ### Auth router
 
 File: `src/server/api/routers/auth.ts`
@@ -258,12 +237,4 @@ Mix of public and protected procedures.
 
 ---
 
-## Client Usage Notes
-
-- React (client) calls use `@trpc/react-query` with `httpBatchStreamLink` to `/api/trpc` and are configured in:
-  - `src/trpc/react.tsx` (provider + client)
-  - `src/trpc/query-client.ts` (retry and SuperJSON hydration settings)
-- RSC calls use a typed caller via:
-  - `src/trpc/server.ts` (RSC `api` and `HydrateClient`)
-
-Both clients set the `x-trpc-source` header for tracing.
+For detailed client setup and usage patterns, see [API.md](./API.md).

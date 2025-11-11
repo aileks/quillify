@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { BookOpen, LogIn, UserPlus, Settings, LogOut, User } from 'lucide-react';
+import { BookOpen, LogIn, UserPlus, Settings, LogOut, User, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -46,6 +46,21 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
           : session?.user ?
             <>
+              <Button
+                variant='ghost'
+                asChild
+                className={cn(
+                  'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
+                  pathname === '/' &&
+                    'bg-sidebar-accent text-sidebar-accent-foreground'
+                )}
+              >
+                <Link href='/'>
+                  <Home className='size-4' />
+                  Home
+                </Link>
+              </Button>
+
               <Button
                 variant='ghost'
                 asChild

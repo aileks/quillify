@@ -6,15 +6,15 @@ This document enumerates the current app routes and tRPC procedures, their HTTP 
 
 ### Public Routes
 
-- `/` - Landing page
-  - **Authenticated users**: Automatically redirected to `/books`
+- `/` - Landing page / Dashboard
+  - **Authenticated users**: See personalized dashboard with reading statistics and overview
   - **Unauthenticated users**: See marketing/landing page
 - `/account/login` - User login page
-  - **Authenticated users**: Automatically redirected to `/books`
-  - **After successful login**: Redirected to `/books` (or `callbackUrl` if provided)
+  - **Authenticated users**: Automatically redirected to `/` (dashboard)
+  - **After successful login**: Redirected to `/` (dashboard) or `callbackUrl` if provided
 - `/account/register` - User registration page
-  - **Authenticated users**: Automatically redirected to `/books`
-  - **After successful registration**: Redirected to `/books` (or `callbackUrl` if provided)
+  - **Authenticated users**: Automatically redirected to `/` (dashboard)
+  - **After successful registration**: Redirected to `/` (dashboard) or `callbackUrl` if provided
 
 ### Protected Routes (require authentication)
 
@@ -35,7 +35,7 @@ This document enumerates the current app routes and tRPC procedures, their HTTP 
 ### Authentication Flow
 
 - **NextAuth sign-in page**: `/` (landing page with login/register CTAs)
-- **Default redirect after login**: `/books`
+- **Default redirect after login**: `/` (dashboard)
 - **Default redirect after logout**: `/`
 - **Unauthorized access**: Redirected to `/`
 

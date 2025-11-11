@@ -11,7 +11,7 @@ interface LoginPageProps {
 async function LoginContent({ searchParams }: LoginPageProps) {
   const session = await auth();
   const resolvedParams = await searchParams;
-  const callbackUrl = resolvedParams.callbackUrl || '/books';
+  const callbackUrl = resolvedParams.callbackUrl || '/';
 
   if (session?.user) {
     redirect(callbackUrl);

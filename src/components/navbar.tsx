@@ -53,6 +53,20 @@ export function Navbar({ className }: NavbarProps) {
                     asChild
                     className='text-background hover:text-background'
                   >
+                    <Link href='/' className={navigationMenuTriggerStyle()}>
+                      Home
+                    </Link>
+                  </Button>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Button
+                    variant='outline'
+                    asChild
+                    className='text-background hover:text-background'
+                  >
                     <Link href='/books' className={navigationMenuTriggerStyle()}>
                       Books
                     </Link>

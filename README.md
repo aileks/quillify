@@ -44,12 +44,12 @@ src/
 
 ### Key Design Patterns
 
-- **Server Components First** — Leveraging React Server Components for optimal performance
-- **Progressive Enhancement** — Client—side interactivity layered on top of SSR
-- **Type—Safe APIs** — tRPC provides automatic type inference from server to client
-- **Database Schema as Source of Truth** — Drizzle generates types from schema definitions
-- **Modular Routing** — Feature—based tRPC routers for better organization
-- **Protected Procedures** — Auth—guarded endpoints ensure secure data access
+- **Server Components First**: Leveraging React Server Components for optimal performance
+- **Progressive Enhancement**: Client—side interactivity layered on top of SSR
+- **Type—Safe APIs**: tRPC provides automatic type inference from server to client
+- **Database Schema as Source of Truth**: Drizzle generates types from schema definitions
+- **Modular Routing**: Feature—based tRPC routers for better organization
+- **Protected Procedures**: Auth—guarded endpoints ensure secure data access
 
 ## Getting Started
 

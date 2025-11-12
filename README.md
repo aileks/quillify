@@ -10,10 +10,10 @@ Digitize your TBR lists and track your library.
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router) with React 19
 - **Language**: TypeScript for complete type safety
-- **API Layer**: [tRPC v11](https://trpc.io/) with React Query for type—safe client—server communication
+- **API Layer**: [tRPC v11](https://trpc.io/) with [TanStack Query](https://tanstack.com/query/latest) for type-safe client<->server communication
 - **Database**: PostgreSQL with [Drizzle ORM](https://orm.drizzle.team/)
 - **Authentication**: [NextAuth v5](https://authjs.dev/) with DrizzleAdapter
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) with CSS—first theming
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) with CSS-first theming
 - **UI Components**: [shadcn/ui](https://ui.shadcn.com/) components with Tailwind CSS
 - **Validation**: [Zod](https://zod.dev/) for runtime schema validation
 
@@ -29,14 +29,14 @@ src/
 │   └── ui/                # shadcn/ui components
 ├── server/
 │   ├── api/               # tRPC router definitions
-│   │   ├── routers/       # Feature—specific routers
+│   │   ├── routers/       # Feature-specific routers
 │   │   ├── root.ts        # Main app router
 │   │   └── trpc.ts        # tRPC context & procedures
 │   ├── auth/              # NextAuth configuration
 │   └── db/                # Database schema & connection
 ├── trpc/
-│   ├── react.tsx          # Client—side tRPC hooks
-│   ├── server.ts          # Server—side tRPC caller (RSC)
+│   ├── react.tsx          # Client-side tRPC hooks
+│   ├── server.ts          # Server-side tRPC caller (RSC)
 │   └── query-client.ts    # React Query configuration
 └── styles/
     └── globals.css        # Global styles & theme variables
@@ -45,11 +45,11 @@ src/
 ### Key Design Patterns
 
 - **Server Components First**: Leveraging React Server Components for optimal performance
-- **Progressive Enhancement**: Client—side interactivity layered on top of SSR
-- **Type—Safe APIs**: tRPC provides automatic type inference from server to client
+- **Progressive Enhancement**: Client-side interactivity layered on top of SSR
+- **Type-Safe APIs**: tRPC provides automatic type inference from server to client
 - **Database Schema as Source of Truth**: Drizzle generates types from schema definitions
-- **Modular Routing**: Feature—based tRPC routers for better organization
-- **Protected Procedures**: Auth—guarded endpoints ensure secure data access
+- **Modular Routing**: Feature-based tRPC routers for better organization
+- **Protected Procedures**: Auth-guarded endpoints ensure secure data access
 
 ## Getting Started
 
@@ -78,14 +78,15 @@ pnpm install
 Create a `.env.local` file in the root directory:
 
 ```env
+NEXTAUTH_URL="http://localhost:3000"
 DATABASE_URL="postgresql://user:password@localhost:5432/quillify"
-AUTH_SECRET="your—secret—key—here"
+AUTH_SECRET="your-secret-key-here"
 ```
 
 Generate a secure `AUTH_SECRET`:
 
 ```bash
-openssl rand —base64 32
+openssl rand -base64 32
 ```
 
 4. **Set up the database**

@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { BookOpen, LogIn, UserPlus, Settings, LogOut, User, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
@@ -13,7 +12,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const pathname = usePathname();
 
   return (
@@ -28,23 +27,16 @@ export function Sidebar({ className }: SidebarProps) {
           <div className='text-sidebar-foreground text-xl font-bold'>
             Quillify
           </div>
-          {status === 'loading' ?
-            <Skeleton className='mt-2 h-4 w-32' />
-          : session?.user ?
+          {session?.user && (
             <div className='text-sidebar-foreground/80 mt-2 flex items-center gap-2 text-sm'>
               <User className='size-4' />
               {session.user.name || session.user.email || 'User'}
             </div>
-          : null}
+          )}
         </div>
 
         <nav className='flex flex-1 flex-col gap-1 p-4'>
-          {status === 'loading' ?
-            <div className='space-y-2'>
-              <Skeleton className='h-10 w-full' />
-              <Skeleton className='h-10 w-full' />
-            </div>
-          : session?.user ?
+          {session?.user ? (
             <>
               <Button
                 variant='ghost'
@@ -91,7 +83,8 @@ export function Sidebar({ className }: SidebarProps) {
                 </Link>
               </Button>
             </>
-          : <>
+          ) : (
+            <>
               <Button
                 variant='ghost'
                 asChild
@@ -122,14 +115,10 @@ export function Sidebar({ className }: SidebarProps) {
                 </Link>
               </Button>
             </>
-          }
+          )}
         </nav>
 
-        {status === 'loading' ?
-          <div className='border-sidebar-border border-t p-4'>
-            <Skeleton className='h-10 w-full' />
-          </div>
-        : session?.user ?
+        {session?.user && (
           <div className='border-sidebar-border border-t p-4'>
             <Button
               variant='ghost'
@@ -140,7 +129,7 @@ export function Sidebar({ className }: SidebarProps) {
               Log Out
             </Button>
           </div>
-        : null}
+        )}
     </aside>
   );
 }

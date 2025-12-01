@@ -9,6 +9,12 @@ export const createQueryClient = () =>
         // With SSR, we usually want to set some default staleTime
         // above 0 to avoid refetching immediately on the client
         staleTime: 30 * 1000,
+        // Don't refetch on window focus - reduces unnecessary network requests
+        refetchOnWindowFocus: false,
+        // Don't refetch on mount if data is fresh - uses cached data when available
+        refetchOnMount: false,
+        // Only refetch on reconnect if data is stale
+        refetchOnReconnect: 'always',
         retry(failureCount, error: unknown) {
           const e = error as TRPCErrorShape;
           const code = e?.data?.code;

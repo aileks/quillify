@@ -35,6 +35,12 @@
   --sidebar-border: oklch(0.474 0.0272 67.0896);
   --sidebar-ring: oklch(0.8544 0.0724 84.3464);
   --radius: 0.5rem;
+
+  /* Sidebar layout variables */
+  --sidebar-min-width: 200px;
+  --sidebar-max-width: 360px;
+  --sidebar-default-width: 256px;
+
   --shadow-x: 0rem;
   --shadow-y: 0.5rem;
   --shadow-blur: 1.5rem;
@@ -92,6 +98,12 @@
   --sidebar-border: oklch(0.8518 0.0141 76.5687);
   --sidebar-ring: oklch(0.628 0.1442 55.3272);
   --radius: 0.5rem;
+
+  /* Sidebar layout variables (same in dark mode) */
+  --sidebar-min-width: 200px;
+  --sidebar-max-width: 360px;
+  --sidebar-default-width: 256px;
+
   --shadow-x: 0rem;
   --shadow-y: 0.5rem;
   --shadow-blur: 1.5rem;
@@ -160,4 +172,54 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
+}
+
+/* Sidebar resize handle styles */
+[data-slot='sidebar-resize-handle'] {
+  touch-action: none;
+}
+
+/* Disable sidebar resizing on touch-only devices */
+@media (pointer: coarse) {
+  [data-slot='sidebar-resize-handle'] {
+    display: none;
+  }
+}
+
+/* Landing page section styles */
+[data-slot='hero-section'] {
+  background: linear-gradient(
+    to bottom,
+    var(--background) 0%,
+    color-mix(in oklch, var(--primary) 5%, var(--background)) 100%
+  );
+}
+
+[data-slot='features-section'] {
+  background: var(--background);
+}
+
+[data-slot='how-it-works-section'] {
+  background: color-mix(in oklch, var(--muted) 50%, var(--background));
+}
+
+[data-slot='social-proof-section'] {
+  background: var(--background);
+}
+
+[data-slot='cta-section'] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Main content transition on sidebar resize */
+#main-content {
+  min-height: 100vh;
+}
+
+/* Apply sidebar margin only on desktop */
+@media (min-width: 768px) {
+  #main-content {
+    margin-left: var(--sidebar-width, 0);
+  }
 }

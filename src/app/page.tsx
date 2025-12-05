@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { auth } from '@/server/auth';
 import { api } from '@/trpc/server';
+import { BookOpen, BarChart3, Library, Search, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default async function Home() {
   const session = await auth();
@@ -32,10 +33,7 @@ export default async function Home() {
         )
       );
 
-      allBooksItems = [
-        ...allBooksItems,
-        ...remainingBooks.flatMap((result) => result.items),
-      ];
+      allBooksItems = [...allBooksItems, ...remainingBooks.flatMap((result) => result.items)];
     }
 
     const readBooks = allBooksItems.filter((book) => book.isRead).length;
@@ -54,7 +52,7 @@ export default async function Home() {
             Welcome back, {userName}!
           </h1>
           <p className='text-muted-foreground text-lg sm:text-xl'>
-            Here's an overview of your reading journey.
+            Here&apos;s an overview of your reading journey.
           </p>
         </div>
 
@@ -87,9 +85,7 @@ export default async function Home() {
               <p className='text-muted-foreground mt-1 text-sm'>
                 {readBooks === 1 ? 'book completed' : 'books completed'}
                 {totalBooks > 0 && (
-                  <span className='ml-1'>
-                    ({Math.round((readBooks / totalBooks) * 100)}%)
-                  </span>
+                  <span className='ml-1'>({Math.round((readBooks / totalBooks) * 100)}%)</span>
                 )}
               </p>
             </CardContent>
@@ -108,9 +104,7 @@ export default async function Home() {
               <p className='text-muted-foreground mt-1 text-sm'>
                 {unreadBooks === 1 ? 'book waiting' : 'books waiting'}
                 {totalBooks > 0 && (
-                  <span className='ml-1'>
-                    ({Math.round((unreadBooks / totalBooks) * 100)}%)
-                  </span>
+                  <span className='ml-1'>({Math.round((unreadBooks / totalBooks) * 100)}%)</span>
                 )}
               </p>
             </CardContent>
@@ -133,7 +127,7 @@ export default async function Home() {
 
         {/* Call to Action */}
         <div className='flex justify-center pt-4'>
-          <Button asChild size='lg' className='w-full sm:w-auto px-7 py-4 text-lg'>
+          <Button asChild size='lg' className='w-full px-7 py-4 text-lg sm:w-auto'>
             <Link href='/books'>View Library</Link>
           </Button>
         </div>
@@ -146,36 +140,223 @@ export default async function Home() {
     <div className='flex min-h-screen flex-col'>
       {/* Hero Section */}
       <section
-        className='flex flex-1 items-center justify-center border-b px-4'
+        data-slot='hero-section'
+        className='relative flex min-h-[80vh] items-center justify-center overflow-hidden px-4 py-20'
         aria-label='Hero section'
+      >
+        {/* Background decoration */}
+        <div className='bg-primary/5 absolute inset-0 -z-10' />
+        <div className='bg-primary/10 absolute -top-40 -right-40 -z-10 h-80 w-80 rounded-full blur-3xl' />
+        <div className='bg-primary/10 absolute -bottom-40 -left-40 -z-10 h-80 w-80 rounded-full blur-3xl' />
+
+        <div className='container mx-auto'>
+          <div className='mx-auto max-w-4xl text-center'>
+            <h1 className='mb-6 font-serif text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl'>
+              Your Personal Library, <span className='text-primary'>Beautifully Organized</span>
+            </h1>
+
+            <p className='text-muted-foreground mx-auto mb-10 max-w-2xl text-lg leading-relaxed sm:text-xl'>
+              Track every book you read, monitor your progress, and discover insights about your
+              reading habits. Quillify makes managing your library simple and enjoyable.
+            </p>
+
+            <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
+              <Button asChild size='lg' className='w-full px-8 py-6 text-lg sm:w-auto'>
+                <Link href='/account/register'>
+                  Get Started Free
+                  <ArrowRight className='ml-2 size-5' />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant='outline'
+                size='lg'
+                className='w-full px-8 py-6 text-lg sm:w-auto'
+              >
+                <Link href='/account/login'>Sign In</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section data-slot='features-section' className='border-t px-4 py-20' aria-label='Features'>
+        <div className='container mx-auto'>
+          <div className='mb-16 text-center'>
+            <h2 className='mb-4 font-serif text-3xl font-bold tracking-tight sm:text-4xl'>
+              Everything You Need to Track Your Reading
+            </h2>
+            <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>
+              Simple tools to organize your books and understand your reading patterns.
+            </p>
+          </div>
+
+          <div className='grid gap-8 sm:grid-cols-2 lg:grid-cols-4'>
+            <Card className='rounded-sm border-0 bg-transparent shadow-none'>
+              <CardHeader className='pb-2'>
+                <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
+                  <Library className='size-6' />
+                </div>
+                <CardTitle className='font-serif text-xl'>Organize Your Library</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className='text-muted-foreground'>
+                  Add books to your collection and categorize them by genre, author, or custom tags.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className='rounded-sm border-0 bg-transparent shadow-none'>
+              <CardHeader className='pb-2'>
+                <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
+                  <BookOpen className='size-6' />
+                </div>
+                <CardTitle className='font-serif text-xl'>Track Your Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className='text-muted-foreground'>
+                  Mark books as read or unread, track page counts, and see your completion rate.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className='rounded-sm border-0 bg-transparent shadow-none'>
+              <CardHeader className='pb-2'>
+                <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
+                  <BarChart3 className='size-6' />
+                </div>
+                <CardTitle className='font-serif text-xl'>Discover Insights</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className='text-muted-foreground'>
+                  View statistics about your reading habits, including total pages and books read.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className='rounded-sm border-0 bg-transparent shadow-none'>
+              <CardHeader className='pb-2'>
+                <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
+                  <Search className='size-6' />
+                </div>
+                <CardTitle className='font-serif text-xl'>Search and Filter</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className='text-muted-foreground'>
+                  Quickly find any book in your collection with powerful search and filter options.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section
+        data-slot='how-it-works-section'
+        className='bg-muted/50 border-y px-4 py-20'
+        aria-label='How it works'
+      >
+        <div className='container mx-auto'>
+          <div className='mb-16 text-center'>
+            <h2 className='mb-4 font-serif text-3xl font-bold tracking-tight sm:text-4xl'>
+              Start Tracking in Three Simple Steps
+            </h2>
+            <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>
+              Getting started with Quillify takes just a few minutes.
+            </p>
+          </div>
+
+          <div className='mx-auto grid max-w-4xl gap-8 sm:grid-cols-3'>
+            <div className='flex flex-col items-center text-center'>
+              <div className='bg-primary text-primary-foreground mb-4 flex h-12 w-12 items-center justify-center rounded-full font-mono text-lg font-bold'>
+                1
+              </div>
+              <h3 className='mb-2 font-serif text-xl font-semibold'>Create Your Account</h3>
+              <p className='text-muted-foreground'>
+                Sign up for free and get instant access to your personal library dashboard.
+              </p>
+            </div>
+
+            <div className='flex flex-col items-center text-center'>
+              <div className='bg-primary text-primary-foreground mb-4 flex h-12 w-12 items-center justify-center rounded-full font-mono text-lg font-bold'>
+                2
+              </div>
+              <h3 className='mb-2 font-serif text-xl font-semibold'>Add Your Books</h3>
+              <p className='text-muted-foreground'>
+                Enter details about books you own, have read, or plan to read next.
+              </p>
+            </div>
+
+            <div className='flex flex-col items-center text-center'>
+              <div className='bg-primary text-primary-foreground mb-4 flex h-12 w-12 items-center justify-center rounded-full font-mono text-lg font-bold'>
+                3
+              </div>
+              <h3 className='mb-2 font-serif text-xl font-semibold'>Track Your Progress</h3>
+              <p className='text-muted-foreground'>
+                Update your reading status and watch your statistics grow over time.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonial/Social Proof Section */}
+      <section
+        data-slot='social-proof-section'
+        className='px-4 py-20'
+        aria-label='Why readers love Quillify'
       >
         <div className='container mx-auto'>
           <div className='mx-auto max-w-3xl text-center'>
-            <h1 className='mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl'>
-              Your Personal Library, Beautifully Organized
-            </h1>
+            <h2 className='mb-8 font-serif text-3xl font-bold tracking-tight sm:text-4xl'>
+              Built for Book Lovers
+            </h2>
 
-            <p className='text-muted-foreground mb-8 text-lg leading-8 sm:text-xl'>
-              Track your reading journey with Quillify. Organize your books, monitor your progress,
-              and discover insights about your reading habits.
-            </p>
+            <div className='mb-10 grid gap-6 sm:grid-cols-3'>
+              <div className='flex flex-col items-center'>
+                <CheckCircle2 className='text-primary mb-2 size-6' />
+                <p className='text-muted-foreground text-sm'>Free to use</p>
+              </div>
+              <div className='flex flex-col items-center'>
+                <CheckCircle2 className='text-primary mb-2 size-6' />
+                <p className='text-muted-foreground text-sm'>No ads or tracking</p>
+              </div>
+              <div className='flex flex-col items-center'>
+                <CheckCircle2 className='text-primary mb-2 size-6' />
+                <p className='text-muted-foreground text-sm'>Your data stays yours</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section
-        className='flex flex-1 items-center justify-center border-t px-4'
+        data-slot='cta-section'
+        className='bg-primary text-primary-foreground px-4 py-20'
         aria-label='Call to action'
       >
         <div className='container mx-auto'>
           <div className='mx-auto max-w-3xl text-center'>
-            <h2 className='mb-4 text-2xl font-bold sm:text-3xl md:text-4xl'>
-              Start Organizing Your Library Today
+            <h2 className='mb-4 font-serif text-3xl font-bold sm:text-4xl'>
+              Ready to Organize Your Library?
             </h2>
+            <p className='mb-8 text-lg opacity-90'>
+              Join Quillify today and take control of your reading journey.
+            </p>
 
-            <Button asChild size='lg' className='w-full sm:w-auto'>
-              <Link href='/account/register'>Create Your Free Account</Link>
+            <Button
+              asChild
+              size='lg'
+              variant='secondary'
+              className='w-full px-8 py-6 text-lg sm:w-auto'
+            >
+              <Link href='/account/register'>
+                Create Your Free Account
+                <ArrowRight className='ml-2 size-5' />
+              </Link>
             </Button>
           </div>
         </div>

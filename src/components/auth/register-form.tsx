@@ -101,7 +101,7 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
   const isLoading = form.formState.isSubmitting || registerMutation.isPending;
 
   return (
-    <Card className='w-full max-w-md'>
+    <Card className='w-full max-w-lg'>
       <CardHeader>
         <CardTitle>Register</CardTitle>
         <CardDescription>Enter your details to create a new account</CardDescription>

@@ -93,7 +93,7 @@ export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
   };
 
   return (
-    <Card className='w-full max-w-md'>
+    <Card className='w-full max-w-lg'>
       <CardHeader>
         <CardTitle>Log In</CardTitle>
         <CardDescription>Enter your credentials to access your account</CardDescription>

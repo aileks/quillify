@@ -6,9 +6,12 @@ export const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {
       queries: {
-        // With SSR, we usually want to set some default staleTime
-        // above 0 to avoid refetching immediately on the client
-        staleTime: 30 * 1000,
+        // Data is considered fresh for 5 minutes - avoids unnecessary refetches
+        // when navigating between pages
+        staleTime: 5 * 60 * 1000,
+        // Keep inactive queries in cache for 10 minutes before garbage collection
+        // This allows returning to previously viewed pages without refetching
+        gcTime: 10 * 60 * 1000,
         // Don't refetch on window focus - reduces unnecessary network requests
         refetchOnWindowFocus: false,
         // Don't refetch on mount if data is fresh - uses cached data when available

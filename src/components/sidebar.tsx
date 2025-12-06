@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { BookOpen, LogIn, UserPlus, Settings, LogOut, User, Home } from 'lucide-react';
+import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCallback, useRef, useEffect, useState } from 'react';
@@ -25,8 +26,25 @@ export function Sidebar({
 }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const utils = api.useUtils();
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
+
+  // Prefetch books data on hover/focus for instant navigation
+  const prefetchBooksData = () => {
+    // Prefetch the default books list (page 1, sorted by title) - used by /books
+    void utils.books.list.prefetch({
+      page: 1,
+      pageSize: 12,
+      sortBy: 'title',
+      sortOrder: 'asc',
+    });
+    // Prefetch stats data (pageSize 100) - used by home dashboard
+    void utils.books.list.prefetch({
+      page: 1,
+      pageSize: 100,
+    });
+  };
 
   // Handle mouse move during resize
   const handleMouseMove = useCallback(
@@ -88,33 +106,38 @@ export function Sidebar({
       <nav className='flex flex-1 flex-col gap-1 p-4'>
         {session?.user ?
           <>
-            <Button
-              variant='ghost'
-              asChild
-              className={cn(
-                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                pathname === '/' && 'bg-sidebar-accent text-sidebar-accent-foreground'
-              )}
-            >
-              <Link href='/'>
-                <Home className='size-4' />
-                Home
-              </Link>
-            </Button>
+            <div onMouseEnter={prefetchBooksData} onFocus={prefetchBooksData}>
+              <Button
+                variant='ghost'
+                asChild
+                className={cn(
+                  'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
+                  pathname === '/' && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                )}
+              >
+                <Link href='/'>
+                  <Home className='size-4' />
+                  Home
+                </Link>
+              </Button>
+            </div>
 
-            <Button
-              variant='ghost'
-              asChild
-              className={cn(
-                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                pathname.startsWith('/books') && 'bg-sidebar-accent text-sidebar-accent-foreground'
-              )}
-            >
-              <Link href='/books'>
-                <BookOpen className='size-4' />
-                Books
-              </Link>
-            </Button>
+            <div onMouseEnter={prefetchBooksData} onFocus={prefetchBooksData}>
+              <Button
+                variant='ghost'
+                asChild
+                className={cn(
+                  'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
+                  pathname.startsWith('/books') &&
+                    'bg-sidebar-accent text-sidebar-accent-foreground'
+                )}
+              >
+                <Link href='/books'>
+                  <BookOpen className='size-4' />
+                  Books
+                </Link>
+              </Button>
+            </div>
 
             <Button
               variant='ghost'

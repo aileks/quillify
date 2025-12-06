@@ -13,15 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { RouterOutputs } from '@/trpc/react';
 
-type BooksListData = RouterOutputs['books']['list'];
-
-interface BooksClientProps {
-  initialData: BooksListData;
-}
-
-export function BooksClient({ initialData }: BooksClientProps) {
+export function BooksClient() {
   const [search, setSearch] = useState('');
   const [isRead, setIsRead] = useState<boolean | undefined>(undefined);
   const [sortBy] = useState<'title' | 'author' | 'createdAt'>('title');
@@ -29,25 +22,14 @@ export function BooksClient({ initialData }: BooksClientProps) {
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
-  const isInitialQuery = page === 1 && !search && isRead === undefined;
-  
-  const { data, isLoading, error, isFetching } = api.books.list.useQuery(
-    {
-      search,
-      isRead,
-      sortBy,
-      sortOrder,
-      page,
-      pageSize,
-    },
-    {
-      initialData: isInitialQuery ? initialData : undefined,
-      // Only show loading state if we're actually fetching new data (not using initial data)
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      staleTime: 30 * 1000, // 30 seconds
-    }
-  );
+  const { data, isLoading, error } = api.books.list.useQuery({
+    search,
+    isRead,
+    sortBy,
+    sortOrder,
+    page,
+    pageSize,
+  });
 
   const books = data?.items ?? [];
   const totalPages = data?.totalPages ?? 0;
@@ -141,8 +123,8 @@ export function BooksClient({ initialData }: BooksClientProps) {
         </Card>
       )}
 
-      {/* Loading State - Only show when actually loading new data (not initial load) */}
-      {isLoading && !error && !isInitialQuery && (
+      {/* Loading State */}
+      {isLoading && !error && (
         <div
           className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
           role='status'
@@ -156,18 +138,18 @@ export function BooksClient({ initialData }: BooksClientProps) {
               aria-hidden='true'
             >
               <div className='space-y-3'>
-                <div className='h-5 w-3/4 animate-pulse rounded bg-muted' />
+                <div className='bg-muted h-5 w-3/4 animate-pulse rounded' />
                 <div className='border-primary/20 border-l-2 pl-3'>
-                  <div className='mb-1 h-3 w-16 animate-pulse rounded bg-muted' />
-                  <div className='h-4 w-2/3 animate-pulse rounded bg-muted' />
+                  <div className='bg-muted mb-1 h-3 w-16 animate-pulse rounded' />
+                  <div className='bg-muted h-4 w-2/3 animate-pulse rounded' />
                 </div>
                 <div className='space-y-2'>
-                  <div className='h-3 w-full animate-pulse rounded bg-muted' />
-                  <div className='h-3 w-full animate-pulse rounded bg-muted' />
-                  <div className='h-3 w-3/4 animate-pulse rounded bg-muted' />
+                  <div className='bg-muted h-3 w-full animate-pulse rounded' />
+                  <div className='bg-muted h-3 w-full animate-pulse rounded' />
+                  <div className='bg-muted h-3 w-3/4 animate-pulse rounded' />
                 </div>
                 <div className='border-foreground/10 border-t pt-3'>
-                  <div className='h-3 w-20 animate-pulse rounded bg-muted' />
+                  <div className='bg-muted h-3 w-20 animate-pulse rounded' />
                 </div>
               </div>
             </div>
@@ -341,4 +323,3 @@ export function BooksClient({ initialData }: BooksClientProps) {
     </div>
   );
 }
-

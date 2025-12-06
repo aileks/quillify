@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
+import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -16,7 +17,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -27,6 +27,23 @@ interface NavbarProps {
 
 export function Navbar({ className }: NavbarProps) {
   const { data: session, status } = useSession();
+  const utils = api.useUtils();
+
+  // Prefetch books data on hover/focus for instant navigation
+  const prefetchBooksData = () => {
+    // Prefetch the default books list (page 1, sorted by title) - used by /books
+    void utils.books.list.prefetch({
+      page: 1,
+      pageSize: 12,
+      sortBy: 'title',
+      sortOrder: 'asc',
+    });
+    // Prefetch stats data (pageSize 100) - used by home dashboard
+    void utils.books.list.prefetch({
+      page: 1,
+      pageSize: 100,
+    });
+  };
 
   return (
     <nav
@@ -46,7 +63,7 @@ export function Navbar({ className }: NavbarProps) {
         : session?.user ?
           <NavigationMenu>
             <NavigationMenuList>
-              <NavigationMenuItem>
+              <NavigationMenuItem onMouseEnter={prefetchBooksData} onFocus={prefetchBooksData}>
                 <NavigationMenuLink asChild>
                   <Button
                     variant='outline'
@@ -60,7 +77,7 @@ export function Navbar({ className }: NavbarProps) {
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
-              <NavigationMenuItem>
+              <NavigationMenuItem onMouseEnter={prefetchBooksData} onFocus={prefetchBooksData}>
                 <NavigationMenuLink asChild>
                   <Button
                     variant='outline'

@@ -23,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +35,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import genres from '@/data/genres.json';
-import type { Book } from '@/types';
 
 const bookFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -50,26 +48,19 @@ type BookFormValues = z.infer<typeof bookFormSchema>;
 
 interface BookDetailClientProps {
   bookId: string;
-  initialBook: Book;
 }
 
 /**
  * Client component for displaying and editing book details.
  * Supports optimistic updates for read status and real-time data synchronization.
  */
-export function BookDetailClient({ bookId, initialBook }: BookDetailClientProps) {
+export function BookDetailClient({ bookId }: BookDetailClientProps) {
   const router = useRouter();
   const utils = api.useUtils();
   const [isEditing, setIsEditing] = useState(false);
 
-  const { data: book } = api.books.getById.useQuery(
-    { id: bookId },
-    {
-      initialData: initialBook,
-      // Consider data fresh for 60s to avoid unnecessary refetches when navigating back
-      staleTime: 60 * 1000,
-    }
-  );
+  // Data is hydrated from server via HydrateClient - no refetch needed
+  const { data: book } = api.books.getById.useQuery({ id: bookId });
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),

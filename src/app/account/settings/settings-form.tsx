@@ -170,7 +170,7 @@ export function SettingsForm() {
           <CardHeader>
             <CardTitle>Change Password</CardTitle>
             <CardDescription>
-              Update your password. You'll need to enter your current password to confirm the
+              Update your password. You&apos;ll need to enter your current password to confirm the
               change.
             </CardDescription>
           </CardHeader>

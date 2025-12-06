@@ -50,6 +50,7 @@ src/
 - **Database Schema as Source of Truth**: Drizzle generates types from schema definitions
 - **Modular Routing**: Feature-based tRPC routers for better organization
 - **Protected Procedures**: Auth-guarded endpoints ensure secure data access
+- **Smart Client-Side Caching**: React Query with prefetching for instant navigation
 
 ## Getting Started
 

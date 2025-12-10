@@ -64,10 +64,25 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
   const [isEditing, setIsEditing] = useState(false);
 
   // Fetch book data - will be instant if prefetched on hover from library
-  const { data: book, isLoading, error } = api.books.getById.useQuery({ id: bookId });
+  // Use retry: false for NOT_FOUND to avoid unnecessary retries
+  const {
+    data: book,
+    isLoading,
+    error,
+  } = api.books.getById.useQuery(
+    { id: bookId },
+    {
+      retry: (failureCount, error) => {
+        // Don't retry on NOT_FOUND errors
+        if (error?.data?.code === 'NOT_FOUND') return false;
+        // Default retry behavior for other errors (3 retries)
+        return failureCount < 3;
+      },
+    }
+  );
 
-  // Handle 404 - book not found
-  if (error?.data?.code === 'NOT_FOUND') {
+  // Handle 404 - book not found (after loading completes)
+  if (!isLoading && error?.data?.code === 'NOT_FOUND') {
     notFound();
   }
 
@@ -214,12 +229,12 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
       {/* Library Catalog Card - Detailed View */}
       <article className='bg-card text-card-foreground border-foreground/10 relative rounded-sm border-2 p-6 shadow-sm md:p-8'>
         {/* Card Number / Call Number Style */}
-        <div className='text-muted-foreground/50 absolute top-4 right-4 font-mono text-xs'>
+        <div className='text-muted-foreground/50 mb-4 font-mono text-xs sm:absolute sm:top-4 sm:right-4 sm:mb-0'>
           #{book.id.slice(0, 8).toUpperCase()}
         </div>
 
         {/* Content */}
-        <div className='pr-20'>
+        <div className='sm:pr-20'>
           {isEditing ?
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>

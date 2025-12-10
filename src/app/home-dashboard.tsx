@@ -23,11 +23,11 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
 
   if (isLoading || !stats) {
     return (
-      <div className='container mx-auto space-y-8 px-4 py-8 md:px-6'>
+      <div className='container mx-auto space-y-6 px-4 py-6 sm:space-y-8 sm:py-8 md:px-6'>
         {/* Welcome Section Skeleton */}
         <div className='space-y-2'>
-          <Skeleton className='h-12 w-80' />
-          <Skeleton className='h-6 w-64' />
+          <Skeleton className='h-9 w-64 sm:h-10 sm:w-80 md:h-12' />
+          <Skeleton className='h-5 w-48 sm:h-6 sm:w-64' />
         </div>
 
         {/* Statistics Cards Skeleton */}
@@ -70,8 +70,8 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
         </div>
 
         {/* CTA Skeleton */}
-        <div className='flex justify-center pt-4'>
-          <Skeleton className='h-12 w-40' />
+        <div className='flex justify-center pt-2 sm:pt-4'>
+          <Skeleton className='h-12 w-full sm:w-40' />
         </div>
       </div>
     );
@@ -90,13 +90,13 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
   } = stats;
 
   return (
-    <div className='container mx-auto space-y-8 px-4 py-8 md:px-6'>
+    <div className='container mx-auto space-y-6 px-4 py-6 sm:space-y-8 sm:py-8 md:px-6'>
       {/* Welcome Section */}
       <div className='space-y-2'>
-        <h1 className='font-serif text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl'>
+        <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl'>
           Welcome back, {userName}!
         </h1>
-        <p className='text-muted-foreground text-lg sm:text-xl'>
+        <p className='text-muted-foreground text-base sm:text-lg md:text-xl'>
           Here&apos;s an overview of your reading journey.
         </p>
       </div>
@@ -183,8 +183,8 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
                 Add some books to see insights about your collection.
               </p>
             : <>
-                <div className='flex items-start gap-3'>
-                  <span className='text-muted-foreground min-w-[100px] font-mono text-xs tracking-wider uppercase'>
+                <div className='flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3'>
+                  <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase sm:min-w-[100px]'>
                     Avg. Length
                   </span>
                   <span className='text-sm font-medium'>
@@ -193,8 +193,8 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
                 </div>
 
                 {oldestPublishYear && newestPublishYear && (
-                  <div className='flex items-start gap-3'>
-                    <span className='text-muted-foreground min-w-[100px] font-mono text-xs tracking-wider uppercase'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3'>
+                    <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase sm:min-w-[100px]'>
                       Pub. Range
                     </span>
                     <span className='text-sm font-medium'>
@@ -206,8 +206,8 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
                 )}
 
                 {topGenres.length > 0 && (
-                  <div className='flex items-start gap-3'>
-                    <span className='text-muted-foreground min-w-[100px] font-mono text-xs tracking-wider uppercase'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3'>
+                    <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase sm:min-w-[100px]'>
                       Top Genres
                     </span>
                     <div className='space-y-1'>
@@ -258,8 +258,8 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
       </div>
 
       {/* Call to Action */}
-      <div className='flex justify-center pt-4'>
-        <Button asChild size='lg' className='w-full px-7 py-4 text-lg sm:w-auto'>
+      <div className='flex justify-center pt-2 sm:pt-4'>
+        <Button asChild size='lg' className='w-full px-7 py-4 text-base sm:w-auto sm:text-lg'>
           <Link href='/books'>View Library</Link>
         </Button>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
-import { httpBatchStreamLink, loggerLink } from '@trpc/client';
+import { httpBatchStreamLink, loggerLink, type TRPCClientError } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { type inferRouterInputs, type inferRouterOutputs } from '@trpc/server';
 import { useState } from 'react';
@@ -50,9 +50,19 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
     api.createClient({
       links: [
         loggerLink({
-          enabled: (op) =>
-            process.env.NODE_ENV === 'development' ||
-            (op.direction === 'down' && op.result instanceof Error),
+          enabled: (op) => {
+            // Skip logging NOT_FOUND errors (handled gracefully by the app)
+            if (op.direction === 'down' && op.result instanceof Error) {
+              const trpcError = op.result as TRPCClientError<AppRouter>;
+              if (trpcError.data?.code === 'NOT_FOUND') {
+                return false;
+              }
+            }
+            return (
+              process.env.NODE_ENV === 'development' ||
+              (op.direction === 'down' && op.result instanceof Error)
+            );
+          },
         }),
         httpBatchStreamLink({
           transformer: SuperJSON,

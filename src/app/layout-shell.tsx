@@ -4,17 +4,18 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useState, useCallback, useSyncExternalStore } from 'react';
 import { Navbar } from '@/components/navbar';
-import { Sidebar } from '@/components/sidebar';
+import { Sidebar, COLLAPSED_WIDTH } from '@/components/sidebar';
 
 const SIDEBAR_MIN_WIDTH = 200;
 const SIDEBAR_MAX_WIDTH = 360;
 const SIDEBAR_DEFAULT_WIDTH = 256;
-const SIDEBAR_STORAGE_KEY = 'quillify-sidebar-width';
+const SIDEBAR_WIDTH_STORAGE_KEY = 'quillify-sidebar-width';
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'quillify-sidebar-collapsed';
 
 // Read initial width from localStorage
 function getStoredWidth(): number {
   if (typeof window === 'undefined') return SIDEBAR_DEFAULT_WIDTH;
-  const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+  const stored = localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY);
   if (stored) {
     const parsed = parseInt(stored, 10);
     if (!isNaN(parsed) && parsed >= SIDEBAR_MIN_WIDTH && parsed <= SIDEBAR_MAX_WIDTH) {
@@ -22,6 +23,13 @@ function getStoredWidth(): number {
     }
   }
   return SIDEBAR_DEFAULT_WIDTH;
+}
+
+// Read initial collapsed state from localStorage
+function getStoredCollapsed(): boolean {
+  if (typeof window === 'undefined') return false;
+  const stored = localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+  return stored === 'true';
 }
 
 // useSyncExternalStore subscription for hydration detection
@@ -38,6 +46,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const pathname = usePathname();
   const isHydrated = useSyncExternalStore(emptySubscribe, getSnapshot, getServerSnapshot);
   const [sidebarWidth, setSidebarWidth] = useState(getStoredWidth);
+  const [isCollapsed, setIsCollapsed] = useState(getStoredCollapsed);
 
   // Hide sidebar when logged out and on auth/landing pages
   const isLandingPage = pathname === '/';
@@ -50,8 +59,17 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const handleWidthChange = useCallback((width: number) => {
     const clampedWidth = Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, width));
     setSidebarWidth(clampedWidth);
-    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(clampedWidth));
+    localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(clampedWidth));
   }, []);
+
+  // Persist collapsed state changes
+  const handleCollapsedChange = useCallback((collapsed: boolean) => {
+    setIsCollapsed(collapsed);
+    localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(collapsed));
+  }, []);
+
+  // Calculate current sidebar width based on collapsed state
+  const currentSidebarWidth = isCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
 
   // Prevent layout shift before hydration
   if (!isHydrated) {
@@ -64,7 +82,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
       <a
         href='#main-content'
         className='focus:bg-primary focus:text-primary-foreground focus-visible:ring-ring focus:rounded-sm-md sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
-        style={{ left: showSidebar ? `${sidebarWidth + 16}px` : '16px' }}
+        style={{ left: showSidebar ? `${currentSidebarWidth + 16}px` : '16px' }}
       >
         Skip to main content
       </a>
@@ -80,17 +98,19 @@ export function LayoutShell({ children }: LayoutShellProps) {
           onWidthChange={handleWidthChange}
           minWidth={SIDEBAR_MIN_WIDTH}
           maxWidth={SIDEBAR_MAX_WIDTH}
+          isCollapsed={isCollapsed}
+          onCollapsedChange={handleCollapsedChange}
         />
       )}
 
       {/* Main content area */}
       <main
         id='main-content'
-        className='min-h-screen transition-[margin] duration-150 ease-out md:transition-[margin]'
+        className='min-h-screen transition-[margin] duration-200 ease-out md:transition-[margin]'
         style={
           {
             // Only apply margin on md+ screens; CSS handles mobile reset
-            '--sidebar-width': showSidebar ? `${sidebarWidth}px` : '0px',
+            '--sidebar-width': showSidebar ? `${currentSidebarWidth}px` : '0px',
           } as React.CSSProperties
         }
       >

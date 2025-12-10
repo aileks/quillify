@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, notFound } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import genres from '@/data/genres.json';
 
 const bookFormSchema = z.object({
@@ -53,14 +54,22 @@ interface BookDetailClientProps {
 /**
  * Client component for displaying and editing book details.
  * Supports optimistic updates for read status and real-time data synchronization.
+ *
+ * Data is fetched client-side, leveraging React Query's cache for instant
+ * navigation when prefetched from the library/dashboard views.
  */
 export function BookDetailClient({ bookId }: BookDetailClientProps) {
   const router = useRouter();
   const utils = api.useUtils();
   const [isEditing, setIsEditing] = useState(false);
 
-  // Data is hydrated from server via HydrateClient - no refetch needed
-  const { data: book } = api.books.getById.useQuery({ id: bookId });
+  // Fetch book data - will be instant if prefetched on hover from library
+  const { data: book, isLoading, error } = api.books.getById.useQuery({ id: bookId });
+
+  // Handle 404 - book not found
+  if (error?.data?.code === 'NOT_FOUND') {
+    notFound();
+  }
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
@@ -82,6 +91,7 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
     onSuccess: () => {
       void utils.books.getById.invalidate({ id: bookId });
       void utils.books.list.invalidate();
+      void utils.books.stats.invalidate();
       setIsEditing(false);
     },
     onError: (error) => {
@@ -118,12 +128,14 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
       // Always refetch to ensure server and client are in sync
       void utils.books.getById.invalidate({ id: bookId });
       void utils.books.list.invalidate();
+      void utils.books.stats.invalidate();
     },
   });
 
   const deleteBook = api.books.remove.useMutation({
     onSuccess: () => {
       void utils.books.list.invalidate();
+      void utils.books.stats.invalidate();
       router.push('/books');
     },
     onError: (error) => {
@@ -159,8 +171,31 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
     });
   }
 
-  if (!book) {
-    return null;
+  if (isLoading || !book) {
+    return (
+      <div className='container mx-auto max-w-4xl space-y-6 px-4 py-6 md:px-6 md:py-10'>
+        <div className='flex items-center gap-4'>
+          <Skeleton className='h-10 w-40' />
+        </div>
+        <div className='bg-card border-foreground/10 rounded-sm border-2 p-6 shadow-sm md:p-8'>
+          <div className='space-y-6'>
+            <Skeleton className='h-12 w-3/4' />
+            <div className='border-primary/20 border-l-2 pl-3'>
+              <Skeleton className='mb-2 h-4 w-16' />
+              <Skeleton className='h-6 w-48' />
+            </div>
+            <div className='space-y-3'>
+              <Skeleton className='h-4 w-32' />
+              <Skeleton className='h-4 w-24' />
+              <Skeleton className='h-4 w-28' />
+            </div>
+            <div className='border-foreground/10 border-t pt-4'>
+              <Skeleton className='h-10 w-32' />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

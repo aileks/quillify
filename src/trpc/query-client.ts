@@ -14,8 +14,8 @@ export const createQueryClient = () =>
         gcTime: 10 * 60 * 1000,
         // Don't refetch on window focus - reduces unnecessary network requests
         refetchOnWindowFocus: false,
-        // Don't refetch on mount if data is fresh - uses cached data when available
-        refetchOnMount: false,
+        // Refetch on mount if data is stale - ensures invalidated queries are refreshed on navigation
+        refetchOnMount: true,
         // Only refetch on reconnect if data is stale
         refetchOnReconnect: 'always',
         retry(failureCount, error: unknown) {

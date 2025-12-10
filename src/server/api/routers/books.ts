@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { and, eq, or, ilike, count, asc, desc } from 'drizzle-orm';
+import { and, eq, or, ilike, isNotNull, count, asc, desc, min, max, sql } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
@@ -7,6 +7,69 @@ import { books } from '@/server/db/schema';
 import type { Book } from '@/types';
 
 export const booksRouter = createTRPCRouter({
+  /**
+   * Get aggregated statistics for the user's book collection.
+   * Uses SQL aggregation for efficient computation instead of fetching all rows.
+   */
+  stats: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    // Aggregate stats query using SQL functions
+    const [aggregates] = await ctx.db
+      .select({
+        totalBooks: count(),
+        readBooks: sql<number>`COUNT(*) FILTER (WHERE ${books.isRead} = true)`.mapWith(Number),
+        totalPages: sql<number>`COALESCE(SUM(${books.numberOfPages}), 0)`.mapWith(Number),
+        totalPagesRead:
+          sql<number>`COALESCE(SUM(${books.numberOfPages}) FILTER (WHERE ${books.isRead} = true), 0)`.mapWith(
+            Number
+          ),
+        avgPages: sql<number>`COALESCE(ROUND(AVG(${books.numberOfPages})), 0)`.mapWith(Number),
+        oldestYear: min(books.publishYear),
+        newestYear: max(books.publishYear),
+      })
+      .from(books)
+      .where(eq(books.userId, userId));
+
+    // Top genres query (top 3)
+    const topGenres = await ctx.db
+      .select({
+        genre: books.genre,
+        count: count(),
+      })
+      .from(books)
+      .where(and(eq(books.userId, userId), isNotNull(books.genre)))
+      .groupBy(books.genre)
+      .orderBy(desc(count()))
+      .limit(3);
+
+    // Recently added books (last 3)
+    const recentlyAdded = await ctx.db
+      .select({
+        id: books.id,
+        title: books.title,
+        author: books.author,
+        createdAt: books.createdAt,
+      })
+      .from(books)
+      .where(eq(books.userId, userId))
+      .orderBy(desc(books.createdAt))
+      .limit(3);
+
+    return {
+      totalBooks: aggregates?.totalBooks ?? 0,
+      readBooks: aggregates?.readBooks ?? 0,
+      unreadBooks: (aggregates?.totalBooks ?? 0) - (aggregates?.readBooks ?? 0),
+      totalPages: aggregates?.totalPages ?? 0,
+      totalPagesRead: aggregates?.totalPagesRead ?? 0,
+      averagePages: aggregates?.avgPages ?? 0,
+      oldestPublishYear: aggregates?.oldestYear ?? null,
+      newestPublishYear: aggregates?.newestYear ?? null,
+      topGenres: topGenres.map((g) => ({ genre: g.genre ?? 'Other', count: g.count })),
+      recentlyAdded,
+    };
+  }),
+
   list: protectedProcedure
     .input(
       z.object({

@@ -9,6 +9,7 @@ export default async function Home() {
   const session = await auth();
 
   // If user is logged in, show dashboard
+  // Data fetching is handled client-side for instant cached navigation
   if (session?.user) {
     const userName = session.user.name || session.user.email?.split('@')[0] || 'there';
     return <HomeDashboard userName={userName} />;

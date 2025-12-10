@@ -53,6 +53,7 @@ export function NewBookForm() {
   const createBook = api.books.create.useMutation({
     onSuccess: () => {
       void utils.books.list.invalidate();
+      void utils.books.stats.invalidate();
       router.push('/books');
     },
     onError: (error) => {

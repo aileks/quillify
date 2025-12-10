@@ -11,22 +11,17 @@ interface HomeDashboardProps {
 }
 
 export function HomeDashboard({ userName }: HomeDashboardProps) {
-  // Fetch books list to calculate statistics
-  const { data, isLoading } = api.books.list.useQuery({
-    page: 1,
-    pageSize: 100,
-  });
+  const utils = api.useUtils();
+  const { data: stats, isLoading } = api.books.stats.useQuery();
 
-  // Calculate stats from the data
-  const totalBooks = data?.totalCount ?? 0;
-  const allBooksItems = data?.items ?? [];
-  const readBooks = allBooksItems.filter((book) => book.isRead).length;
-  const unreadBooks = totalBooks - readBooks;
-  const totalPagesRead = allBooksItems
-    .filter((book) => book.isRead)
-    .reduce((sum, book) => sum + book.numberOfPages, 0);
+  /**
+   * Prefetch book details on hover for instant navigation.
+   */
+  const prefetchBook = (bookId: string) => {
+    void utils.books.getById.prefetch({ id: bookId });
+  };
 
-  if (isLoading) {
+  if (isLoading || !stats) {
     return (
       <div className='container mx-auto space-y-8 px-4 py-8 md:px-6'>
         {/* Welcome Section Skeleton */}
@@ -50,6 +45,30 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
           ))}
         </div>
 
+        {/* Insights Section Skeleton */}
+        <div className='grid gap-4 md:grid-cols-2'>
+          <Card className='rounded-sm'>
+            <CardHeader>
+              <Skeleton className='h-5 w-32' />
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className='h-4 w-full' />
+              ))}
+            </CardContent>
+          </Card>
+          <Card className='rounded-sm'>
+            <CardHeader>
+              <Skeleton className='h-5 w-32' />
+            </CardHeader>
+            <CardContent className='space-y-3'>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className='h-12 w-full' />
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
         {/* CTA Skeleton */}
         <div className='flex justify-center pt-4'>
           <Skeleton className='h-12 w-40' />
@@ -57,6 +76,18 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
       </div>
     );
   }
+
+  const {
+    totalBooks,
+    readBooks,
+    unreadBooks,
+    totalPagesRead,
+    averagePages,
+    oldestPublishYear,
+    newestPublishYear,
+    topGenres,
+    recentlyAdded,
+  } = stats;
 
   return (
     <div className='container mx-auto space-y-8 px-4 py-8 md:px-6'>
@@ -135,6 +166,93 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
             <p className='text-muted-foreground mt-1 text-sm'>
               {totalPagesRead === 1 ? 'page' : 'pages'} across all completed books
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Insights Section - 2 Column Layout */}
+      <div className='grid gap-4 md:grid-cols-2'>
+        {/* Library Insights Card */}
+        <Card className='rounded-sm'>
+          <CardHeader>
+            <CardTitle className='font-serif text-xl font-bold'>Library Insights</CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-4'>
+            {totalBooks === 0 ?
+              <p className='text-muted-foreground text-sm'>
+                Add some books to see insights about your collection.
+              </p>
+            : <>
+                <div className='flex items-start gap-3'>
+                  <span className='text-muted-foreground min-w-[100px] font-mono text-xs tracking-wider uppercase'>
+                    Avg. Length
+                  </span>
+                  <span className='text-sm font-medium'>
+                    {averagePages.toLocaleString()} pages per book
+                  </span>
+                </div>
+
+                {oldestPublishYear && newestPublishYear && (
+                  <div className='flex items-start gap-3'>
+                    <span className='text-muted-foreground min-w-[100px] font-mono text-xs tracking-wider uppercase'>
+                      Pub. Range
+                    </span>
+                    <span className='text-sm font-medium'>
+                      {oldestPublishYear === newestPublishYear ?
+                        oldestPublishYear
+                      : `${oldestPublishYear} – ${newestPublishYear}`}
+                    </span>
+                  </div>
+                )}
+
+                {topGenres.length > 0 && (
+                  <div className='flex items-start gap-3'>
+                    <span className='text-muted-foreground min-w-[100px] font-mono text-xs tracking-wider uppercase'>
+                      Top Genres
+                    </span>
+                    <div className='space-y-1'>
+                      {topGenres.map((g, index) => (
+                        <div key={g.genre} className='text-sm'>
+                          <span className='text-muted-foreground mr-2'>{index + 1}.</span>
+                          <span className='font-medium'>{g.genre}</span>
+                          <span className='text-muted-foreground ml-1'>
+                            ({g.count} {g.count === 1 ? 'book' : 'books'})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            }
+          </CardContent>
+        </Card>
+
+        {/* Recently Added Card */}
+        <Card className='rounded-sm'>
+          <CardHeader>
+            <CardTitle className='font-serif text-xl font-bold'>Recently Added</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentlyAdded.length === 0 ?
+              <p className='text-muted-foreground text-sm'>
+                No books in your library yet. Start by adding your first book!
+              </p>
+            : <div className='space-y-3'>
+                {recentlyAdded.map((book) => (
+                  <Link
+                    key={book.id}
+                    href={`/books/${book.id}`}
+                    className='hover:bg-muted/50 block rounded-sm p-2 transition-colors'
+                    onMouseEnter={() => prefetchBook(book.id)}
+                    onFocus={() => prefetchBook(book.id)}
+                  >
+                    <div className='font-serif leading-tight font-medium'>{book.title}</div>
+                    <div className='text-muted-foreground text-sm'>by {book.author}</div>
+                  </Link>
+                ))}
+              </div>
+            }
           </CardContent>
         </Card>
       </div>

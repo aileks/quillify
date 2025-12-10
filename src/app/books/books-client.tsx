@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 
 export function BooksClient() {
+  const utils = api.useUtils();
   const [search, setSearch] = useState('');
   const [isRead, setIsRead] = useState<boolean | undefined>(undefined);
   const [sortBy] = useState<'title' | 'author' | 'createdAt'>('title');
@@ -34,6 +35,14 @@ export function BooksClient() {
   const books = data?.items ?? [];
   const totalPages = data?.totalPages ?? 0;
   const totalCount = data?.totalCount ?? 0;
+
+  /**
+   * Prefetch book details on hover for instant navigation.
+   * The data will be cached and served immediately when the user clicks.
+   */
+  const prefetchBook = (bookId: string) => {
+    void utils.books.getById.prefetch({ id: bookId });
+  };
 
   return (
     <div className='container mx-auto space-y-6 px-4 py-6 md:px-6'>
@@ -236,6 +245,8 @@ export function BooksClient() {
                 className='group'
                 role='listitem'
                 aria-label={`${book.title} by ${book.author} - ${book.isRead ? 'Read' : 'Unread'}`}
+                onMouseEnter={() => prefetchBook(book.id)}
+                onFocus={() => prefetchBook(book.id)}
               >
                 <div className='relative h-full'>
                   {/* Library Catalog Card */}

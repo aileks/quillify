@@ -229,8 +229,8 @@ export function BooksClient() {
           <SelectValue>{getSortOrderLabel(sortOrder)}</SelectValue>
         </SelectTrigger>
         <SelectContent className='rounded-sm'>
-          <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
           <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
+          <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
         </SelectContent>
       </Select>
     </div>
@@ -334,8 +334,8 @@ export function BooksClient() {
                     <SelectValue>{getSortOrderLabel(sortOrder)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent className='rounded-sm'>
-                    <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
                     <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
+                    <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

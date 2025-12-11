@@ -148,9 +148,18 @@ export const authRouter = createTRPCRouter({
       const userId = ctx.session.user.id;
 
       // Get current user
-      const user = await ctx.db.query.users.findFirst({
-        where: eq(users.id, userId),
-      });
+      let user;
+      try {
+        user = await ctx.db.query.users.findFirst({
+          where: eq(users.id, userId),
+        });
+      } catch (error: unknown) {
+        console.error('Error fetching user:', error instanceof Error ? error.message : error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update email. Please try again.',
+        });
+      }
 
       if (!user) {
         throw new TRPCError({
@@ -181,9 +190,18 @@ export const authRouter = createTRPCRouter({
       }
 
       // Check if new email is already taken
-      const existingUser = await ctx.db.query.users.findFirst({
-        where: eq(users.email, newEmail),
-      });
+      let existingUser;
+      try {
+        existingUser = await ctx.db.query.users.findFirst({
+          where: eq(users.email, newEmail),
+        });
+      } catch (error: unknown) {
+        console.error('Error checking email:', error instanceof Error ? error.message : error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update email. Please try again.',
+        });
+      }
 
       if (existingUser && existingUser.id !== userId) {
         throw new TRPCError({
@@ -237,9 +255,18 @@ export const authRouter = createTRPCRouter({
       const userId = ctx.session.user.id;
 
       // Get current user
-      const user = await ctx.db.query.users.findFirst({
-        where: eq(users.id, userId),
-      });
+      let user;
+      try {
+        user = await ctx.db.query.users.findFirst({
+          where: eq(users.id, userId),
+        });
+      } catch (error: unknown) {
+        console.error('Error fetching user:', error instanceof Error ? error.message : error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update password. Please try again.',
+        });
+      }
 
       if (!user) {
         throw new TRPCError({

@@ -211,7 +211,7 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
       <div className='flex items-center gap-4'>
         <Button
           variant='outline'
-          onClick={() => router.push('/books')}
+          onClick={() => router.back()}
           className='w-full sm:w-auto'
           aria-label='Return to books list'
         >

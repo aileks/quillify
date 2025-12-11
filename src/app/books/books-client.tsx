@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,14 +17,40 @@ import {
 
 export function BooksClient() {
   const utils = api.useUtils();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Initialize page from URL search params
+  const initialPage = parseInt(searchParams.get('page') ?? '1', 10) || 1;
+
   const [search, setSearch] = useState('');
   const [isRead, setIsRead] = useState<boolean | undefined>(undefined);
   const [sortBy] = useState<'title' | 'author' | 'createdAt'>('title');
   const [sortOrder] = useState<'asc' | 'desc'>('asc');
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
+  const [pageInput, setPageInput] = useState(String(initialPage));
   const pageSize = 12;
 
-  const { data, isLoading, error } = api.books.list.useQuery({
+  // Sync page state to URL
+  useEffect(() => {
+    const currentPage = searchParams.get('page');
+    const newPage = page === 1 ? null : String(page);
+
+    // Only update URL if the page param actually needs to change
+    if (currentPage !== newPage) {
+      const params = new URLSearchParams(searchParams.toString());
+      if (page === 1) {
+        params.delete('page');
+      } else {
+        params.set('page', String(page));
+      }
+      const newUrl = params.toString() ? `/books?${params.toString()}` : '/books';
+      router.replace(newUrl, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  const { data, isLoading, error, isFetching } = api.books.list.useQuery({
     search,
     isRead,
     sortBy,
@@ -35,6 +62,23 @@ export function BooksClient() {
   const books = data?.items ?? [];
   const totalPages = data?.totalPages ?? 0;
   const totalCount = data?.totalCount ?? 0;
+
+  // Track last known totalPages so pagination stays visible during loading
+  const lastTotalPagesRef = useRef(totalPages);
+  useEffect(() => {
+    if (totalPages > 0) {
+      lastTotalPagesRef.current = totalPages;
+    }
+  }, [totalPages]);
+  const displayTotalPages = totalPages || lastTotalPagesRef.current;
+
+  // Show skeleton when loading or fetching new page data
+  const showSkeleton = isLoading || (isFetching && books.length === 0);
+
+  // Sync pageInput when page changes (e.g., from Previous/Next buttons)
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
 
   /**
    * Prefetch book details on hover for instant navigation.
@@ -92,7 +136,7 @@ export function BooksClient() {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className='w-full rounded-sm'
+                className='placeholder:text-muted-foreground/70 w-full rounded-sm text-sm placeholder:text-xs sm:text-base sm:placeholder:text-sm'
                 aria-label='Search books'
               />
             </div>
@@ -148,8 +192,8 @@ export function BooksClient() {
         </Card>
       )}
 
-      {/* Loading State */}
-      {isLoading && !error && (
+      {/* Loading State - show skeleton during initial load or page transitions */}
+      {showSkeleton && !error && (
         <div
           className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
           role='status'
@@ -183,7 +227,7 @@ export function BooksClient() {
       )}
 
       {/* Empty State */}
-      {!isLoading && !error && books.length === 0 && (
+      {!showSkeleton && !error && books.length === 0 && (
         <Card className='rounded-sm'>
           <CardContent className='flex flex-col items-center justify-center py-8 md:py-12'>
             <p className='text-muted-foreground mb-4 text-center'>
@@ -215,19 +259,67 @@ export function BooksClient() {
         </Card>
       )}
 
-      {/* Pagination */}
-      {!isLoading && !error && books.length > 0 && totalPages > 1 && (
-        <div className='flex flex-col items-center justify-end gap-4 sm:flex-row'>
-          <p className='text-muted-foreground font-bold'>
-            Page {page} of {totalPages}
-          </p>
+      {/* Pagination - always show when we have multiple pages (use displayTotalPages to persist during loading) */}
+      {!error && displayTotalPages > 1 && (
+        <div
+          className={`flex flex-col items-center gap-3 sm:flex-row sm:justify-end sm:gap-4 ${isFetching ? 'opacity-70' : ''}`}
+        >
+          {/* Page indicator / input */}
+          {displayTotalPages <= 5 ?
+            <p className='text-muted-foreground text-sm font-bold sm:text-base'>
+              Page {page} of {displayTotalPages}
+            </p>
+          : <div className='flex items-center gap-2'>
+              <span className='text-muted-foreground text-sm font-bold sm:text-base'>Page</span>
+              <Input
+                type='number'
+                min={1}
+                max={displayTotalPages}
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const value = parseInt(pageInput, 10);
+                    if (!isNaN(value) && value >= 1 && value <= displayTotalPages) {
+                      setPage(value);
+                    } else {
+                      // Reset to current page if invalid
+                      setPageInput(String(page));
+                    }
+                  }
+                }}
+                onBlur={() => {
+                  // Reset to current page on blur (don't navigation)
+                  setPageInput(String(page));
+                }}
+                className='h-9 w-14 [appearance:textfield] rounded-sm text-center text-sm sm:h-10 sm:w-16 sm:text-base [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+                aria-label='Page number'
+              />
+              <span className='text-muted-foreground text-sm font-bold sm:text-base'>
+                of {displayTotalPages}
+              </span>
+            </div>
+          }
 
-          <div className='flex gap-2'>
+          {/* Navigation buttons */}
+          <div className='flex w-full justify-center gap-1.5 sm:w-auto sm:gap-2'>
+            {displayTotalPages > 15 && (
+              <Button
+                variant='secondary'
+                onClick={() => setPage(1)}
+                disabled={page === 1}
+                className='h-9 w-9 rounded-sm p-0 text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10 sm:text-sm'
+                aria-label='Go to first page'
+              >
+                ««
+              </Button>
+            )}
+
             <Button
               variant='secondary'
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className='w-24 rounded-sm disabled:cursor-not-allowed disabled:opacity-50'
+              className='h-9 flex-1 rounded-sm text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-24 sm:flex-none sm:text-sm'
               aria-label={`Go to previous page, page ${page - 1}`}
             >
               Previous
@@ -235,15 +327,27 @@ export function BooksClient() {
 
             <Button
               variant='secondary'
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className='w-24 rounded-sm disabled:cursor-not-allowed disabled:opacity-50'
+              onClick={() => setPage((p) => Math.min(displayTotalPages, p + 1))}
+              disabled={page === displayTotalPages}
+              className='h-9 flex-1 rounded-sm text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-24 sm:flex-none sm:text-sm'
               aria-label={`Go to next page, page ${page + 1}`}
               onMouseEnter={prefetchNextPage}
               onFocus={prefetchNextPage}
             >
               Next
             </Button>
+
+            {displayTotalPages > 15 && (
+              <Button
+                variant='secondary'
+                onClick={() => setPage(totalPages)}
+                disabled={page === totalPages}
+                className='h-9 w-9 rounded-sm p-0 text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10 sm:text-sm'
+                aria-label='Go to last page'
+              >
+                »»
+              </Button>
+            )}
           </div>
         </div>
       )}

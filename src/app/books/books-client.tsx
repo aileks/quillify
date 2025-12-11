@@ -179,7 +179,7 @@ export function BooksClient() {
 
       {/* Search and Filter Controls */}
       <Card className='rounded-sm'>
-        <CardContent className='pt-6'>
+        <CardContent>
           {/* Mobile: Collapsible filters */}
           <div className='sm:hidden'>
             <div className='mb-4'>

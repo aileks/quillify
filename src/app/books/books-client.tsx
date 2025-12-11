@@ -158,84 +158,6 @@ export function BooksClient() {
     }
   };
 
-  // Filter controls component (reused for both mobile and desktop)
-  const FilterControls = ({ className }: { className?: string }) => (
-    <div className={cn('grid gap-4', className)}>
-      {/* Search */}
-      <div className='sm:col-span-2 lg:col-span-2'>
-        <Input
-          type='search'
-          placeholder='Search books by title, author, or genre...'
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className='placeholder:text-muted-foreground/70 w-full rounded-sm text-sm placeholder:text-xs sm:text-base sm:placeholder:text-sm'
-          aria-label='Search books'
-        />
-      </div>
-
-      {/* Genre Filter */}
-      <GenreFilterSelect
-        value={genre}
-        onValueChange={(v) => {
-          setGenre(v);
-          setPage(1);
-        }}
-      />
-
-      {/* Read Status */}
-      <Select
-        value={
-          isRead === undefined ? 'all'
-          : isRead ?
-            'read'
-          : 'unread'
-        }
-        onValueChange={(value) => {
-          setIsRead(value === 'all' ? undefined : value === 'read');
-          setPage(1);
-        }}
-      >
-        <SelectTrigger
-          className='w-full cursor-pointer rounded-sm'
-          aria-label='Filter by read status'
-        >
-          <SelectValue placeholder='Filter by status' />
-        </SelectTrigger>
-        <SelectContent className='rounded-sm'>
-          <SelectItem value='all'>All Books</SelectItem>
-          <SelectItem value='read'>Read</SelectItem>
-          <SelectItem value='unread'>Unread</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {/* Sort By */}
-      <Select value={sortBy} onValueChange={handleSortByChange}>
-        <SelectTrigger className='w-full cursor-pointer rounded-sm' aria-label='Sort by'>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className='rounded-sm'>
-          <SelectItem value='title'>Sort by Title</SelectItem>
-          <SelectItem value='author'>Sort by Author</SelectItem>
-          <SelectItem value='createdAt'>Sort by Date Added</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {/* Sort Order */}
-      <Select value={sortOrder} onValueChange={handleSortOrderChange}>
-        <SelectTrigger className='w-full cursor-pointer rounded-sm' aria-label='Sort order'>
-          <SelectValue>{getSortOrderLabel(sortOrder)}</SelectValue>
-        </SelectTrigger>
-        <SelectContent className='rounded-sm'>
-          <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
-          <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
   return (
     <div className='container mx-auto space-y-6 px-4 py-6 md:px-6'>
       <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
@@ -343,7 +265,80 @@ export function BooksClient() {
           </div>
 
           {/* Desktop: Always visible grid */}
-          <FilterControls className='hidden sm:grid sm:grid-cols-2 lg:grid-cols-6' />
+          <div className='hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-6'>
+            {/* Search */}
+            <div className='sm:col-span-2 lg:col-span-2'>
+              <Input
+                type='search'
+                placeholder='Search books by title, author, or genre...'
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className='placeholder:text-muted-foreground/70 w-full rounded-sm text-sm placeholder:text-xs sm:text-base sm:placeholder:text-sm'
+                aria-label='Search books'
+              />
+            </div>
+
+            {/* Genre Filter */}
+            <GenreFilterSelect
+              value={genre}
+              onValueChange={(v) => {
+                setGenre(v);
+                setPage(1);
+              }}
+            />
+
+            {/* Read Status */}
+            <Select
+              value={
+                isRead === undefined ? 'all'
+                : isRead ?
+                  'read'
+                : 'unread'
+              }
+              onValueChange={(value) => {
+                setIsRead(value === 'all' ? undefined : value === 'read');
+                setPage(1);
+              }}
+            >
+              <SelectTrigger
+                className='w-full cursor-pointer rounded-sm'
+                aria-label='Filter by read status'
+              >
+                <SelectValue placeholder='Filter by status' />
+              </SelectTrigger>
+              <SelectContent className='rounded-sm'>
+                <SelectItem value='all'>All Books</SelectItem>
+                <SelectItem value='read'>Read</SelectItem>
+                <SelectItem value='unread'>Unread</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Sort By */}
+            <Select value={sortBy} onValueChange={handleSortByChange}>
+              <SelectTrigger className='w-full cursor-pointer rounded-sm' aria-label='Sort by'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className='rounded-sm'>
+                <SelectItem value='title'>Sort by Title</SelectItem>
+                <SelectItem value='author'>Sort by Author</SelectItem>
+                <SelectItem value='createdAt'>Sort by Date Added</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Sort Order */}
+            <Select value={sortOrder} onValueChange={handleSortOrderChange}>
+              <SelectTrigger className='w-full cursor-pointer rounded-sm' aria-label='Sort order'>
+                <SelectValue>{getSortOrderLabel(sortOrder)}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className='rounded-sm'>
+                <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
+                <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 

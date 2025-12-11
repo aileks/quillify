@@ -27,6 +27,7 @@ interface SidebarProps {
   maxWidth?: number;
   isCollapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
+  onResizingChange?: (isResizing: boolean) => void;
 }
 
 const COLLAPSED_WIDTH = 64;
@@ -39,6 +40,7 @@ export function Sidebar({
   maxWidth = 360,
   isCollapsed = false,
   onCollapsedChange,
+  onResizingChange,
 }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
@@ -72,9 +74,10 @@ export function Sidebar({
   // Handle mouse up to stop resizing
   const handleMouseUp = useCallback(() => {
     setIsResizing(false);
+    onResizingChange?.(false);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
-  }, []);
+  }, [onResizingChange]);
 
   // Start resizing
   const handleResizeStart = useCallback(
@@ -82,10 +85,11 @@ export function Sidebar({
       if (isCollapsed) return;
       e.preventDefault();
       setIsResizing(true);
+      onResizingChange?.(true);
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
     },
-    [isCollapsed]
+    [isCollapsed, onResizingChange]
   );
 
   // Add/remove event listeners for resize
@@ -106,7 +110,9 @@ export function Sidebar({
     <aside
       ref={sidebarRef}
       className={cn(
-        'border-sidebar-border bg-sidebar text-sidebar-foreground fixed top-0 left-0 z-50 flex h-screen flex-col border-r font-serif transition-[width] duration-200 ease-out',
+        'border-sidebar-border bg-sidebar text-sidebar-foreground fixed top-0 left-0 z-50 flex h-screen flex-col border-r font-serif',
+        // Only animate width when not actively resizing (e.g., collapse/expand)
+        !isResizing && 'transition-[width] duration-200 ease-out',
         className
       )}
       style={{ width: `${currentWidth}px` }}

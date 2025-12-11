@@ -47,6 +47,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const isHydrated = useSyncExternalStore(emptySubscribe, getSnapshot, getServerSnapshot);
   const [sidebarWidth, setSidebarWidth] = useState(getStoredWidth);
   const [isCollapsed, setIsCollapsed] = useState(getStoredCollapsed);
+  const [isResizing, setIsResizing] = useState(false);
 
   // Hide sidebar when logged out and on auth/landing pages
   const isLandingPage = pathname === '/';
@@ -100,13 +101,14 @@ export function LayoutShell({ children }: LayoutShellProps) {
           maxWidth={SIDEBAR_MAX_WIDTH}
           isCollapsed={isCollapsed}
           onCollapsedChange={handleCollapsedChange}
+          onResizingChange={setIsResizing}
         />
       )}
 
       {/* Main content area */}
       <main
         id='main-content'
-        className='min-h-screen transition-[margin] duration-200 ease-out md:transition-[margin]'
+        className={`min-h-screen ${!isResizing ? 'transition-[margin] duration-200 ease-out md:transition-[margin]' : ''}`}
         style={
           {
             // Only apply margin on md+ screens; CSS handles mobile reset

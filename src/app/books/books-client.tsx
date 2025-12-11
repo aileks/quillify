@@ -50,14 +50,20 @@ export function BooksClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  const { data, isLoading, error, isFetching } = api.books.list.useQuery({
-    search,
-    isRead,
-    sortBy,
-    sortOrder,
-    page,
-    pageSize,
-  });
+  const { data, isLoading, error, isFetching } = api.books.list.useQuery(
+    {
+      search,
+      isRead,
+      sortBy,
+      sortOrder,
+      page,
+      pageSize,
+    },
+    {
+      // Keep previous data visible during page transitions
+      placeholderData: (previousData) => previousData,
+    }
+  );
 
   const books = data?.items ?? [];
   const totalPages = data?.totalPages ?? 0;
@@ -71,9 +77,6 @@ export function BooksClient() {
     }
   }, [totalPages]);
   const displayTotalPages = totalPages || lastTotalPagesRef.current;
-
-  // Show skeleton when loading or fetching new page data
-  const showSkeleton = isLoading || (isFetching && books.length === 0);
 
   // Sync pageInput when page changes (e.g., from Previous/Next buttons)
   useEffect(() => {
@@ -193,7 +196,7 @@ export function BooksClient() {
       )}
 
       {/* Loading State - show skeleton during initial load or page transitions */}
-      {showSkeleton && !error && (
+      {isLoading && !error && (
         <div
           className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
           role='status'
@@ -227,7 +230,7 @@ export function BooksClient() {
       )}
 
       {/* Empty State */}
-      {!showSkeleton && !error && books.length === 0 && (
+      {!isLoading && !error && books.length === 0 && (
         <Card className='rounded-sm'>
           <CardContent className='flex flex-col items-center justify-center py-8 md:py-12'>
             <p className='text-muted-foreground mb-4 text-center'>
@@ -340,8 +343,8 @@ export function BooksClient() {
             {displayTotalPages > 15 && (
               <Button
                 variant='secondary'
-                onClick={() => setPage(totalPages)}
-                disabled={page === totalPages}
+                onClick={() => setPage(displayTotalPages)}
+                disabled={page === displayTotalPages}
                 className='h-9 w-9 rounded-sm p-0 text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10 sm:text-sm'
                 aria-label='Go to last page'
               >
@@ -356,7 +359,7 @@ export function BooksClient() {
       {!isLoading && !error && books.length > 0 && (
         <>
           <div
-            className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+            className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? 'opacity-60' : ''}`}
             role='list'
             aria-label='Library catalog entries'
           >

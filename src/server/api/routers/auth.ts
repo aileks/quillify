@@ -116,7 +116,7 @@ export const authRouter = createTRPCRouter({
       id: user.id,
       email: user.email,
       name: user.name,
-      emailVerifiedAt: user.emailVerifiedAt,
+      emailVerified: user.emailVerified,
     };
   }),
 

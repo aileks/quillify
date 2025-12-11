@@ -4,7 +4,7 @@ import { Merriweather, Work_Sans, Courier_Prime } from 'next/font/google';
 import { TRPCReactProvider } from '@/trpc/react';
 import { SessionProvider } from '@/components/auth';
 import { LayoutShell } from '@/app/layout-shell';
-import { Toaster } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 
 const merriweather = Merriweather({
   variable: '--font-serif',

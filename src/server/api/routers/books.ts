@@ -1,5 +1,18 @@
 import { z } from 'zod';
-import { and, eq, or, ilike, isNotNull, count, asc, desc, min, max, sql } from 'drizzle-orm';
+import {
+  and,
+  eq,
+  or,
+  ilike,
+  isNotNull,
+  inArray,
+  count,
+  asc,
+  desc,
+  min,
+  max,
+  sql,
+} from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
@@ -75,6 +88,7 @@ export const booksRouter = createTRPCRouter({
       z.object({
         isRead: z.boolean().optional(),
         search: z.string().optional(),
+        genre: z.array(z.string()).optional(),
         sortBy: z.enum(['title', 'author', 'createdAt']).default('title'),
         sortOrder: z.enum(['asc', 'desc']).default('asc'),
         page: z.number().int().positive().default(1),
@@ -82,7 +96,7 @@ export const booksRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const { isRead, search, sortBy, sortOrder, page, pageSize } = input;
+      const { isRead, search, genre, sortBy, sortOrder, page, pageSize } = input;
 
       // Build dynamic WHERE conditions array
       const conditions = [eq(books.userId, ctx.session.user.id)];
@@ -100,6 +114,10 @@ export const booksRouter = createTRPCRouter({
             ilike(books.genre, `%${search}%`)
           )!
         );
+      }
+
+      if (genre && genre.length > 0) {
+        conditions.push(inArray(books.genre, genre));
       }
 
       // Combine all conditions with AND logic

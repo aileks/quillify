@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { ChevronDownIcon } from 'lucide-react';
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,46 +15,66 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { GenreFilterSelect } from '@/components/genre-filter-select';
+import { cn } from '@/lib/utils';
+
+type SortBy = 'title' | 'author' | 'createdAt';
+type SortOrder = 'asc' | 'desc';
 
 export function BooksClient() {
   const utils = api.useUtils();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Initialize page from URL search params
-  const initialPage = parseInt(searchParams.get('page') ?? '1', 10) || 1;
+  // Parse URL params for initial state
+  const parseInitialState = useCallback(() => {
+    const page = parseInt(searchParams.get('page') ?? '1', 10) || 1;
+    const search = searchParams.get('search') ?? '';
+    const genre = searchParams.get('genre')?.split(',').filter(Boolean) ?? [];
+    const sortBy = (searchParams.get('sortBy') ?? 'createdAt') as SortBy;
+    const sortOrder = (searchParams.get('sortOrder') ?? 'desc') as SortOrder;
+    const isReadParam = searchParams.get('isRead');
+    const isRead =
+      isReadParam === 'true' ? true
+      : isReadParam === 'false' ? false
+      : undefined;
 
-  const [search, setSearch] = useState('');
-  const [isRead, setIsRead] = useState<boolean | undefined>(undefined);
-  const [sortBy] = useState<'title' | 'author' | 'createdAt'>('title');
-  const [sortOrder] = useState<'asc' | 'desc'>('asc');
-  const [page, setPage] = useState(initialPage);
-  const [pageInput, setPageInput] = useState(String(initialPage));
+    return { page, search, genre, sortBy, sortOrder, isRead };
+  }, [searchParams]);
+
+  const initial = parseInitialState();
+
+  // State
+  const [search, setSearch] = useState(initial.search);
+  const [isRead, setIsRead] = useState<boolean | undefined>(initial.isRead);
+  const [genre, setGenre] = useState<string[]>(initial.genre);
+  const [sortBy, setSortBy] = useState<SortBy>(initial.sortBy);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(initial.sortOrder);
+  const [page, setPage] = useState(initial.page);
+  const [pageInput, setPageInput] = useState(String(initial.page));
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const pageSize = 12;
 
-  // Sync page state to URL
+  // Sync all filters to URL
   useEffect(() => {
-    const currentPage = searchParams.get('page');
-    const newPage = page === 1 ? null : String(page);
+    const params = new URLSearchParams();
 
-    // Only update URL if the page param actually needs to change
-    if (currentPage !== newPage) {
-      const params = new URLSearchParams(searchParams.toString());
-      if (page === 1) {
-        params.delete('page');
-      } else {
-        params.set('page', String(page));
-      }
-      const newUrl = params.toString() ? `/books?${params.toString()}` : '/books';
-      router.replace(newUrl, { scroll: false });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+    if (search) params.set('search', search);
+    if (isRead !== undefined) params.set('isRead', String(isRead));
+    if (genre.length > 0) params.set('genre', genre.join(','));
+    if (sortBy !== 'createdAt') params.set('sortBy', sortBy);
+    if (sortOrder !== 'desc') params.set('sortOrder', sortOrder);
+    if (page > 1) params.set('page', String(page));
+
+    const newUrl = params.toString() ? `/books?${params.toString()}` : '/books';
+    router.replace(newUrl, { scroll: false });
+  }, [search, isRead, genre, sortBy, sortOrder, page, router]);
 
   const { data, isLoading, error, isFetching } = api.books.list.useQuery(
     {
       search,
       isRead,
+      genre,
       sortBy,
       sortOrder,
       page,
@@ -69,19 +90,48 @@ export function BooksClient() {
   const totalPages = data?.totalPages ?? 0;
   const totalCount = data?.totalCount ?? 0;
 
-  // Track last known totalPages so pagination stays visible during loading
-  const lastTotalPagesRef = useRef(totalPages);
-  useEffect(() => {
-    if (totalPages > 0) {
-      lastTotalPagesRef.current = totalPages;
-    }
-  }, [totalPages]);
-  const displayTotalPages = totalPages || lastTotalPagesRef.current;
-
   // Sync pageInput when page changes (e.g., from Previous/Next buttons)
   useEffect(() => {
     setPageInput(String(page));
   }, [page]);
+
+  // Filter helpers
+  const hasActiveFilters = search || isRead !== undefined || genre.length > 0;
+  const activeFilterCount = [
+    search ? 1 : 0,
+    isRead !== undefined ? 1 : 0,
+    genre.length > 0 ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
+  const clearFilters = () => {
+    setSearch('');
+    setIsRead(undefined);
+    setGenre([]);
+    setPage(1);
+  };
+
+  // Sort handlers
+  const handleSortByChange = (value: SortBy) => {
+    setSortBy(value);
+    // Auto-flip to descending for date (newest first is expected)
+    if (value === 'createdAt') {
+      setSortOrder('desc');
+    }
+    setPage(1);
+  };
+
+  const handleSortOrderChange = (value: SortOrder) => {
+    setSortOrder(value);
+    setPage(1);
+  };
+
+  // Context-aware sort order labels
+  const getSortOrderLabel = (order: SortOrder) => {
+    if (sortBy === 'createdAt') {
+      return order === 'asc' ? 'Oldest First' : 'Newest First';
+    }
+    return order === 'asc' ? 'A → Z' : 'Z → A';
+  };
 
   /**
    * Prefetch book details on hover for instant navigation.
@@ -99,6 +149,7 @@ export function BooksClient() {
       void utils.books.list.prefetch({
         search,
         isRead,
+        genre,
         sortBy,
         sortOrder,
         page: page + 1,
@@ -106,6 +157,84 @@ export function BooksClient() {
       });
     }
   };
+
+  // Filter controls component (reused for both mobile and desktop)
+  const FilterControls = ({ className }: { className?: string }) => (
+    <div className={cn('grid gap-4', className)}>
+      {/* Search */}
+      <div className='sm:col-span-2 lg:col-span-2'>
+        <Input
+          type='search'
+          placeholder='Search books by title, author, or genre...'
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          className='placeholder:text-muted-foreground/70 w-full rounded-sm text-sm placeholder:text-xs sm:text-base sm:placeholder:text-sm'
+          aria-label='Search books'
+        />
+      </div>
+
+      {/* Genre Filter */}
+      <GenreFilterSelect
+        value={genre}
+        onValueChange={(v) => {
+          setGenre(v);
+          setPage(1);
+        }}
+      />
+
+      {/* Read Status */}
+      <Select
+        value={
+          isRead === undefined ? 'all'
+          : isRead ?
+            'read'
+          : 'unread'
+        }
+        onValueChange={(value) => {
+          setIsRead(value === 'all' ? undefined : value === 'read');
+          setPage(1);
+        }}
+      >
+        <SelectTrigger
+          className='w-full cursor-pointer rounded-sm'
+          aria-label='Filter by read status'
+        >
+          <SelectValue placeholder='Filter by status' />
+        </SelectTrigger>
+        <SelectContent className='rounded-sm'>
+          <SelectItem value='all'>All Books</SelectItem>
+          <SelectItem value='read'>Read</SelectItem>
+          <SelectItem value='unread'>Unread</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Sort By */}
+      <Select value={sortBy} onValueChange={handleSortByChange}>
+        <SelectTrigger className='w-full cursor-pointer rounded-sm' aria-label='Sort by'>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className='rounded-sm'>
+          <SelectItem value='title'>Sort by Title</SelectItem>
+          <SelectItem value='author'>Sort by Author</SelectItem>
+          <SelectItem value='createdAt'>Sort by Date Added</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Sort Order */}
+      <Select value={sortOrder} onValueChange={handleSortOrderChange}>
+        <SelectTrigger className='w-full cursor-pointer rounded-sm' aria-label='Sort order'>
+          <SelectValue>{getSortOrderLabel(sortOrder)}</SelectValue>
+        </SelectTrigger>
+        <SelectContent className='rounded-sm'>
+          <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
+          <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   return (
     <div className='container mx-auto space-y-6 px-4 py-6 md:px-6'>
@@ -129,48 +258,92 @@ export function BooksClient() {
       {/* Search and Filter Controls */}
       <Card className='rounded-sm'>
         <CardContent className='pt-6'>
-          <div className='grid gap-4 rounded-sm sm:grid-cols-2 lg:grid-cols-3'>
-            <div className='sm:col-span-2'>
+          {/* Mobile: Collapsible filters */}
+          <div className='sm:hidden'>
+            <div className='mb-4'>
               <Input
                 type='search'
-                placeholder='Search books by title, author, or genre...'
+                placeholder='Search books...'
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className='placeholder:text-muted-foreground/70 w-full rounded-sm text-sm placeholder:text-xs sm:text-base sm:placeholder:text-sm'
+                className='placeholder:text-muted-foreground/70 w-full rounded-sm text-sm'
                 aria-label='Search books'
               />
             </div>
-
-            <Select
-              value={
-                // Convert boolean | undefined to string for Select component
-                isRead === undefined ? 'all'
-                : isRead ?
-                  'read'
-                : 'unread'
-              }
-              onValueChange={(value) => {
-                // Convert string back to boolean | undefined
-                setIsRead(value === 'all' ? undefined : value === 'read');
-                setPage(1);
-              }}
+            <Button
+              variant='outline'
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              className='w-full justify-between rounded-sm'
             >
-              <SelectTrigger
-                className='cursor-pointer rounded-sm'
-                aria-label='Filter books by read status'
-              >
-                <SelectValue placeholder='Filter by status' />
-              </SelectTrigger>
-              <SelectContent className='rounded-sm'>
-                <SelectItem value='all'>All Books</SelectItem>
-                <SelectItem value='read'>Read</SelectItem>
-                <SelectItem value='unread'>Unread</SelectItem>
-              </SelectContent>
-            </Select>
+              <span>
+                Filters{' '}
+                {hasActiveFilters && (
+                  <span className='text-muted-foreground'>({activeFilterCount} active)</span>
+                )}
+              </span>
+              <ChevronDownIcon
+                className={cn('size-4 transition-transform', filtersOpen && 'rotate-180')}
+              />
+            </Button>
+
+            {filtersOpen && (
+              <div className='mt-4 grid gap-4'>
+                <GenreFilterSelect
+                  value={genre}
+                  onValueChange={(v) => {
+                    setGenre(v);
+                    setPage(1);
+                  }}
+                />
+                <Select
+                  value={
+                    isRead === undefined ? 'all'
+                    : isRead ?
+                      'read'
+                    : 'unread'
+                  }
+                  onValueChange={(value) => {
+                    setIsRead(value === 'all' ? undefined : value === 'read');
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className='cursor-pointer rounded-sm'>
+                    <SelectValue placeholder='Filter by status' />
+                  </SelectTrigger>
+                  <SelectContent className='rounded-sm'>
+                    <SelectItem value='all'>All Books</SelectItem>
+                    <SelectItem value='read'>Read</SelectItem>
+                    <SelectItem value='unread'>Unread</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={handleSortByChange}>
+                  <SelectTrigger className='cursor-pointer rounded-sm'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className='rounded-sm'>
+                    <SelectItem value='title'>Sort by Title</SelectItem>
+                    <SelectItem value='author'>Sort by Author</SelectItem>
+                    <SelectItem value='createdAt'>Sort by Date Added</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={sortOrder} onValueChange={handleSortOrderChange}>
+                  <SelectTrigger className='cursor-pointer rounded-sm'>
+                    <SelectValue>{getSortOrderLabel(sortOrder)}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className='rounded-sm'>
+                    <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
+                    <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
+
+          {/* Desktop: Always visible grid */}
+          <FilterControls className='hidden sm:grid sm:grid-cols-2 lg:grid-cols-6' />
         </CardContent>
       </Card>
 
@@ -234,27 +407,19 @@ export function BooksClient() {
         <Card className='rounded-sm'>
           <CardContent className='flex flex-col items-center justify-center py-8 md:py-12'>
             <p className='text-muted-foreground mb-4 text-center'>
-              {search || isRead !== undefined ?
+              {hasActiveFilters ?
                 'No books found matching your filters.'
               : "You haven't added any books yet. Start building your library!"}
             </p>
 
-            {!search && isRead === undefined && (
+            {!hasActiveFilters && (
               <Button asChild className='w-full sm:w-auto'>
                 <Link href='/books/new'>Add Your First Book</Link>
               </Button>
             )}
 
-            {(search || isRead !== undefined) && (
-              <Button
-                variant='outline'
-                onClick={() => {
-                  setSearch('');
-                  setIsRead(undefined);
-                  setPage(1);
-                }}
-                className='w-full sm:w-auto'
-              >
+            {hasActiveFilters && (
+              <Button variant='outline' onClick={clearFilters} className='w-full sm:w-auto'>
                 Clear Filters
               </Button>
             )}
@@ -262,28 +427,28 @@ export function BooksClient() {
         </Card>
       )}
 
-      {/* Pagination - always show when we have multiple pages (use displayTotalPages to persist during loading) */}
-      {!error && displayTotalPages > 1 && (
+      {/* Pagination - only show when we have results and multiple pages */}
+      {!error && books.length > 0 && totalPages > 1 && (
         <div
           className={`flex flex-col items-center gap-3 sm:flex-row sm:justify-end sm:gap-4 ${isFetching ? 'opacity-70' : ''}`}
         >
           {/* Page indicator / input */}
-          {displayTotalPages <= 5 ?
+          {totalPages <= 5 ?
             <p className='text-muted-foreground text-sm font-bold sm:text-base'>
-              Page {page} of {displayTotalPages}
+              Page {page} of {totalPages}
             </p>
           : <div className='flex items-center gap-2'>
               <span className='text-muted-foreground text-sm font-bold sm:text-base'>Page</span>
               <Input
                 type='number'
                 min={1}
-                max={displayTotalPages}
+                max={totalPages}
                 value={pageInput}
                 onChange={(e) => setPageInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     const value = parseInt(pageInput, 10);
-                    if (!isNaN(value) && value >= 1 && value <= displayTotalPages) {
+                    if (!isNaN(value) && value >= 1 && value <= totalPages) {
                       setPage(value);
                     } else {
                       // Reset to current page if invalid
@@ -299,14 +464,14 @@ export function BooksClient() {
                 aria-label='Page number'
               />
               <span className='text-muted-foreground text-sm font-bold sm:text-base'>
-                of {displayTotalPages}
+                of {totalPages}
               </span>
             </div>
           }
 
           {/* Navigation buttons */}
           <div className='flex w-full justify-center gap-1.5 sm:w-auto sm:gap-2'>
-            {displayTotalPages > 15 && (
+            {totalPages > 15 && (
               <Button
                 variant='secondary'
                 onClick={() => setPage(1)}
@@ -330,8 +495,8 @@ export function BooksClient() {
 
             <Button
               variant='secondary'
-              onClick={() => setPage((p) => Math.min(displayTotalPages, p + 1))}
-              disabled={page === displayTotalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
               className='h-9 flex-1 rounded-sm text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-24 sm:flex-none sm:text-sm'
               aria-label={`Go to next page, page ${page + 1}`}
               onMouseEnter={prefetchNextPage}
@@ -340,11 +505,11 @@ export function BooksClient() {
               Next
             </Button>
 
-            {displayTotalPages > 15 && (
+            {totalPages > 15 && (
               <Button
                 variant='secondary'
-                onClick={() => setPage(displayTotalPages)}
-                disabled={page === displayTotalPages}
+                onClick={() => setPage(totalPages)}
+                disabled={page === totalPages}
                 className='h-9 w-9 rounded-sm p-0 text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10 sm:text-sm'
                 aria-label='Go to last page'
               >

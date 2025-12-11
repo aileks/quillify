@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,13 +45,14 @@ export function NewBookForm() {
   });
 
   const createBook = api.books.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (book) => {
+      toast.success(`"${book.title}" added to your library`);
       void utils.books.list.invalidate();
       void utils.books.stats.invalidate();
       router.push('/books');
     },
     onError: (error) => {
-      console.error('Error creating book:', error);
+      toast.error(error.message || 'Failed to add book');
     },
   });
 

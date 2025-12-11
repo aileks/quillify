@@ -24,6 +24,7 @@ export function GenreCombobox({
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState('');
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const listboxId = React.useId();
 
   // Filter genres based on input
   const filteredGenres = React.useMemo(() => {
@@ -56,6 +57,7 @@ export function GenreCombobox({
           type='button'
           role='combobox'
           aria-expanded={open}
+          aria-controls={listboxId}
           className={cn(
             // Match Input styling with max-width
             'border-foreground/10 flex h-9 max-w-[240px] items-center justify-between gap-2 rounded-sm border bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow]',
@@ -92,7 +94,7 @@ export function GenreCombobox({
             />
           </div>
 
-          <CommandList className='max-h-[300px] overflow-y-auto p-1'>
+          <CommandList id={listboxId} className='max-h-[300px] overflow-y-auto p-1'>
             {filteredGenres.length === 0 && (
               <div className='text-muted-foreground py-6 text-center text-sm'>No genre found.</div>
             )}

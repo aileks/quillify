@@ -24,13 +24,34 @@ interface GenreFilterSelectProps {
 export function GenreFilterSelect({ value, onValueChange, className }: GenreFilterSelectProps) {
   const [open, setOpen] = React.useState(false);
   const listboxId = React.useId();
+  const isSelecting = React.useRef(false);
 
   const handleToggle = (genre: string) => {
+    console.log('[GenreFilterSelect] handleToggle called for:', genre);
+    isSelecting.current = true;
     if (value.includes(genre)) {
       onValueChange(value.filter((g) => g !== genre));
     } else {
       onValueChange([...value, genre]);
     }
+    // Reset after a short delay to allow any pending close events to be ignored
+    setTimeout(() => {
+      console.log('[GenreFilterSelect] isSelecting reset to false');
+      isSelecting.current = false;
+    }, 0);
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    console.log('[GenreFilterSelect] handleOpenChange called:', {
+      newOpen,
+      isSelecting: isSelecting.current,
+    });
+    // Don't close if we're in the middle of selecting an item
+    if (!newOpen && isSelecting.current) {
+      console.log('[GenreFilterSelect] Prevented close - isSelecting is true');
+      return;
+    }
+    setOpen(newOpen);
   };
 
   const getTriggerLabel = () => {
@@ -40,7 +61,7 @@ export function GenreFilterSelect({ value, onValueChange, className }: GenreFilt
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
+    <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
       <PopoverTrigger asChild>
         <button
           type='button'
@@ -65,12 +86,21 @@ export function GenreFilterSelect({ value, onValueChange, className }: GenreFilt
         className='w-[--radix-popover-trigger-width] min-w-[200px] p-0'
         align='start'
         sideOffset={4}
-        onCloseAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => {
+          console.log('[GenreFilterSelect] onCloseAutoFocus', e);
+          e.preventDefault();
+        }}
+        onPointerDownOutside={(e) => {
+          console.log('[GenreFilterSelect] onPointerDownOutside', e);
+          e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          console.log('[GenreFilterSelect] onInteractOutside', e);
+          e.preventDefault();
+        }}
       >
         <Command
-          // Prevent cmdk from closing the popover by filtering the event
           onKeyDown={(e) => {
-            // Allow Escape to close
             if (e.key === 'Escape') {
               setOpen(false);
             }

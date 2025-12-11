@@ -44,6 +44,22 @@ export function BooksClient() {
     void utils.books.getById.prefetch({ id: bookId });
   };
 
+  /**
+   * Prefetch next page of results on hover for instant pagination.
+   */
+  const prefetchNextPage = () => {
+    if (page < totalPages) {
+      void utils.books.list.prefetch({
+        search,
+        isRead,
+        sortBy,
+        sortOrder,
+        page: page + 1,
+        pageSize,
+      });
+    }
+  };
+
   return (
     <div className='container mx-auto space-y-6 px-4 py-6 md:px-6'>
       <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
@@ -223,6 +239,8 @@ export function BooksClient() {
               disabled={page === totalPages}
               className='w-24 rounded-sm disabled:cursor-not-allowed disabled:opacity-50'
               aria-label={`Go to next page, page ${page + 1}`}
+              onMouseEnter={prefetchNextPage}
+              onFocus={prefetchNextPage}
             >
               Next
             </Button>

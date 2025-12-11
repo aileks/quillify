@@ -15,15 +15,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import genres from '@/data/genres.json';
+import { GenreCombobox } from '@/components/genre-combobox';
 
 const bookFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -183,20 +176,13 @@ export function NewBookForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Genre (optional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className='cursor-pointer rounded-sm'>
-                          <SelectValue placeholder='Select a genre' />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {genres.map((genre) => (
-                          <SelectItem key={genre} value={genre}>
-                            {genre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <GenreCombobox
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder='Select a genre...'
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

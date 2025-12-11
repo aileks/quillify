@@ -17,13 +17,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -35,7 +28,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import genres from '@/data/genres.json';
+import { GenreCombobox } from '@/components/genre-combobox';
 
 const bookFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -333,23 +326,17 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
                   name='genre'
                   render={({ field }) => (
                     <FormItem>
-                      <div className='flex items-start gap-2'>
-                        <FormLabel className='text-muted-foreground min-w-[80px] pt-2 font-mono text-xs tracking-wider uppercase'>
+                      <div className='flex flex-col gap-2 sm:flex-row sm:items-start'>
+                        <FormLabel className='text-muted-foreground font-mono text-xs tracking-wider uppercase sm:min-w-[80px] sm:pt-2'>
                           Subject:
                         </FormLabel>
                         <FormControl>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger className='font-medium'>
-                              <SelectValue placeholder='Select a genre' />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {genres.map((genre) => (
-                                <SelectItem key={genre} value={genre}>
-                                  {genre}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <GenreCombobox
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            placeholder='Select a genre...'
+                            className='font-medium'
+                          />
                         </FormControl>
                       </div>
                       <FormMessage />

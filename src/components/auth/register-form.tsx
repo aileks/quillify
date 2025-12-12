@@ -52,8 +52,11 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export function RegisterForm() {
   const [error, setError] = React.useState<string>('');
   const [isSigningIn, setIsSigningIn] = React.useState(false);
+  const [pendingCredentials, setPendingCredentials] = React.useState<{
+    email: string;
+    password: string;
+  } | null>(null);
   const router = useRouter();
-  const credentialsRef = React.useRef<{ email: string; password: string } | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -68,34 +71,44 @@ export function RegisterForm() {
   const registerMutation = api.auth.register.useMutation({
     onSuccess: async () => {
       setError('');
-      // Auto-login after successful registration
-      if (credentialsRef.current) {
-        setIsSigningIn(true);
-        const result = await signIn('credentials', {
-          email: credentialsRef.current.email,
-          password: credentialsRef.current.password,
-          redirect: false,
-        });
-
-        if (result?.ok) {
-          router.push('/');
-          router.refresh();
-        } else {
-          // If auto-login fails, redirect to login page
-          router.push('/account/login');
-        }
-        setIsSigningIn(false);
-      }
+      // Auto-login will be triggered by the effect when pendingCredentials is set
     },
     onError: (error) => {
       setError(error.message || 'Failed to register. Please try again.');
+      setPendingCredentials(null);
     },
   });
 
-  const onSubmit = async (data: RegisterFormValues) => {
+  // Auto-login after successful registration
+  React.useEffect(() => {
+    if (!pendingCredentials || !registerMutation.isSuccess) return;
+
+    const performSignIn = async () => {
+      setIsSigningIn(true);
+      const result = await signIn('credentials', {
+        email: pendingCredentials.email,
+        password: pendingCredentials.password,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        router.push('/');
+        router.refresh();
+      } else {
+        // If auto-login fails, redirect to login page
+        router.push('/account/login');
+      }
+      setIsSigningIn(false);
+      setPendingCredentials(null);
+    };
+
+    performSignIn();
+  }, [pendingCredentials, registerMutation.isSuccess, router]);
+
+  const onSubmit = (data: RegisterFormValues) => {
     setError('');
     // Store credentials for auto-login after registration
-    credentialsRef.current = { email: data.email, password: data.password };
+    setPendingCredentials({ email: data.email, password: data.password });
     registerMutation.mutate({
       email: data.email,
       password: data.password,

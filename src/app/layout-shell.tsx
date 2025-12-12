@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useState, useCallback, useSyncExternalStore, useEffect, useRef } from 'react';
+import { useState, useCallback, useSyncExternalStore, useEffect } from 'react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
@@ -55,7 +55,6 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [isCollapsed, setIsCollapsed] = useState(getStoredCollapsed);
   const [isResizing, setIsResizing] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [firstLoginToastShown, setFirstLoginToastShown] = useState(false);
 
   // Hide sidebar when logged out and on auth/landing pages
   const isLandingPage = pathname === '/';
@@ -92,8 +91,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
     const alreadyShown = localStorage.getItem(toastKey) === 'true';
     if (alreadyShown) return;
 
-    // Mark as shown immediately to prevent banner from appearing
-    setFirstLoginToastShown(true);
+    // Mark as shown in localStorage
     localStorage.setItem(toastKey, 'true');
 
     toast.info(
@@ -119,15 +117,15 @@ export function LayoutShell({ children }: LayoutShellProps) {
   }, [userId]);
 
   // Show banner if: needs verification, not first login (toast shown instead), and not dismissed
+  // The localStorage check ensures banner doesn't show on first login (before or after effect runs)
   const showVerificationBanner =
     isHydrated &&
     needsVerification &&
-    !firstLoginToastShown &&
     !bannerDismissed &&
     (userId ?
       sessionStorage.getItem(`${VERIFICATION_BANNER_DISMISSED_KEY}-${userId}`) !== 'true'
     : true) &&
-    // Also check localStorage to ensure we don't show banner on first login before effect runs
+    // Only show banner if toast was already shown (localStorage key exists)
     (userId ? localStorage.getItem(`${FIRST_LOGIN_TOAST_SHOWN_KEY}-${userId}`) === 'true' : false);
 
   // Persist width changes

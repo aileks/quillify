@@ -31,7 +31,7 @@ async function sendVerificationToExistingUsers() {
     });
 
     if (unverifiedUsers.length === 0) {
-      console.log('✅ No unverified users found.');
+      console.log('[OK] No unverified users found.');
       process.exit(0);
     }
 
@@ -81,14 +81,14 @@ async function sendVerificationToExistingUsers() {
           category: 'Email Verification',
         });
 
-        console.log(`✅ Verification email sent to ${user.email}`);
+        console.log(`[OK] Verification email sent to ${user.email}`);
         successCount++;
 
         // Add delay to avoid rate limits (500ms between emails)
         await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (error: unknown) {
         console.error(
-          `❌ Error processing user ${user.email}:`,
+          `[ERROR] Error processing user ${user.email}:`,
           error instanceof Error ? error.message : error
         );
         errorCount++;
@@ -97,9 +97,9 @@ async function sendVerificationToExistingUsers() {
 
     console.log('\n========================================');
     console.log('SUMMARY:');
-    console.log(`✅ Successfully sent: ${successCount} emails`);
-    console.log(`❌ Failed: ${errorCount} emails`);
-    console.log(`📊 Total processed: ${unverifiedUsers.length} users`);
+    console.log(`[OK] Successfully sent: ${successCount} emails`);
+    console.log(`[ERROR] Failed: ${errorCount} emails`);
+    console.log(`[INFO] Total processed: ${unverifiedUsers.length} users`);
     console.log('========================================');
 
     if (errorCount > 0) {

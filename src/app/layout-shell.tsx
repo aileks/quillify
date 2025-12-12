@@ -14,8 +14,9 @@ const SIDEBAR_MAX_WIDTH = 360;
 const SIDEBAR_DEFAULT_WIDTH = 256;
 const SIDEBAR_WIDTH_STORAGE_KEY = 'quillify-sidebar-width';
 const SIDEBAR_COLLAPSED_STORAGE_KEY = 'quillify-sidebar-collapsed';
-const VERIFICATION_TOAST_SHOWN_KEY = 'quillify-verification-toast-shown';
+const FIRST_LOGIN_TOAST_SHOWN_KEY = 'quillify-first-login-toast-shown';
 const VERIFICATION_BANNER_DISMISSED_KEY = 'quillify-verification-banner-dismissed';
+const ACCOUNT_DELETED_KEY = 'quillify-account-deleted';
 
 // Read initial width from localStorage
 function getStoredWidth(): number {
@@ -71,17 +72,28 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const userEmail = session?.user?.email ?? '';
   const userId = session?.user?.id;
 
-  // Show first-time verification toast (30 seconds, once per session per user)
+  // Show account deleted toast (after redirect from account deletion)
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const accountDeleted = sessionStorage.getItem(ACCOUNT_DELETED_KEY);
+    if (accountDeleted === 'true') {
+      sessionStorage.removeItem(ACCOUNT_DELETED_KEY);
+      toast.success('Your account has been deleted');
+    }
+  }, [isHydrated]);
+
+  // Show first-login verification toast (only on very first login, uses localStorage)
   useEffect(() => {
     if (!needsVerification || !isHydrated || toastShownRef.current || !userId) return;
 
-    // Use user-specific key to handle logout/login properly
-    const toastKey = `${VERIFICATION_TOAST_SHOWN_KEY}-${userId}`;
-    const alreadyShown = sessionStorage.getItem(toastKey) === 'true';
+    // Use localStorage with user-specific key - only show once ever per user
+    const toastKey = `${FIRST_LOGIN_TOAST_SHOWN_KEY}-${userId}`;
+    const alreadyShown = localStorage.getItem(toastKey) === 'true';
     if (alreadyShown) return;
 
     toastShownRef.current = true;
-    sessionStorage.setItem(toastKey, 'true');
+    localStorage.setItem(toastKey, 'true');
 
     toast.info(
       <div className='flex flex-col gap-2'>

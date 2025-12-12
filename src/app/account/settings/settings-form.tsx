@@ -151,7 +151,8 @@ export function SettingsForm() {
 
   const deleteAccount = api.auth.deleteAccount.useMutation({
     onSuccess: () => {
-      toast.success('Your account has been deleted');
+      // Store flag to show toast on home page after redirect
+      sessionStorage.setItem('quillify-account-deleted', 'true');
       // Sign out and redirect to home
       signOut({ callbackUrl: '/' });
     },

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -50,7 +51,9 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export function RegisterForm() {
   const [error, setError] = React.useState<string>('');
+  const [isSigningIn, setIsSigningIn] = React.useState(false);
   const router = useRouter();
+  const credentialsRef = React.useRef<{ email: string; password: string } | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -63,10 +66,26 @@ export function RegisterForm() {
   });
 
   const registerMutation = api.auth.register.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       setError('');
-      // Redirect to login page - verification toast will be shown there on first login
-      router.push('/account/login');
+      // Auto-login after successful registration
+      if (credentialsRef.current) {
+        setIsSigningIn(true);
+        const result = await signIn('credentials', {
+          email: credentialsRef.current.email,
+          password: credentialsRef.current.password,
+          redirect: false,
+        });
+
+        if (result?.ok) {
+          router.push('/');
+          router.refresh();
+        } else {
+          // If auto-login fails, redirect to login page
+          router.push('/account/login');
+        }
+        setIsSigningIn(false);
+      }
     },
     onError: (error) => {
       setError(error.message || 'Failed to register. Please try again.');
@@ -75,6 +94,8 @@ export function RegisterForm() {
 
   const onSubmit = async (data: RegisterFormValues) => {
     setError('');
+    // Store credentials for auto-login after registration
+    credentialsRef.current = { email: data.email, password: data.password };
     registerMutation.mutate({
       email: data.email,
       password: data.password,
@@ -82,7 +103,7 @@ export function RegisterForm() {
     });
   };
 
-  const isLoading = form.formState.isSubmitting || registerMutation.isPending;
+  const isLoading = form.formState.isSubmitting || registerMutation.isPending || isSigningIn;
 
   return (
     <Card className='w-full max-w-lg'>

@@ -7,6 +7,11 @@ import { NextResponse } from 'next/server';
 export function proxy(req: NextRequest) {
   const { method, headers } = req;
 
+  // Allow email verification route to pass through (browser link clicks)
+  if (req.nextUrl.pathname === '/api/verify-email') {
+    return NextResponse.next();
+  }
+
   // Only consider true document requests
   const secFetchDest = headers.get('sec-fetch-dest') ?? '';
   const secFetchMode = headers.get('sec-fetch-mode') ?? '';

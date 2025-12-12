@@ -6,12 +6,25 @@ import { db } from '@/server/db';
 import { emailVerificationTokens } from '@/server/db/schema';
 import { createCaller } from '@/server/api/root';
 
+// Helper to create redirect response with verification cookie
+function createVerifyRedirect(url: URL): NextResponse {
+  const response = NextResponse.redirect(url);
+  response.cookies.set('verify-email-redirect', 'true', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60, // 1 minute - just enough time for the redirect
+    path: '/account/verify-email',
+  });
+  return response;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
 
   if (!token) {
-    return NextResponse.redirect(new URL('/account/verify-email?status=invalid', request.url));
+    return createVerifyRedirect(new URL('/account/verify-email?status=invalid', request.url));
   }
 
   // Look up the token with associated user to get email (for error cases)
@@ -44,11 +57,11 @@ export async function GET(request: NextRequest) {
 
     if (result.success) {
       // Redirect to verification success page
-      return NextResponse.redirect(new URL('/account/verify-email?status=success', request.url));
+      return createVerifyRedirect(new URL('/account/verify-email?status=success', request.url));
     }
 
     // Should not reach here given the response structure, but just in case
-    return NextResponse.redirect(new URL('/account/verify-email?status=invalid', request.url));
+    return createVerifyRedirect(new URL('/account/verify-email?status=invalid', request.url));
   } catch (error) {
     console.error('Email verification error:', error);
 
@@ -68,6 +81,6 @@ export async function GET(request: NextRequest) {
       redirectUrl.searchParams.set('email', userEmail);
     }
 
-    return NextResponse.redirect(redirectUrl);
+    return createVerifyRedirect(redirectUrl);
   }
 }

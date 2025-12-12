@@ -83,16 +83,24 @@ export function LayoutShell({ children }: LayoutShellProps) {
   }, [isHydrated]);
 
   // Show first-login verification toast (only on very first login, uses localStorage)
+  // We use a separate "pending" key to track that toast is currently showing
+  // This prevents the banner from appearing while the toast is visible
   useEffect(() => {
     if (!needsVerification || !isHydrated || !userId) return;
 
-    // Use localStorage with user-specific key - only show once ever per user
     const toastKey = `${FIRST_LOGIN_TOAST_SHOWN_KEY}-${userId}`;
-    const alreadyShown = localStorage.getItem(toastKey) === 'true';
-    if (alreadyShown) return;
+    const toastPendingKey = `${FIRST_LOGIN_TOAST_SHOWN_KEY}-pending-${userId}`;
 
-    // Mark as shown in localStorage
-    localStorage.setItem(toastKey, 'true');
+    // If toast was already fully shown (completed), don't show again
+    const alreadyCompleted = localStorage.getItem(toastKey) === 'true';
+    if (alreadyCompleted) return;
+
+    // If toast is currently pending (showing), don't trigger again
+    const isPending = sessionStorage.getItem(toastPendingKey) === 'true';
+    if (isPending) return;
+
+    // Mark toast as pending (currently showing)
+    sessionStorage.setItem(toastPendingKey, 'true');
 
     toast.info(
       <div className='flex flex-col gap-2'>
@@ -104,7 +112,19 @@ export function LayoutShell({ children }: LayoutShellProps) {
           Go to Settings
         </Link>
       </div>,
-      { duration: 30000 }
+      {
+        duration: 30000,
+        onDismiss: () => {
+          // Only mark as completed when toast is dismissed
+          localStorage.setItem(toastKey, 'true');
+          sessionStorage.removeItem(toastPendingKey);
+        },
+        onAutoClose: () => {
+          // Also mark as completed on auto-close
+          localStorage.setItem(toastKey, 'true');
+          sessionStorage.removeItem(toastPendingKey);
+        },
+      }
     );
   }, [needsVerification, isHydrated, userId]);
 
@@ -116,8 +136,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
     }
   }, [userId]);
 
-  // Show banner if: needs verification, not first login (toast shown instead), and not dismissed
-  // The localStorage check ensures banner doesn't show on first login (before or after effect runs)
+  // Show banner if: needs verification, toast already completed (not pending), and not dismissed
   const showVerificationBanner =
     isHydrated &&
     needsVerification &&
@@ -125,8 +144,11 @@ export function LayoutShell({ children }: LayoutShellProps) {
     (userId ?
       sessionStorage.getItem(`${VERIFICATION_BANNER_DISMISSED_KEY}-${userId}`) !== 'true'
     : true) &&
-    // Only show banner if toast was already shown (localStorage key exists)
-    (userId ? localStorage.getItem(`${FIRST_LOGIN_TOAST_SHOWN_KEY}-${userId}`) === 'true' : false);
+    // Only show banner if toast was completed (localStorage key exists) AND not currently pending
+    (userId ?
+      localStorage.getItem(`${FIRST_LOGIN_TOAST_SHOWN_KEY}-${userId}`) === 'true' &&
+      sessionStorage.getItem(`${FIRST_LOGIN_TOAST_SHOWN_KEY}-pending-${userId}`) !== 'true'
+    : false);
 
   // Persist width changes
   const handleWidthChange = useCallback((width: number) => {

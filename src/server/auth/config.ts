@@ -112,7 +112,7 @@ export const authConfig = {
     }),
   ],
   callbacks: {
-    jwt: ({ token, user, trigger }) => {
+    jwt: async ({ token, user, trigger }) => {
       // On log in, store rememberMe preference and check verification
       if (user && trigger === 'signIn') {
         token.id = user.id;
@@ -134,6 +134,26 @@ export const authConfig = {
         } else {
           // 1 day
           token.exp = now + 24 * 60 * 60;
+        }
+      }
+
+      // For unverified users, check if they've verified since login
+      // This allows the session to update without requiring re-login
+      const emailVerified = (token as { emailVerified?: boolean }).emailVerified;
+      if (token.id && emailVerified === false) {
+        try {
+          const userRecord = await db.query.users.findFirst({
+            where: eq(users.id, token.id as string),
+            columns: { emailVerifiedAt: true },
+          });
+
+          if (userRecord?.emailVerifiedAt) {
+            // User has verified their email - update the token
+            (token as { emailVerified?: boolean }).emailVerified = true;
+          }
+        } catch (error) {
+          // Log but don't fail - just keep the current state
+          console.error('Error checking email verification status:', error);
         }
       }
 

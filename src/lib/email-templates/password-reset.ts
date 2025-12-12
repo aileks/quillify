@@ -4,6 +4,26 @@ interface PasswordResetEmailParams {
   expiresInMinutes: number;
 }
 
+// Quillify brand colors (converted from oklch to hex)
+const colors = {
+  // Warm cream background
+  background: '#f5f0e6',
+  // Card/content background
+  card: '#faf8f4',
+  // Primary amber/orange
+  primary: '#b45309',
+  primaryHover: '#d97706',
+  // Dark brown for sidebar/headers
+  dark: '#4a3f35',
+  // Text colors
+  text: '#3d3429',
+  textMuted: '#6b5d4d',
+  textLight: '#8b7d6b',
+  // Borders
+  border: '#d4cbbe',
+  borderLight: '#e8e2d6',
+};
+
 export function getPasswordResetEmailHtml({
   resetUrl,
   userName,
@@ -19,68 +39,85 @@ export function getPasswordResetEmailHtml({
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reset Your Password</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5;">
+<body style="margin: 0; padding: 0; font-family: 'Georgia', 'Times New Roman', serif; background-color: ${colors.background};">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: ${colors.background};">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 480px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-          <!-- Header -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 520px;">
+          
+          <!-- Header with dark background -->
           <tr>
-            <td align="center" style="padding: 40px 40px 20px 40px;">
-              <img src="https://quillify-app.com/quill-logo.png" alt="Quillify" width="48" height="48" style="display: block;">
-              <h1 style="margin: 16px 0 0 0; font-size: 24px; font-weight: 600; color: #18181b;">Quillify</h1>
+            <td align="center" style="background-color: ${colors.dark}; padding: 32px 40px; border-radius: 12px 12px 0 0;">
+              <img src="https://quillify-app.com/quill-logo.png" alt="Quillify" width="44" height="44" style="display: block;">
+              <h1 style="margin: 12px 0 0 0; font-size: 26px; font-weight: 400; color: #faf8f4; font-family: 'Georgia', 'Times New Roman', serif; letter-spacing: 0.5px;">Quillify</h1>
             </td>
           </tr>
           
-          <!-- Content -->
+          <!-- Main content card -->
           <tr>
-            <td style="padding: 20px 40px 40px 40px;">
-              <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 24px; color: #3f3f46;">
+            <td style="background-color: ${colors.card}; padding: 40px; border-left: 1px solid ${colors.borderLight}; border-right: 1px solid ${colors.borderLight};">
+              <p style="margin: 0 0 20px 0; font-size: 18px; line-height: 28px; color: ${colors.text}; font-family: 'Georgia', 'Times New Roman', serif;">
                 ${greeting}
               </p>
-              <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 24px; color: #3f3f46;">
+              <p style="margin: 0 0 28px 0; font-size: 16px; line-height: 26px; color: ${colors.textMuted}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                 We received a request to reset your password. Click the button below to choose a new password.
               </p>
               
               <!-- CTA Button -->
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td align="center" style="padding: 8px 0 24px 0;">
-                    <a href="${resetUrl}" target="_blank" style="display: inline-block; padding: 14px 32px; background-color: #18181b; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500; border-radius: 8px;">
+                  <td align="center" style="padding: 8px 0 32px 0;">
+                    <a href="${resetUrl}" target="_blank" style="display: inline-block; padding: 16px 36px; background-color: ${colors.primary}; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: 0.3px;">
                       Reset Password
                     </a>
                   </td>
                 </tr>
               </table>
               
-              <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 22px; color: #71717a;">
-                This link will expire in <strong>${expiresInMinutes} minutes</strong>.
+              <!-- Decorative divider -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="padding: 0 0 24px 0;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="border-top: 1px solid ${colors.border}; height: 1px; font-size: 0; line-height: 0;">&nbsp;</td>
+                        <td style="width: 60px; text-align: center; padding: 0 12px;">
+                          <span style="font-size: 18px; color: ${colors.primary};">&#9830;</span>
+                        </td>
+                        <td style="border-top: 1px solid ${colors.border}; height: 1px; font-size: 0; line-height: 0;">&nbsp;</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 22px; color: ${colors.textMuted}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                This link will expire in <strong style="color: ${colors.text};">${expiresInMinutes} minutes</strong>.
               </p>
               
-              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 22px; color: #71717a;">
+              <p style="margin: 0 0 16px 0; font-size: 13px; line-height: 21px; color: ${colors.textLight}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                 If the button doesn't work, copy and paste this link into your browser:
               </p>
-              <p style="margin: 0 0 24px 0; font-size: 12px; line-height: 20px; color: #a1a1aa; word-break: break-all;">
+              <p style="margin: 0; font-size: 12px; line-height: 20px; color: ${colors.primary}; word-break: break-all; font-family: 'Courier New', monospace; background-color: ${colors.background}; padding: 12px; border-radius: 6px; border: 1px solid ${colors.borderLight};">
                 ${resetUrl}
-              </p>
-              
-              <!-- Divider -->
-              <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 24px 0;">
-              
-              <p style="margin: 0; font-size: 13px; line-height: 20px; color: #a1a1aa;">
-                If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
               </p>
             </td>
           </tr>
           
           <!-- Footer -->
           <tr>
-            <td align="center" style="padding: 0 40px 40px 40px;">
-              <p style="margin: 0; font-size: 12px; color: #a1a1aa;">
+            <td style="background-color: ${colors.card}; padding: 24px 40px; border: 1px solid ${colors.borderLight}; border-top: none; border-radius: 0 0 12px 12px;">
+              <!-- Border separator -->
+              <div style="border-top: 1px solid ${colors.border}; margin-bottom: 20px;"></div>
+              <p style="margin: 0 0 12px 0; font-size: 13px; line-height: 20px; color: ${colors.textLight}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center;">
+                If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+              </p>
+              <p style="margin: 0; font-size: 12px; color: ${colors.textLight}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center;">
                 &copy; ${new Date().getFullYear()} Quillify. All rights reserved.
               </p>
             </td>
           </tr>
+          
         </table>
       </td>
     </tr>

@@ -39,7 +39,7 @@ const loginSchema = z.object({
 
 // Helper function to generate verification URL
 function generateVerificationUrl(token: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
   return `${appUrl}/api/verify-email?token=${token}`;
 }
 
@@ -499,7 +499,10 @@ export const authRouter = createTRPCRouter({
       }
 
       // Build reset URL
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(
+        /\/$/,
+        ''
+      );
       const resetUrl = `${appUrl}/account/reset-password?token=${token}`;
 
       // Send email

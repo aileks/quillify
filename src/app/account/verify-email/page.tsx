@@ -31,7 +31,7 @@ function VerifyEmailContent() {
 
         <CardFooter className='flex flex-col gap-4'>
           <Button type='button' className='w-full' asChild>
-            <Link href='/account/login'>Continue to Login</Link>
+            <Link href='/'>Continue to Dashboard</Link>
           </Button>
         </CardFooter>
       </Card>

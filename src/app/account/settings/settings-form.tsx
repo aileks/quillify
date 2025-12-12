@@ -442,6 +442,12 @@ export function SettingsForm() {
                         placeholder='Enter your password'
                         value={deletePassword}
                         onChange={(e) => setDeletePassword(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && deletePassword && !deleteAccount.isPending) {
+                            e.preventDefault();
+                            handleDeleteContinue();
+                          }
+                        }}
                         className='placeholder:text-muted-foreground'
                         disabled={deleteAccount.isPending}
                       />

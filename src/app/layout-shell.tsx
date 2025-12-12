@@ -55,7 +55,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [isCollapsed, setIsCollapsed] = useState(getStoredCollapsed);
   const [isResizing, setIsResizing] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const toastShownRef = useRef(false);
+  const [firstLoginToastShown, setFirstLoginToastShown] = useState(false);
 
   // Hide sidebar when logged out and on auth/landing pages
   const isLandingPage = pathname === '/';
@@ -85,14 +85,15 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
   // Show first-login verification toast (only on very first login, uses localStorage)
   useEffect(() => {
-    if (!needsVerification || !isHydrated || toastShownRef.current || !userId) return;
+    if (!needsVerification || !isHydrated || !userId) return;
 
     // Use localStorage with user-specific key - only show once ever per user
     const toastKey = `${FIRST_LOGIN_TOAST_SHOWN_KEY}-${userId}`;
     const alreadyShown = localStorage.getItem(toastKey) === 'true';
     if (alreadyShown) return;
 
-    toastShownRef.current = true;
+    // Mark as shown immediately to prevent banner from appearing
+    setFirstLoginToastShown(true);
     localStorage.setItem(toastKey, 'true');
 
     toast.info(
@@ -117,14 +118,17 @@ export function LayoutShell({ children }: LayoutShellProps) {
     }
   }, [userId]);
 
-  // Show banner if: needs verification and not dismissed for this user
+  // Show banner if: needs verification, not first login (toast shown instead), and not dismissed
   const showVerificationBanner =
     isHydrated &&
     needsVerification &&
+    !firstLoginToastShown &&
     !bannerDismissed &&
     (userId ?
       sessionStorage.getItem(`${VERIFICATION_BANNER_DISMISSED_KEY}-${userId}`) !== 'true'
-    : true);
+    : true) &&
+    // Also check localStorage to ensure we don't show banner on first login before effect runs
+    (userId ? localStorage.getItem(`${FIRST_LOGIN_TOAST_SHOWN_KEY}-${userId}`) === 'true' : false);
 
   // Persist width changes
   const handleWidthChange = useCallback((width: number) => {

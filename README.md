@@ -56,7 +56,7 @@ Unauthenticated users see a landing page that showcases the application's featur
     ```
 
 3.  **Set up environment variables**:
-    Create a `.env.local` file in the root directory with the following content, replacing placeholders with your actual values:
+    Create a `.env` file in the root directory with the following content, replacing placeholders with your actual values:
 
     ```env
     NEXTAUTH_URL="http://localhost:3000"
@@ -128,7 +128,7 @@ Open your browser to [http://localhost:3000](http://localhost:3000).
 
 ## Configuration
 
-Environment variables are managed via a `.env.local` file in the project root. Key variables include:
+Environment variables are managed via a `.env` file in the project root. Key variables include:
 
 - `NEXTAUTH_URL`: The base URL of your application (e.g., `http://localhost:3000`).
 - `DATABASE_URL`: The connection string for your PostgreSQL database.

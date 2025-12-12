@@ -140,24 +140,32 @@ export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name='rememberMe'
-              render={({ field }) => (
-                <FormItem className='flex flex-row items-center space-y-0 space-x-2'>
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormLabel className='cursor-pointer text-sm font-normal'>
-                    Remember me for 30 days
-                  </FormLabel>
-                </FormItem>
-              )}
-            />
+            <div className='flex items-center justify-between'>
+              <FormField
+                control={form.control}
+                name='rememberMe'
+                render={({ field }) => (
+                  <FormItem className='flex flex-row items-center space-y-0 space-x-2'>
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormLabel className='cursor-pointer text-sm font-normal'>
+                      Remember me for 30 days
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+              <Link
+                href='/account/forgot-password'
+                className='text-muted-foreground hover:text-primary text-sm'
+              >
+                Forgot password?
+              </Link>
+            </div>
 
             {error && (
               <div className='rounded-sm-md bg-destructive/10 text-destructive p-3 text-sm'>

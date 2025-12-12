@@ -52,7 +52,10 @@ export function LayoutShell({ children }: LayoutShellProps) {
   // Hide sidebar when logged out and on auth/landing pages
   const isLandingPage = pathname === '/';
   const isAuthPage =
-    pathname.startsWith('/account/login') || pathname.startsWith('/account/register');
+    pathname.startsWith('/account/login') ||
+    pathname.startsWith('/account/register') ||
+    pathname.startsWith('/account/forgot-password') ||
+    pathname.startsWith('/account/reset-password');
   const isAuthenticated = status === 'authenticated' && !!session?.user;
   const showSidebar = isAuthenticated || (!isLandingPage && !isAuthPage);
 

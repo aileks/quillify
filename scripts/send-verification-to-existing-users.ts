@@ -15,7 +15,13 @@ import {
 
 const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
 
+// Check for --dry-run flag
+const isDryRun = process.argv.includes('--dry-run');
+
 async function sendVerificationToExistingUsers() {
+  if (isDryRun) {
+    console.log('[DRY-RUN MODE] No emails will be sent.\n');
+  }
   console.log('Starting email verification process for existing users...\n');
 
   try {
@@ -58,30 +64,39 @@ async function sendVerificationToExistingUsers() {
           expiresAt,
         });
 
-        // Build verification URL
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        // Build verification URL (remove trailing slash if present)
+        const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(
+          /\/$/,
+          ''
+        );
         const verificationUrl = `${appUrl}/api/verify-email?token=${token}`;
 
-        // Send verification email (mark as existing user)
-        await sendEmail({
-          to: user.email!,
-          subject: 'Action Required: Verify Your Email Address',
-          html: getEmailVerificationHtml({
-            verificationUrl,
-            userName: user.name,
-            expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
-            isExistingUser: true,
-          }),
-          text: getEmailVerificationText({
-            verificationUrl,
-            userName: user.name,
-            expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
-            isExistingUser: true,
-          }),
-          category: 'Email Verification',
-        });
+        if (isDryRun) {
+          // In dry-run mode, just log what would be sent
+          console.log(`[DRY-RUN] Would send email to: ${user.email}`);
+          console.log(`[DRY-RUN] Verification URL: ${verificationUrl}`);
+        } else {
+          // Send verification email (mark as existing user)
+          await sendEmail({
+            to: user.email!,
+            subject: 'Action Required: Verify Your Email Address',
+            html: getEmailVerificationHtml({
+              verificationUrl,
+              userName: user.name,
+              expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+              isExistingUser: true,
+            }),
+            text: getEmailVerificationText({
+              verificationUrl,
+              userName: user.name,
+              expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+              isExistingUser: true,
+            }),
+            category: 'Email Verification',
+          });
+        }
 
-        console.log(`[OK] Verification email sent to ${user.email}`);
+        console.log(`[OK] Verification email ${isDryRun ? 'would be' : ''} sent to ${user.email}`);
         successCount++;
 
         // Add delay to avoid rate limits (500ms between emails)

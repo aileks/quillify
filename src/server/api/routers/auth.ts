@@ -1021,4 +1021,68 @@ export const authRouter = createTRPCRouter({
       });
     }
   }),
+
+  /**
+   * Delete user account (requires password verification)
+   * Cascade delete will handle all related data (books, tokens, etc.)
+   */
+  deleteAccount: protectedProcedure
+    .input(
+      z.object({
+        currentPassword: z.string().min(1, 'Password is required'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { currentPassword } = input;
+      const userId = ctx.session.user.id;
+
+      // Get current user
+      const user = await ctx.db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      if (!user.password) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This account uses a different sign-in method',
+        });
+      }
+
+      // Verify current password (normalize hash format for Laravel compatibility)
+      const passwordHash = user.password;
+      const normalizedHash =
+        passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
+
+      const isValidPassword = await bcrypt.compare(currentPassword, normalizedHash);
+
+      if (!isValidPassword) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Incorrect password',
+        });
+      }
+
+      // Delete user - cascade will handle books, tokens, etc.
+      try {
+        await ctx.db.delete(users).where(eq(users.id, userId));
+
+        return {
+          success: true,
+          message: 'Account deleted successfully',
+        };
+      } catch (error: unknown) {
+        console.error('Error deleting account:', error instanceof Error ? error.message : error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to delete account. Please try again.',
+        });
+      }
+    }),
 });

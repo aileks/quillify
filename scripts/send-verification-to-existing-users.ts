@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 import { db } from '@/server/db';
 import { users, emailVerificationTokens } from '@/server/db/schema';
-import { eq, lt } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import crypto from 'crypto';
 import { sendEmail } from '@/lib/email';
 import {
@@ -19,7 +19,7 @@ async function sendVerificationToExistingUsers() {
   try {
     // Find all users who haven't verified their email
     const unverifiedUsers = await db.query.users.findMany({
-      where: lt(users.emailVerifiedAt, new Date(0)),
+      where: isNull(users.emailVerifiedAt),
       columns: {
         id: true,
         email: true,

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const nameFormSchema = z.object({
   name: z
@@ -71,6 +82,12 @@ export function SettingsForm() {
   const currentEmail = session?.user?.email ?? '';
   const currentName = session?.user?.name ?? '';
   const isVerified = session?.user?.emailVerified === true;
+
+  // Delete account state
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [showFirstDialog, setShowFirstDialog] = useState(false);
+  const [showFinalConfirm, setShowFinalConfirm] = useState(false);
 
   const nameForm = useForm<NameFormValues>({
     resolver: zodResolver(nameFormSchema),
@@ -132,6 +149,19 @@ export function SettingsForm() {
     },
   });
 
+  const deleteAccount = api.auth.deleteAccount.useMutation({
+    onSuccess: () => {
+      toast.success('Your account has been deleted');
+      // Sign out and redirect to home
+      signOut({ callbackUrl: '/' });
+    },
+    onError: (error) => {
+      setDeleteError(error.message || 'Failed to delete account');
+      // Close the final confirmation dialog so user sees the error in first dialog
+      setShowFinalConfirm(false);
+    },
+  });
+
   function onNameSubmit(data: NameFormValues) {
     updateName.mutate({ name: data.name });
   }
@@ -150,6 +180,26 @@ export function SettingsForm() {
     });
   }
 
+  function handleDeleteContinue() {
+    if (!deletePassword) {
+      setDeleteError('Please enter your password');
+      return;
+    }
+    setDeleteError('');
+    setShowFinalConfirm(true);
+  }
+
+  function handleDeleteConfirm() {
+    deleteAccount.mutate({ currentPassword: deletePassword });
+  }
+
+  function handleDeleteCancel() {
+    setShowFirstDialog(false);
+    setShowFinalConfirm(false);
+    setDeletePassword('');
+    setDeleteError('');
+  }
+
   return (
     <div className='container mx-auto max-w-2xl px-4 py-6 md:px-6 md:py-10'>
       <Tabs defaultValue={getInitialTab(isVerified)} className='space-y-6'>
@@ -161,51 +211,49 @@ export function SettingsForm() {
 
         {/* Profile Tab */}
         <TabsContent value='profile'>
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Update your display name.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...nameForm}>
-                <form onSubmit={nameForm.handleSubmit(onNameSubmit)} className='space-y-4'>
-                  <FormField
-                    control={nameForm.control}
-                    name='name'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder='Your name'
-                            className='placeholder:text-muted-foreground'
-                            {...field}
-                            disabled={updateName.isPending}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          2-25 characters, letters, numbers, and spaces only
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type='submit' disabled={updateName.isPending}>
-                    {updateName.isPending ? 'Saving...' : 'Save Name'}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Account Tab */}
-        <TabsContent value='account'>
           <div className='space-y-6'>
+            {/* Name Update Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Display Name</CardTitle>
+                <CardDescription>Update your display name.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...nameForm}>
+                  <form onSubmit={nameForm.handleSubmit(onNameSubmit)} className='space-y-4'>
+                    <FormField
+                      control={nameForm.control}
+                      name='name'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder='Your name'
+                              className='placeholder:text-muted-foreground'
+                              {...field}
+                              disabled={updateName.isPending}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            2-25 characters, letters, numbers, and spaces only
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type='submit' disabled={updateName.isPending}>
+                      {updateName.isPending ? 'Saving...' : 'Save Name'}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+
             {/* Email Update Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Change Email</CardTitle>
+                <CardTitle>Email Address</CardTitle>
                 <CardDescription>
                   Update your email address. Your current email is: <strong>{currentEmail}</strong>
                 </CardDescription>
@@ -261,7 +309,12 @@ export function SettingsForm() {
                 </Form>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
 
+        {/* Account Tab */}
+        <TabsContent value='account'>
+          <div className='space-y-6'>
             {/* Password Update Card */}
             <Card>
               <CardHeader>
@@ -342,6 +395,97 @@ export function SettingsForm() {
                     </Button>
                   </form>
                 </Form>
+              </CardContent>
+            </Card>
+
+            {/* Delete Account Card */}
+            <Card className='border-destructive/50'>
+              <CardHeader>
+                <CardTitle className='text-destructive'>Delete Account</CardTitle>
+                <CardDescription>
+                  Permanently delete your account and all associated data. This action cannot be
+                  undone.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AlertDialog open={showFirstDialog} onOpenChange={setShowFirstDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant='destructive'
+                      onClick={() => {
+                        setDeletePassword('');
+                        setDeleteError('');
+                      }}
+                    >
+                      Delete Account
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Your Account</AlertDialogTitle>
+                      <AlertDialogDescription className='space-y-3'>
+                        <span className='block'>
+                          This will permanently delete your account and all your data, including:
+                        </span>
+                        <ul className='list-disc space-y-1 pl-5'>
+                          <li>All books in your library</li>
+                          <li>Your reading history and statistics</li>
+                          <li>Your account settings and preferences</li>
+                        </ul>
+                        <span className='block font-medium'>Enter your password to continue.</span>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className='space-y-4 py-4'>
+                      <Input
+                        type='password'
+                        placeholder='Enter your password'
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        className='placeholder:text-muted-foreground'
+                        disabled={deleteAccount.isPending}
+                      />
+                      {deleteError && <p className='text-destructive text-sm'>{deleteError}</p>}
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={handleDeleteCancel}>Cancel</AlertDialogCancel>
+                      <Button
+                        variant='destructive'
+                        onClick={handleDeleteContinue}
+                        disabled={deleteAccount.isPending || !deletePassword}
+                      >
+                        Continue
+                      </Button>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                {/* Second confirmation dialog */}
+                <AlertDialog open={showFinalConfirm} onOpenChange={setShowFinalConfirm}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. Your account and all associated data will be
+                        permanently deleted.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel
+                        onClick={() => setShowFinalConfirm(false)}
+                        disabled={deleteAccount.isPending}
+                      >
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteConfirm}
+                        disabled={deleteAccount.isPending}
+                        className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                      >
+                        {deleteAccount.isPending ? 'Deleting...' : 'Yes, delete my account'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </CardContent>
             </Card>
           </div>

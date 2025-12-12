@@ -1,4 +1,8 @@
 import { config } from 'dotenv';
+
+// Load environment variables BEFORE importing modules that use them
+config();
+
 import { db } from '@/server/db';
 import { users, emailVerificationTokens } from '@/server/db/schema';
 import { eq, isNull } from 'drizzle-orm';
@@ -8,8 +12,6 @@ import {
   getEmailVerificationHtml,
   getEmailVerificationText,
 } from '@/lib/email-templates/email-verification';
-
-config();
 
 const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
 
@@ -30,7 +32,7 @@ async function sendVerificationToExistingUsers() {
 
     if (unverifiedUsers.length === 0) {
       console.log('✅ No unverified users found.');
-      return;
+      process.exit(0);
     }
 
     console.log(`Found ${unverifiedUsers.length} unverified users.\n`);
@@ -106,6 +108,8 @@ async function sendVerificationToExistingUsers() {
       );
       process.exit(1);
     }
+
+    process.exit(0);
   } catch (error: unknown) {
     console.error(
       'Fatal error running verification script:',

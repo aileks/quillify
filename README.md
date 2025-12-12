@@ -4,6 +4,10 @@ Digitize your TBR lists and track your library.
 
 ![Quillify Screenshot](./docs/showcase.png)
 
+## Motivation
+
+Quillify bridges the gap between physical "to-be-read" (TBR) lists and modern digital book catalogs. While many of us maintain paper lists or scattered notes (paper or digital) of books we want to read, there's a unique problem: most existing book tracking apps focus on logging books you've already read, not managing your reading wishlist. Quillify solves this by providing a dedicated space to digitize your TBR list, organize it by genre, and seamlessly transition books from your wishlist to your read history all in one place, without getting in the way.
+
 ## Features
 
 - **Comprehensive Book Cataloging**: Add and manage books with details like title, author, genre, publication year, and number of pages.
@@ -29,14 +33,14 @@ Once logged in, users are presented with a personalized dashboard showing key re
 
 Unauthenticated users see a landing page that showcases the application's features. They are prompted to register or log in to access the full functionality of the library management system.
 
-## Installation
+## Getting Started
 
 ### Prerequisites
 
 - Node.js 21+ and pnpm
 - PostgreSQL database
 
-### Installation Steps
+### Quick Start
 
 1.  **Clone the repository**:
 
@@ -269,4 +273,3 @@ This project is licensed under the BSD 3-Clause License. See the [LICENSE](./LIC
 - **[SCHEMA.md](./docs/SCHEMA.md)**: Database schema documentation.
 
 _README.md was made with [Etchr](https://etchr.dev)_
-

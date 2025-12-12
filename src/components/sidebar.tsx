@@ -251,7 +251,7 @@ export function Sidebar({
             variant='ghost'
             onClick={() => signOut({ callbackUrl: '/' })}
             className={cn(
-              'hover:bg-sidebar-accent text-destructive hover:text-destructive w-full justify-start gap-3 text-left',
+              'w-full justify-start gap-3 text-left text-red-400 hover:text-red-700',
               isCollapsed && 'justify-center px-2'
             )}
             title={isCollapsed ? 'Log Out' : undefined}

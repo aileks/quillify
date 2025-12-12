@@ -17,6 +17,7 @@ Quillify bridges the gap between physical "to-be-read" (TBR) lists and modern di
 - **Genre Analysis**: Identify top genres within your library.
 - **Recently Added Books**: View a curated list of recently added books.
 - **User Authentication**: Secure user accounts with email/password authentication via NextAuth.js.
+- **Password Reset**: Forgot password flow with secure email-based reset tokens (30-minute expiration, rate limiting).
 - **Responsive Design**: Fully adaptive interface that works across all devices.
 - **Type-Safe API**: tRPC ensures end-to-end type safety between the client and server.
 - **Optimistic UI Updates**: Enhances user experience with instant feedback for actions like toggling read status.
@@ -56,15 +57,26 @@ Unauthenticated users see a landing page that showcases the application's featur
     ```
 
 3.  **Set up environment variables**:
-    Create a `.env` file in the root directory with the following content, replacing placeholders with your actual values:
+    Copy the example environment file and update the values:
 
-    ```env
-    NEXTAUTH_URL="http://localhost:3000"
-    DATABASE_URL="postgresql://user:password@localhost:5432/quillify"
-    AUTH_SECRET="your-secret-key-here"
+    ```bash
+    cp .env.example .env
     ```
 
-    To generate a secure `AUTH_SECRET`, run:
+    Then edit `.env` with your actual values:
+
+    ```env
+    AUTH_SECRET=your_auth_secret_key_here
+    DATABASE_URL=postgresql://postgres:@localhost:5432/postgres
+    NEXT_AUTH_URL=http://localhost:3000
+    MAIL_FROM_ADDRESS=your_mail_from_address_here
+    MAIL_FROM_NAME=Quillify
+    MAILTRAP_API_KEY=your_mailtrap_api_key_here
+    NEXT_PUBLIC_APP_URL=http://localhost:3000/
+    CRON_SECRET=your_cron_secret_here
+    ```
+
+    To generate secure secrets, run:
 
     ```bash
     openssl rand -base64 32
@@ -128,11 +140,16 @@ Open your browser to [http://localhost:3000](http://localhost:3000).
 
 ## Configuration
 
-Environment variables are managed via a `.env` file in the project root. Key variables include:
+Environment variables are managed via a `.env` file in the project root. See `.env.example` for a template. Key variables include:
 
-- `NEXTAUTH_URL`: The base URL of your application (e.g., `http://localhost:3000`).
-- `DATABASE_URL`: The connection string for your PostgreSQL database.
 - `AUTH_SECRET`: A secret key used for signing NextAuth.js session tokens.
+- `DATABASE_URL`: The connection string for your PostgreSQL database.
+- `NEXT_AUTH_URL`: The base URL of your application (e.g., `http://localhost:3000`).
+- `MAILTRAP_API_KEY`: API key for Mailtrap email service (used for password reset emails).
+- `MAIL_FROM_ADDRESS`: The email address used as the sender for outgoing emails.
+- `MAIL_FROM_NAME`: The display name for outgoing emails.
+- `NEXT_PUBLIC_APP_URL`: The public URL of your application (used for email links).
+- `CRON_SECRET`: Secret key for authenticating Vercel cron job requests.
 
 Database schema and migrations are handled by Drizzle Kit. Configuration files for Drizzle Kit can be found in `drizzle.config.ts`.
 
@@ -221,6 +238,7 @@ The database schema is defined using Drizzle ORM in `src/server/db/schema.ts` an
 
 - **`users`**: Stores user account information, including ID, name, email, and password hash. The password field is nullable to support future OAuth providers.
 - **`books`**: Stores book entries linked to users, containing details such as title, author, page count, genre, publication year, and read status.
+- **`password_reset_tokens`**: Stores password reset tokens with expiration timestamps, linked to users for secure password recovery.
 
 For a detailed schema description, refer to [SCHEMA.md](./docs/SCHEMA.md).
 
@@ -237,6 +255,7 @@ The project utilizes a range of libraries for its functionality. Key dependencie
 - `drizzle-orm`: SQL ORM.
 - `zod`: Schema validation.
 - `bcryptjs`: Password hashing.
+- `mailtrap`: Official Mailtrap SDK for sending transactional emails (password reset).
 - `tailwindcss`, `class-variance-authority`, `tailwind-merge`: Styling and component utilities.
 - `shadcn/ui` components (via direct import): UI component library.
 - `lucide-react`: Icon library.

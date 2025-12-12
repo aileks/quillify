@@ -15,6 +15,12 @@ This document enumerates the current app routes and tRPC procedures, their HTTP 
 - `/account/register` - User registration page
   - **Authenticated users**: Automatically redirected to `/` (dashboard)
   - **After successful registration**: Redirected to `/` (dashboard) or `callbackUrl` if provided
+- `/account/forgot-password` - Request password reset page
+  - **Authenticated users**: Can still access (in case they want to reset password)
+  - **After successful submission**: Shows confirmation message regardless of email existence (security)
+- `/account/reset-password` - Reset password page (requires valid token)
+  - **Query params**: `token` (required) - The reset token from email
+  - **Invalid/expired token**: Shows error message with link to request new token
 
 ### Protected Routes (require authentication)
 
@@ -31,6 +37,10 @@ This document enumerates the current app routes and tRPC procedures, their HTTP 
 
 - `/api/auth/[...nextauth]` - NextAuth.js authentication endpoints
 - `/api/trpc/[trpc]` - tRPC HTTP handler (all tRPC procedures)
+- `/api/cron/cleanup-tokens` - Cron endpoint for cleaning expired password reset tokens
+  - **Method**: GET
+  - **Authorization**: Requires `Authorization: Bearer <CRON_SECRET>` header (Vercel cron)
+  - **Schedule**: Daily at 3:00 AM UTC (configured in `vercel.json`)
 
 ### Authentication Flow
 
@@ -234,6 +244,58 @@ Mix of public and protected procedures.
   - 401 UNAUTHORIZED - Not authenticated or current password is incorrect.
   - 404 NOT_FOUND - User not found.
   - 500 INTERNAL_SERVER_ERROR - Failed to update password.
+
+6. auth.requestPasswordReset (mutation) - Public
+
+- Purpose: Request a password reset email. Always returns success to prevent email enumeration.
+- Input (required):
+  - `email: string (email)` - Email address to send reset link to
+- Success:
+  - 200 OK - Returns `{ success: true, message: 'If an account exists...' }`.
+- Errors:
+  - 400 BAD_REQUEST - Validation error.
+- Notes:
+  - Rate limited to 3 requests per email per hour
+  - Generates a secure token with 30-minute expiration
+  - Sends styled HTML email via Mailtrap
+
+7. auth.validateResetToken (query) - Public
+
+- Purpose: Validate a password reset token before showing the reset form.
+- Input (required):
+  - `token: string` - The reset token from the email link
+- Success:
+  - 200 OK - Returns `{ valid: true, email: string }`.
+- Errors:
+  - 400 BAD_REQUEST - Invalid or expired token (returns `{ valid: false, message: '...' }`).
+- Notes:
+  - Also cleans up expired tokens on-demand during validation
+
+8. auth.resetPassword (mutation) - Public
+
+- Purpose: Reset user password using a valid reset token.
+- Input (required):
+  - `token: string` - The reset token from the email link
+  - `password: string` - New password (>= 8 chars, 1 upper, 1 lower, 1 number)
+- Success:
+  - 200 OK - Returns `{ success: true, message: 'Password has been reset successfully' }`.
+- Errors:
+  - 400 BAD_REQUEST - Validation error, invalid token, or expired token.
+  - 404 NOT_FOUND - User not found.
+  - 500 INTERNAL_SERVER_ERROR - Failed to update password.
+- Notes:
+  - Deletes the token after successful use
+  - Cleans up all expired tokens for the user
+
+9. auth.cleanupExpiredTokens (mutation) - Public (but secured via cron)
+
+- Purpose: Clean up all expired password reset tokens from the database.
+- Input: None
+- Success:
+  - 200 OK - Returns `{ success: true, deleted: number }`.
+- Notes:
+  - Called by the `/api/cron/cleanup-tokens` endpoint
+  - Runs daily via Vercel cron job
 
 ---
 

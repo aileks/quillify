@@ -136,6 +136,38 @@ Success responses default to HTTP 200 OK (even for mutations).
 - **Batching**: Enabled for multiple parallel queries
 - **Headers**: Both clients set `x-trpc-source` header for request tracing
 
+## Cron Jobs
+
+Quillify uses Vercel cron jobs for scheduled maintenance tasks.
+
+### Token Cleanup
+
+- **Endpoint**: `/api/cron/cleanup-tokens`
+- **Schedule**: Daily at 3:00 AM UTC
+- **Configuration**: `vercel.json`
+- **Authentication**: Requires `Authorization: Bearer <CRON_SECRET>` header
+- **Purpose**: Removes expired password reset tokens from the database
+
+## Email Service
+
+Quillify uses [Mailtrap](https://mailtrap.io/) for transactional emails.
+
+### Configuration
+
+- **Client**: `src/lib/email.ts`
+- **Templates**: `src/lib/email-templates/`
+
+### Email Types
+
+- **Password Reset**: Styled HTML email with reset link (30-minute expiration)
+
+### Environment Variables
+
+- `MAILTRAP_API_KEY`: API key from Mailtrap dashboard
+- `MAIL_FROM_ADDRESS`: Sender email address
+- `MAIL_FROM_NAME`: Sender display name
+- `NEXT_PUBLIC_APP_URL`: Base URL for email links
+
 ## Adding New Endpoints
 
 1. **Create or update a router** in `src/server/api/routers/`
@@ -153,4 +185,5 @@ Success responses default to HTTP 200 OK (even for mutations).
 - `src/trpc/react.tsx` - React Query + tRPC client and provider
 - `src/trpc/query-client.ts` - React Query configuration
 - `src/app/api/trpc/[trpc]/route.ts` - Next.js API route handler
+- `src/app/api/cron/cleanup-tokens/route.ts` - Cron endpoint for token cleanup
 - [ROUTES.md](./ROUTES.md) - Complete endpoint documentation

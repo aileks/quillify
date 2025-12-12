@@ -71,7 +71,7 @@ export function LoginForm({ callbackUrl = '/', emailParam, verified }: LoginForm
     } else if (verified) {
       setError('');
       // Show success message for verification
-      toast.success('Email verified successfully! You can now log in.', {
+      toast.success('Email verified successfully!', {
         duration: Infinity,
       });
     }

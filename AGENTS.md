@@ -10,14 +10,15 @@
 ## Code Style
 
 - **Imports**: External packages first, then internal with `@/` alias. Use `import type` for type-only imports
-- **Formatting**: 2-space indent, single quotes, semicolons, 100 char line width, trailing commas (ES5)
+- **Formatting**: 2-space indent, single quotes (including JSX), semicolons, 100 char line width, trailing commas (ES5)
 - **Naming**: Files in kebab-case, components/types in PascalCase, functions/variables in camelCase
-- **TypeScript**: Strict mode enabled, use `noUncheckedIndexedAccess` - always check array/object access
+- **TypeScript**: Strict mode, `noUncheckedIndexedAccess` enabled - always check array/object access before use
 
 ## Patterns
 
-- Client components: Add `'use client';` directive. Server components are default (no directive)
-- tRPC: Use `protectedProcedure` for auth routes, Zod for input validation, `TRPCError` for errors
-- Forms: react-hook-form + Zod schemas with `@hookform/resolvers`
+- Client components: Add `'use client';` directive. Server components are default (no directive needed)
+- tRPC: Use `protectedProcedure` for authenticated routes, Zod for input validation, `TRPCError` for errors
+- Forms: react-hook-form + Zod schemas with `@hookform/resolvers/zod`
 - Styling: Tailwind CSS with `cn()` utility from `@/lib/utils` for conditional classes
-- Error handling: `TRPCError` with codes (`NOT_FOUND`, etc.), `notFound()` for missing pages
+- Error handling: `TRPCError` with codes (`NOT_FOUND`, `UNAUTHORIZED`, etc.), `notFound()` for missing pages
+- Email: Use `sendEmail()` from `@/lib/email` with HTML + text templates from `@/lib/email-templates/`

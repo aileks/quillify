@@ -435,14 +435,12 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
                 <div className='flex items-center gap-2'>
                   <div
                     className={`h-2.5 w-2.5 rounded-full ${
-                      book.isRead ? 'bg-green-600' : 'bg-amber-500'
+                      book.isRead ? 'bg-chart-3' : 'bg-amber-500'
                     }`}
                   />
                   <span
                     className={`text-sm font-semibold tracking-wider uppercase ${
-                      book.isRead ?
-                        'text-green-700 dark:text-green-500'
-                      : 'text-amber-700 dark:text-amber-500'
+                      book.isRead ? 'text-chart-3' : 'text-amber-700 dark:text-amber-500'
                     }`}
                   >
                     {book.isRead ? 'Read' : 'Unread'}

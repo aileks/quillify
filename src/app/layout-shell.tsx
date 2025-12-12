@@ -2,15 +2,20 @@
 
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useState, useCallback, useSyncExternalStore } from 'react';
+import { useState, useCallback, useSyncExternalStore, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
+import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { Sidebar, COLLAPSED_WIDTH } from '@/components/sidebar';
+import { EmailVerificationBanner } from '@/components/email-verification-banner';
 
 const SIDEBAR_MIN_WIDTH = 200;
 const SIDEBAR_MAX_WIDTH = 360;
 const SIDEBAR_DEFAULT_WIDTH = 256;
 const SIDEBAR_WIDTH_STORAGE_KEY = 'quillify-sidebar-width';
 const SIDEBAR_COLLAPSED_STORAGE_KEY = 'quillify-sidebar-collapsed';
+const VERIFICATION_TOAST_SHOWN_KEY = 'quillify-verification-toast-shown';
+const VERIFICATION_BANNER_DISMISSED_KEY = 'quillify-verification-banner-dismissed';
 
 // Read initial width from localStorage
 function getStoredWidth(): number {
@@ -48,6 +53,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [sidebarWidth, setSidebarWidth] = useState(getStoredWidth);
   const [isCollapsed, setIsCollapsed] = useState(getStoredCollapsed);
   const [isResizing, setIsResizing] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const toastShownRef = useRef(false);
 
   // Hide sidebar when logged out and on auth/landing pages
   const isLandingPage = pathname === '/';
@@ -58,6 +65,54 @@ export function LayoutShell({ children }: LayoutShellProps) {
     pathname.startsWith('/account/reset-password');
   const isAuthenticated = status === 'authenticated' && !!session?.user;
   const showSidebar = isAuthenticated || (!isLandingPage && !isAuthPage);
+
+  // Check if user needs to verify email
+  const needsVerification = isAuthenticated && session?.user?.emailVerified === false;
+  const userEmail = session?.user?.email ?? '';
+  const userId = session?.user?.id;
+
+  // Show first-time verification toast (30 seconds, once per session per user)
+  useEffect(() => {
+    if (!needsVerification || !isHydrated || toastShownRef.current || !userId) return;
+
+    // Use user-specific key to handle logout/login properly
+    const toastKey = `${VERIFICATION_TOAST_SHOWN_KEY}-${userId}`;
+    const alreadyShown = sessionStorage.getItem(toastKey) === 'true';
+    if (alreadyShown) return;
+
+    toastShownRef.current = true;
+    sessionStorage.setItem(toastKey, 'true');
+
+    toast.info(
+      <div className='flex flex-col gap-2'>
+        <span>Please verify your email address to unlock unlimited books.</span>
+        <Link
+          href='/account/settings#verification'
+          className='text-primary underline underline-offset-2'
+        >
+          Go to Settings
+        </Link>
+      </div>,
+      { duration: 30000 }
+    );
+  }, [needsVerification, isHydrated, userId]);
+
+  // Handle banner dismissal (user-specific)
+  const handleBannerDismiss = useCallback(() => {
+    setBannerDismissed(true);
+    if (userId) {
+      sessionStorage.setItem(`${VERIFICATION_BANNER_DISMISSED_KEY}-${userId}`, 'true');
+    }
+  }, [userId]);
+
+  // Show banner if: needs verification and not dismissed for this user
+  const showVerificationBanner =
+    isHydrated &&
+    needsVerification &&
+    !bannerDismissed &&
+    (userId ?
+      sessionStorage.getItem(`${VERIFICATION_BANNER_DISMISSED_KEY}-${userId}`) !== 'true'
+    : true);
 
   // Persist width changes
   const handleWidthChange = useCallback((width: number) => {
@@ -93,6 +148,20 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
       {/* Mobile navbar */}
       <Navbar className='md:hidden' />
+
+      {/* Email verification banner */}
+      {showVerificationBanner && (
+        <div
+          className='md:ml-[var(--sidebar-width)]'
+          style={
+            {
+              '--sidebar-width': showSidebar ? `${currentSidebarWidth}px` : '0px',
+            } as React.CSSProperties
+          }
+        >
+          <EmailVerificationBanner email={userEmail} onDismiss={handleBannerDismiss} />
+        </div>
+      )}
 
       {/* Desktop sidebar */}
       {showSidebar && (

@@ -3,16 +3,22 @@ import { TRPCError } from '@trpc/server';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc';
-import { users, passwordResetTokens } from '@/server/db/schema';
-import { eq, and, gt, lt } from 'drizzle-orm';
+import { users, passwordResetTokens, emailVerificationTokens } from '@/server/db/schema';
+import { eq, and, gt, lt, desc } from 'drizzle-orm';
 import { sendEmail } from '@/lib/email';
 import {
   getPasswordResetEmailHtml,
   getPasswordResetEmailText,
 } from '@/lib/email-templates/password-reset';
+import {
+  getEmailVerificationHtml,
+  getEmailVerificationText,
+} from '@/lib/email-templates/email-verification';
 
 const TOKEN_EXPIRY_MINUTES = 30;
+const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
 const MAX_RESET_REQUESTS_PER_HOUR = 3;
+const MAX_VERIFICATION_REQUESTS_PER_HOUR = 3;
 
 const registerSchema = z.object({
   email: z.email('Invalid email address'),
@@ -30,6 +36,12 @@ const loginSchema = z.object({
   email: z.email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
 });
+
+// Helper function to generate verification URL
+function generateVerificationUrl(token: string): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  return `${appUrl}/api/verify-email?token=${token}`;
+}
 
 export const authRouter = createTRPCRouter({
   /**
@@ -67,9 +79,64 @@ export const authRouter = createTRPCRouter({
           name: users.name,
         });
 
+      if (!newUser) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create user',
+        });
+      }
+
+      // Send verification email
+      try {
+        // Delete any existing tokens for this user (shouldn't exist, but just in case)
+        await ctx.db
+          .delete(emailVerificationTokens)
+          .where(eq(emailVerificationTokens.userId, newUser.id));
+
+        // Generate verification token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+
+        // Store token in database
+        await ctx.db.insert(emailVerificationTokens).values({
+          userId: newUser.id,
+          token,
+          expiresAt,
+        });
+
+        // Build verification URL
+        const verificationUrl = generateVerificationUrl(token);
+
+        // Send verification email
+        await sendEmail({
+          to: newUser.email!,
+          subject: 'Verify Your Email Address',
+          html: getEmailVerificationHtml({
+            verificationUrl,
+            userName: newUser.name,
+            expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+            isExistingUser: false,
+          }),
+          text: getEmailVerificationText({
+            verificationUrl,
+            userName: newUser.name,
+            expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+            isExistingUser: false,
+          }),
+          category: 'Email Verification',
+        });
+      } catch (emailError: unknown) {
+        // Don't fail registration if email fails, but log the error
+        console.error(
+          'Failed to send verification email:',
+          emailError instanceof Error ? emailError.message : emailError
+        );
+      }
+
       return {
         success: true,
         user: newUser,
+        message: 'Registration successful. Please check your email to verify your account.',
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -333,6 +400,46 @@ export const authRouter = createTRPCRouter({
     }),
 
   /**
+   * Update user name
+   */
+  updateName: protectedProcedure
+    .input(
+      z.object({
+        name: z
+          .string()
+          .min(2, 'Name must be at least 2 characters')
+          .max(25, 'Name must be at most 25 characters')
+          .regex(/^[a-zA-Z0-9 ]+$/, 'Name can only contain letters, numbers, and spaces')
+          .transform((val) => val.trim()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      try {
+        await ctx.db
+          .update(users)
+          .set({
+            name: input.name,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId));
+
+        return {
+          success: true,
+          message: 'Name updated successfully',
+        };
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Error updating name:', errorMessage);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update name',
+        });
+      }
+    }),
+
+  /**
    * Request a password reset email
    */
   requestPasswordReset: publicProcedure
@@ -555,6 +662,362 @@ export const authRouter = createTRPCRouter({
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to cleanup expired tokens.',
+      });
+    }
+  }),
+
+  /**
+   * Send email verification link to user
+   */
+  sendVerificationEmail: publicProcedure
+    .input(z.object({ email: z.email('Invalid email address') }))
+    .mutation(async ({ ctx, input }) => {
+      const { email } = input;
+
+      // Find user by email
+      const user = await ctx.db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return {
+          success: true,
+          message: 'If an account with that email exists, we sent a verification link.',
+        };
+      }
+
+      // Check if email is already verified
+      if (user.emailVerifiedAt) {
+        return {
+          success: true,
+          message: 'Your email is already verified.',
+        };
+      }
+
+      // Check rate limit: max 3 requests per hour per user
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const recentTokens = await ctx.db.query.emailVerificationTokens.findMany({
+        where: and(
+          eq(emailVerificationTokens.userId, user.id),
+          gt(emailVerificationTokens.createdAt, oneHourAgo)
+        ),
+        orderBy: [desc(emailVerificationTokens.createdAt)],
+      });
+
+      if (recentTokens.length >= MAX_VERIFICATION_REQUESTS_PER_HOUR) {
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Too many verification requests. Please try again later.',
+        });
+      }
+
+      // Delete any existing tokens for this user
+      await ctx.db
+        .delete(emailVerificationTokens)
+        .where(eq(emailVerificationTokens.userId, user.id));
+
+      // Generate secure token
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+
+      // Store token in database
+      try {
+        await ctx.db.insert(emailVerificationTokens).values({
+          userId: user.id,
+          token,
+          expiresAt,
+        });
+      } catch (error: unknown) {
+        console.error(
+          'Error creating email verification token:',
+          error instanceof Error ? error.message : error
+        );
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create verification request. Please try again.',
+        });
+      }
+
+      // Build verification URL
+      const verificationUrl = generateVerificationUrl(token);
+
+      // Determine if this is for an existing user (based on account age)
+      const isExistingUser = user.createdAt < new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      // Send email
+      try {
+        await sendEmail({
+          to: email,
+          subject:
+            isExistingUser ?
+              'Action Required: Verify Your Email Address'
+            : 'Verify Your Email Address',
+          html: getEmailVerificationHtml({
+            verificationUrl,
+            userName: user.name,
+            expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+            isExistingUser,
+          }),
+          text: getEmailVerificationText({
+            verificationUrl,
+            userName: user.name,
+            expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+            isExistingUser,
+          }),
+          category: 'Email Verification',
+        });
+      } catch (error: unknown) {
+        console.error(
+          'Error sending verification email:',
+          error instanceof Error ? error.message : error
+        );
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to send verification email. Please try again.',
+        });
+      }
+
+      return {
+        success: true,
+        message: 'If an account with that email exists, we sent a verification link.',
+      };
+    }),
+
+  /**
+   * Validate an email verification token
+   */
+  validateVerificationToken: publicProcedure
+    .input(z.object({ token: z.string().min(1, 'Token is required') }))
+    .query(async ({ ctx, input }) => {
+      const { token } = input;
+
+      const verificationToken = await ctx.db.query.emailVerificationTokens.findFirst({
+        where: eq(emailVerificationTokens.token, token),
+      });
+
+      if (!verificationToken) {
+        return { valid: false, message: 'Invalid or expired verification link.' };
+      }
+
+      if (new Date() > verificationToken.expiresAt) {
+        // Clean up expired token
+        await ctx.db
+          .delete(emailVerificationTokens)
+          .where(eq(emailVerificationTokens.id, verificationToken.id));
+        return {
+          valid: false,
+          message: 'This verification link has expired. Please request a new one.',
+        };
+      }
+
+      return { valid: true };
+    }),
+
+  /**
+   * Verify email using a valid token
+   */
+  verifyEmail: publicProcedure
+    .input(z.object({ token: z.string().min(1, 'Token is required') }))
+    .mutation(async ({ ctx, input }) => {
+      const { token } = input;
+
+      // Find and validate token
+      const verificationToken = await ctx.db.query.emailVerificationTokens.findFirst({
+        where: eq(emailVerificationTokens.token, token),
+      });
+
+      if (!verificationToken) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Invalid or expired verification link.',
+        });
+      }
+
+      if (new Date() > verificationToken.expiresAt) {
+        // Clean up expired token
+        await ctx.db
+          .delete(emailVerificationTokens)
+          .where(eq(emailVerificationTokens.id, verificationToken.id));
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This verification link has expired. Please request a new one.',
+        });
+      }
+
+      // Update user email verification status and delete token
+      try {
+        await ctx.db
+          .update(users)
+          .set({
+            emailVerifiedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, verificationToken.userId));
+
+        // Delete the used token
+        await ctx.db
+          .delete(emailVerificationTokens)
+          .where(eq(emailVerificationTokens.id, verificationToken.id));
+
+        // Clean up any other expired tokens for this user
+        await ctx.db
+          .delete(emailVerificationTokens)
+          .where(
+            and(
+              eq(emailVerificationTokens.userId, verificationToken.userId),
+              lt(emailVerificationTokens.expiresAt, new Date())
+            )
+          );
+
+        return {
+          success: true,
+          message: 'Email verified successfully. You can now log in.',
+        };
+      } catch (error: unknown) {
+        console.error('Error verifying email:', error instanceof Error ? error.message : error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to verify email. Please try again.',
+        });
+      }
+    }),
+
+  /**
+   * Resend verification email (for authenticated users)
+   */
+  resendVerificationEmail: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    // Get user
+    const user = await ctx.db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
+      });
+    }
+
+    // Check if email is already verified
+    if (user.emailVerifiedAt) {
+      return {
+        success: true,
+        message: 'Your email is already verified.',
+      };
+    }
+
+    // Check rate limit: max 3 requests per hour per user
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentTokens = await ctx.db.query.emailVerificationTokens.findMany({
+      where: and(
+        eq(emailVerificationTokens.userId, user.id),
+        gt(emailVerificationTokens.createdAt, oneHourAgo)
+      ),
+      orderBy: [desc(emailVerificationTokens.createdAt)],
+    });
+
+    if (recentTokens.length >= MAX_VERIFICATION_REQUESTS_PER_HOUR) {
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Too many verification requests. Please try again later.',
+      });
+    }
+
+    // Delete any existing tokens for this user
+    await ctx.db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.userId, user.id));
+
+    // Generate new token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+
+    // Store token in database
+    try {
+      await ctx.db.insert(emailVerificationTokens).values({
+        userId: user.id,
+        token,
+        expiresAt,
+      });
+    } catch (error: unknown) {
+      console.error(
+        'Error creating email verification token:',
+        error instanceof Error ? error.message : error
+      );
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to create verification request. Please try again.',
+      });
+    }
+
+    // Build verification URL
+    const verificationUrl = generateVerificationUrl(token);
+
+    // Determine if this is for an existing user
+    const isExistingUser = user.createdAt < new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    // Send email
+    try {
+      await sendEmail({
+        to: user.email!,
+        subject:
+          isExistingUser ?
+            'Action Required: Verify Your Email Address'
+          : 'Verify Your Email Address',
+        html: getEmailVerificationHtml({
+          verificationUrl,
+          userName: user.name,
+          expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+          isExistingUser,
+        }),
+        text: getEmailVerificationText({
+          verificationUrl,
+          userName: user.name,
+          expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+          isExistingUser,
+        }),
+        category: 'Email Verification',
+      });
+    } catch (error: unknown) {
+      console.error(
+        'Error sending verification email:',
+        error instanceof Error ? error.message : error
+      );
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to send verification email. Please try again.',
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Verification email sent successfully.',
+    };
+  }),
+
+  /**
+   * Cleanup expired email verification tokens (for cron job)
+   */
+  cleanupExpiredVerificationTokens: publicProcedure.mutation(async ({ ctx }) => {
+    try {
+      const result = await ctx.db
+        .delete(emailVerificationTokens)
+        .where(lt(emailVerificationTokens.expiresAt, new Date()))
+        .returning({ id: emailVerificationTokens.id });
+
+      return {
+        success: true,
+        deletedCount: result.length,
+      };
+    } catch (error: unknown) {
+      console.error(
+        'Error cleaning up expired verification tokens:',
+        error instanceof Error ? error.message : error
+      );
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to cleanup expired verification tokens.',
       });
     }
   }),

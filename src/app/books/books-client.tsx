@@ -591,14 +591,12 @@ export function BooksClient() {
                         <div className='flex items-center gap-1.5'>
                           <div
                             className={`h-2 w-2 rounded-full ${
-                              book.isRead ? 'bg-green-600' : 'bg-amber-500'
+                              book.isRead ? 'bg-chart-3' : 'bg-amber-500'
                             }`}
                           />
                           <span
                             className={`text-xs font-semibold tracking-wider uppercase ${
-                              book.isRead ?
-                                'text-green-700 dark:text-green-500'
-                              : 'text-amber-700 dark:text-amber-500'
+                              book.isRead ? 'text-chart-3' : 'text-amber-700 dark:text-amber-500'
                             }`}
                           >
                             {book.isRead ? 'Read' : 'Unread'}

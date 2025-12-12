@@ -8,6 +8,9 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
+import ResendVerification from './resend-verification';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,11 +42,40 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
   callbackUrl?: string;
+  errorParam?: string;
+  emailParam?: string;
+  verified?: boolean;
 }
 
-export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
+export function LoginForm({ callbackUrl = '/', emailParam, verified }: LoginFormProps) {
   const [error, setError] = React.useState<string>('');
+  const [emailForVerification, setEmailForVerification] = React.useState<string>(emailParam || '');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  React.useEffect(() => {
+    const error = searchParams.get('error');
+    const email = searchParams.get('email');
+
+    if (error === 'email_not_verified' && email) {
+      setError(
+        'Please verify your email before logging in. Check your inbox for the verification link.'
+      );
+      setEmailForVerification(email);
+    } else if (error === 'invalid_token') {
+      setError('Invalid verification link. Please request a new one.');
+    } else if (error === 'expired_token') {
+      setError('This verification link has expired. Please request a new one.');
+    } else if (error) {
+      setError('An error occurred. Please try again.');
+    } else if (verified) {
+      setError('');
+      // Show success message for verification
+      toast.success('Email verified successfully! You can now log in.', {
+        duration: Infinity,
+      });
+    }
+  }, [searchParams, verified]);
 
   const form = useForm({
     resolver: zodResolver(loginSchema),
@@ -170,6 +202,12 @@ export function LoginForm({ callbackUrl = '/' }: LoginFormProps) {
             {error && (
               <div className='rounded-sm-md bg-destructive/10 text-destructive p-3 text-sm'>
                 {error}
+              </div>
+            )}
+
+            {emailForVerification && error.includes('verify') && (
+              <div className='pt-2'>
+                <ResendVerification email={emailForVerification} />
               </div>
             )}
 

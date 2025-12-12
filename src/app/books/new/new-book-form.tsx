@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -52,7 +53,22 @@ export function NewBookForm() {
       router.push('/books');
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to add book');
+      if (error.message === 'BOOK_LIMIT_REACHED') {
+        toast.error(
+          <div className='flex flex-col gap-2'>
+            <span>You&apos;ve reached the 10-book limit for unverified accounts.</span>
+            <Link
+              href='/account/settings#verification'
+              className='text-primary underline underline-offset-2'
+            >
+              Verify your email to add unlimited books
+            </Link>
+          </div>,
+          { duration: Infinity }
+        );
+      } else {
+        toast.error(error.message || 'Failed to add book');
+      }
     },
   });
 

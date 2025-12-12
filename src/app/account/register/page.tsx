@@ -19,7 +19,7 @@ async function RegisterContent({ searchParams }: RegisterPageProps) {
 
   return (
     <div className='flex min-h-screen items-center justify-center p-4'>
-      <RegisterForm callbackUrl={callbackUrl} />
+      <RegisterForm />
     </div>
   );
 }

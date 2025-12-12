@@ -2322,8 +2322,17 @@ async function seed() {
     if (existingUser) {
       console.log('Demo user already exists!');
       demoUser = existingUser;
+
+      // Ensure demo user has verified email
+      if (!existingUser.emailVerifiedAt) {
+        await db
+          .update(users)
+          .set({ emailVerifiedAt: new Date() })
+          .where(eq(users.id, existingUser.id));
+        console.log('Updated demo user with verified email');
+      }
     } else {
-      // Create demo user
+      // Create demo user with verified email
       const hashedPassword = await bcrypt.hash(DEMO_USER.password, 12);
       const [newUser] = await db
         .insert(users)
@@ -2331,10 +2340,11 @@ async function seed() {
           email: DEMO_USER.email,
           password: hashedPassword,
           name: DEMO_USER.name,
+          emailVerifiedAt: new Date(),
         })
         .returning();
       demoUser = newUser;
-      console.log('Created demo user');
+      console.log('Created demo user with verified email');
     }
 
     // Check if books already exist for this user

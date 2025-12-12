@@ -108,8 +108,8 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     return (
       <Card className='w-full max-w-lg'>
         <CardHeader>
-          <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100'>
-            <XCircle className='h-6 w-6 text-red-600' />
+          <div className='bg-destructive/20 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full'>
+            <XCircle className='text-destructive h-6 w-6' />
           </div>
           <CardTitle className='text-center'>Invalid Reset Link</CardTitle>
           <CardDescription className='text-center'>
@@ -137,8 +137,8 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     return (
       <Card className='w-full max-w-lg'>
         <CardHeader>
-          <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100'>
-            <CheckCircle className='h-6 w-6 text-green-600' />
+          <div className='bg-chart-3/20 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full'>
+            <CheckCircle className='text-chart-3 h-6 w-6' />
           </div>
           <CardTitle className='text-center'>Password Reset Successful</CardTitle>
           <CardDescription className='text-center'>

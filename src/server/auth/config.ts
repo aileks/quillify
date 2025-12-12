@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { db } from '@/server/db';
 import { createCaller } from '@/server/api/root';
 import type { AuthUser } from '@/types';
+import { users } from '@/server/db/schema';
+import { eq } from 'drizzle-orm';
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -16,6 +18,7 @@ declare module 'next-auth' {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      emailVerified: boolean;
       // ...other properties
       // role: UserRole;
     } & DefaultSession['user'];
@@ -69,6 +72,28 @@ export const authConfig = {
             password: parsedCredentials.data.password,
           });
 
+          // Check if email is verified
+          const userRecord = await db.query.users.findFirst({
+            where: eq(users.id, user.id),
+          });
+
+          if (!userRecord) {
+            return null;
+          }
+
+          // If email not verified, mark it so we can track in session
+          if (!userRecord.emailVerifiedAt) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              rememberMe:
+                parsedCredentials.data.rememberMe === true ||
+                parsedCredentials.data.rememberMe === 'true',
+              requiresEmailVerification: true,
+            };
+          }
+
           // Store rememberMe in the user object to access it in jwt callback
           return {
             id: user.id,
@@ -80,8 +105,7 @@ export const authConfig = {
           };
         } catch (error: unknown) {
           // Return null to indicate authentication failure
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error('Authentication error:', errorMessage);
+          console.error('Authentication error:', error instanceof Error ? error.message : error);
           return null;
         }
       },
@@ -89,11 +113,17 @@ export const authConfig = {
   ],
   callbacks: {
     jwt: ({ token, user, trigger }) => {
-      // On log in, store rememberMe preference
+      // On log in, store rememberMe preference and check verification
       if (user && trigger === 'signIn') {
         token.id = user.id;
         // Store rememberMe as a custom property on the token
         (token as { rememberMe?: boolean }).rememberMe = (user as AuthUser).rememberMe ?? false;
+
+        // Store email verified status based on requiresEmailVerification flag from authorize
+        // If requiresEmailVerification is true, email is NOT verified
+        const requiresVerification = (user as AuthUser & { requiresEmailVerification?: boolean })
+          .requiresEmailVerification;
+        (token as { emailVerified?: boolean }).emailVerified = !requiresVerification;
 
         // Set custom expiry based on rememberMe
         const now = Math.floor(Date.now() / 1000);
@@ -106,13 +136,19 @@ export const authConfig = {
           token.exp = now + 24 * 60 * 60;
         }
       }
+
       return token;
+    },
+    signIn: async () => {
+      // Allow all sign-ins - email verification is handled via in-app notice, not login blocking
+      return true;
     },
     session: ({ session, token }) => ({
       ...session,
       user: {
         ...session.user,
         id: token.id as string,
+        emailVerified: (token as { emailVerified?: boolean }).emailVerified ?? false,
       },
     }),
   },

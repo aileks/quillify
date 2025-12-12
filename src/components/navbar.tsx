@@ -108,7 +108,7 @@ export function Navbar({ className }: NavbarProps) {
 
                     <DropdownMenuItem
                       onClick={() => signOut({ callbackUrl: '/' })}
-                      className='cursor-pointer text-red-600 dark:text-red-400'
+                      className='text-destructive cursor-pointer'
                     >
                       Sign Out
                     </DropdownMenuItem>

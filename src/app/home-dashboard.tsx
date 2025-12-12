@@ -124,9 +124,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='font-serif text-3xl font-bold text-green-700 dark:text-green-500'>
-              {readBooks}
-            </div>
+            <div className='text-chart-3 font-serif text-3xl font-bold'>{readBooks}</div>
             <p className='text-muted-foreground mt-1 text-sm'>
               {readBooks === 1 ? 'book completed' : 'books completed'}
               {totalBooks > 0 && (

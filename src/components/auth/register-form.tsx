@@ -4,7 +4,6 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -49,11 +48,7 @@ const registerSchema = z
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-interface RegisterFormProps {
-  callbackUrl?: string;
-}
-
-export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
+export function RegisterForm() {
   const [error, setError] = React.useState<string>('');
   const router = useRouter();
 
@@ -68,21 +63,10 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
   });
 
   const registerMutation = api.auth.register.useMutation({
-    onSuccess: async () => {
-      // Automatically log in the user after successful registration for better UX
-      // Use redirect: false to handle navigation manually and show errors if login fails
-      const result = await signIn('credentials', {
-        email: form.getValues('email'),
-        password: form.getValues('password'),
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError('Registration successful, but login failed. Please try logging in.');
-      } else if (result?.ok) {
-        router.push(callbackUrl);
-        router.refresh();
-      }
+    onSuccess: () => {
+      setError('');
+      // Redirect to login page - verification toast will be shown there on first login
+      router.push('/account/login');
     },
     onError: (error) => {
       setError(error.message || 'Failed to register. Please try again.');

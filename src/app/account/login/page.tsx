@@ -5,13 +5,21 @@ import { LoginForm } from '@/components/auth/login-form';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface LoginPageProps {
-  searchParams: Promise<{ callbackUrl?: string }>;
+  searchParams: Promise<{
+    callbackUrl?: string;
+    error?: string;
+    email?: string;
+    verified?: string;
+  }>;
 }
 
 async function LoginContent({ searchParams }: LoginPageProps) {
   const session = await auth();
   const resolvedParams = await searchParams;
   const callbackUrl = resolvedParams.callbackUrl || '/';
+  const error = resolvedParams.error;
+  const email = resolvedParams.email;
+  const verified = resolvedParams.verified;
 
   if (session?.user) {
     redirect(callbackUrl);
@@ -19,7 +27,12 @@ async function LoginContent({ searchParams }: LoginPageProps) {
 
   return (
     <div className='flex min-h-screen items-center justify-center p-4'>
-      <LoginForm callbackUrl={callbackUrl} />
+      <LoginForm
+        callbackUrl={callbackUrl}
+        errorParam={error}
+        emailParam={email}
+        verified={!!verified}
+      />
     </div>
   );
 }

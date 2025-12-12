@@ -16,7 +16,7 @@ import {
 import { TRPCError } from '@trpc/server';
 
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
-import { books } from '@/server/db/schema';
+import { books, users } from '@/server/db/schema';
 import type { Book } from '@/types';
 
 export const booksRouter = createTRPCRouter({
@@ -177,10 +177,30 @@ export const booksRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      // Check if user is verified - unverified users have a 10-book limit
+      const [user] = await ctx.db.select().from(users).where(eq(users.id, userId));
+
+      if (user && !user.emailVerifiedAt) {
+        // Count existing books for this user
+        const [bookCount] = await ctx.db
+          .select({ count: count() })
+          .from(books)
+          .where(eq(books.userId, userId));
+
+        if (bookCount && bookCount.count >= 10) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'BOOK_LIMIT_REACHED',
+          });
+        }
+      }
+
       const [inserted] = await ctx.db
         .insert(books)
         .values({
-          userId: ctx.session.user.id,
+          userId,
           title: input.title,
           author: input.author,
           numberOfPages: input.numberOfPages,

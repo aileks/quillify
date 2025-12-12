@@ -14,10 +14,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       position='top-right'
       className='toaster group'
+      closeButton
       toastOptions={{
         classNames: {
           toast:
-            'group toast font-serif bg-popover text-popover-foreground border-border shadow-lg rounded-sm',
+            'group toast font-serif bg-popover text-popover-foreground border-border shadow-lg rounded-sm cursor-pointer',
           title: 'text-sm font-medium',
           description: 'text-sm text-muted-foreground',
           success: 'border-l-4 border-l-chart-3 [&_[data-icon]]:text-chart-3',
@@ -27,6 +28,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
             'border-l-4 border-l-amber-600 dark:border-l-amber-500 [&_[data-icon]]:text-amber-600 dark:[&_[data-icon]]:text-amber-500',
           actionButton: 'bg-primary text-primary-foreground',
           cancelButton: 'bg-muted text-muted-foreground',
+          closeButton:
+            'bg-popover border-border text-muted-foreground hover:text-foreground hover:bg-muted',
         },
       }}
       icons={{

@@ -138,7 +138,7 @@ export const booksRouter = createTRPCRouter({
         .select()
         .from(books)
         .where(where)
-        .orderBy(orderByFn(orderByColumn))
+        .orderBy(orderByFn(orderByColumn), orderByFn(books.id))
         .limit(pageSize)
         .offset((page - 1) * pageSize);
 

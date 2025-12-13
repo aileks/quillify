@@ -113,9 +113,11 @@ export function BooksClient() {
   // Sort handlers
   const handleSortByChange = (value: SortBy) => {
     setSortBy(value);
-    // Auto-flip to descending for date (newest first is expected)
+    // Set sensible defaults: A→Z for text fields, newest-first for dates
     if (value === 'createdAt') {
       setSortOrder('desc');
+    } else {
+      setSortOrder('asc');
     }
     setPage(1);
   };

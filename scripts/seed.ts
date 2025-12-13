@@ -2358,14 +2358,20 @@ async function seed() {
         console.log(`Deleting ${existingBooks.length} existing books...`);
         await db.delete(books).where(eq(books.userId, demoUser!.id));
       }
+      // Generate random timestamps spanning the last 2 years
+      const now = Date.now();
+      const twoYearsMs = 2 * 365 * 24 * 60 * 60 * 1000;
+      const randomTimestamps = DEMO_BOOKS.map(() => new Date(now - Math.random() * twoYearsMs));
+
       // Create books in batches for better performance
       const batchSize = 50;
       for (let i = 0; i < DEMO_BOOKS.length; i += batchSize) {
         const batch = DEMO_BOOKS.slice(i, i + batchSize);
         await db.insert(books).values(
-          batch.map((book) => ({
+          batch.map((book, batchIndex) => ({
             userId: demoUser!.id,
             ...book,
+            createdAt: randomTimestamps[i + batchIndex],
           }))
         );
         console.log(`Inserted books ${i + 1} to ${Math.min(i + batchSize, DEMO_BOOKS.length)}`);

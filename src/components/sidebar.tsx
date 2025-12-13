@@ -18,35 +18,24 @@ import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCallback, useRef, useEffect, useState } from 'react';
+import { useUIStore, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH } from '@/stores';
 
 interface SidebarProps {
   className?: string;
-  width?: number;
-  onWidthChange?: (width: number) => void;
-  minWidth?: number;
-  maxWidth?: number;
-  isCollapsed?: boolean;
-  onCollapsedChange?: (collapsed: boolean) => void;
   onResizingChange?: (isResizing: boolean) => void;
 }
 
-const COLLAPSED_WIDTH = 64;
+export const COLLAPSED_WIDTH = 64;
 
-export function Sidebar({
-  className,
-  width = 256,
-  onWidthChange,
-  minWidth = 200,
-  maxWidth = 360,
-  isCollapsed = false,
-  onCollapsedChange,
-  onResizingChange,
-}: SidebarProps) {
+export function Sidebar({ className, onResizingChange }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const utils = api.useUtils();
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
+
+  // Get sidebar state from store
+  const { sidebarWidth, sidebarCollapsed, setSidebarWidth, setSidebarCollapsed } = useUIStore();
 
   // Prefetch data on hover/focus for instant navigation
   const prefetchBooksData = () => {
@@ -64,11 +53,11 @@ export function Sidebar({
   // Handle mouse move during resize
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!onWidthChange || isCollapsed) return;
-      const newWidth = Math.max(minWidth, Math.min(maxWidth, e.clientX));
-      onWidthChange(newWidth);
+      if (sidebarCollapsed) return;
+      const newWidth = Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, e.clientX));
+      setSidebarWidth(newWidth);
     },
-    [onWidthChange, minWidth, maxWidth, isCollapsed]
+    [sidebarCollapsed, setSidebarWidth]
   );
 
   // Handle mouse up to stop resizing
@@ -82,14 +71,14 @@ export function Sidebar({
   // Start resizing
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
-      if (isCollapsed) return;
+      if (sidebarCollapsed) return;
       e.preventDefault();
       setIsResizing(true);
       onResizingChange?.(true);
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
     },
-    [isCollapsed, onResizingChange]
+    [sidebarCollapsed, onResizingChange]
   );
 
   // Add/remove event listeners for resize
@@ -104,7 +93,7 @@ export function Sidebar({
     };
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
-  const currentWidth = isCollapsed ? COLLAPSED_WIDTH : width;
+  const currentWidth = sidebarCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
 
   return (
     <aside
@@ -121,27 +110,25 @@ export function Sidebar({
       {/* Header */}
       <div className='border-sidebar-border flex flex-col border-b px-4 py-4'>
         <div className='flex items-center justify-between'>
-          {!isCollapsed && (
+          {!sidebarCollapsed && (
             <div className='text-sidebar-foreground text-xl font-bold'>Quillify</div>
           )}
-          {onCollapsedChange && (
-            <Button
-              variant='ghost'
-              size='icon'
-              onClick={() => onCollapsedChange(!isCollapsed)}
-              className={cn(
-                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-8 w-8 shrink-0',
-                isCollapsed && 'mx-auto'
-              )}
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {isCollapsed ?
-                <PanelLeft className='size-4' />
-              : <PanelLeftClose className='size-4' />}
-            </Button>
-          )}
+          <Button
+            variant='ghost'
+            size='icon'
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className={cn(
+              'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-8 w-8 shrink-0',
+              sidebarCollapsed && 'mx-auto'
+            )}
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ?
+              <PanelLeft className='size-4' />
+            : <PanelLeftClose className='size-4' />}
+          </Button>
         </div>
-        {session?.user && !isCollapsed && (
+        {session?.user && !sidebarCollapsed && (
           <div className='text-sidebar-foreground/80 mt-2 flex items-center gap-2 text-sm'>
             <User className='size-4 shrink-0' />
             <span className='truncate'>{session.user.name || session.user.email || 'User'}</span>
@@ -160,13 +147,13 @@ export function Sidebar({
                 className={cn(
                   'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
                   pathname === '/' && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                  isCollapsed && 'justify-center px-2'
+                  sidebarCollapsed && 'justify-center px-2'
                 )}
-                title={isCollapsed ? 'Home' : undefined}
+                title={sidebarCollapsed ? 'Home' : undefined}
               >
                 <Link href='/'>
                   <Home className='size-4 shrink-0' />
-                  {!isCollapsed && <span>Home</span>}
+                  {!sidebarCollapsed && <span>Home</span>}
                 </Link>
               </Button>
             </div>
@@ -179,13 +166,13 @@ export function Sidebar({
                   'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
                   pathname.startsWith('/books') &&
                     'bg-sidebar-accent text-sidebar-accent-foreground',
-                  isCollapsed && 'justify-center px-2'
+                  sidebarCollapsed && 'justify-center px-2'
                 )}
-                title={isCollapsed ? 'Books' : undefined}
+                title={sidebarCollapsed ? 'Books' : undefined}
               >
                 <Link href='/books'>
                   <BookOpen className='size-4 shrink-0' />
-                  {!isCollapsed && <span>Books</span>}
+                  {!sidebarCollapsed && <span>Books</span>}
                 </Link>
               </Button>
             </div>
@@ -197,13 +184,13 @@ export function Sidebar({
                 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
                 pathname === '/account/settings' &&
                   'bg-sidebar-accent text-sidebar-accent-foreground',
-                isCollapsed && 'justify-center px-2'
+                sidebarCollapsed && 'justify-center px-2'
               )}
-              title={isCollapsed ? 'Settings' : undefined}
+              title={sidebarCollapsed ? 'Settings' : undefined}
             >
               <Link href='/account/settings'>
                 <Settings className='size-4 shrink-0' />
-                {!isCollapsed && <span>Settings</span>}
+                {!sidebarCollapsed && <span>Settings</span>}
               </Link>
             </Button>
           </>
@@ -214,13 +201,13 @@ export function Sidebar({
               className={cn(
                 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
                 pathname === '/account/login' && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                isCollapsed && 'justify-center px-2'
+                sidebarCollapsed && 'justify-center px-2'
               )}
-              title={isCollapsed ? 'Log In' : undefined}
+              title={sidebarCollapsed ? 'Log In' : undefined}
             >
               <Link href='/account/login'>
                 <LogIn className='size-4 shrink-0' />
-                {!isCollapsed && <span>Log In</span>}
+                {!sidebarCollapsed && <span>Log In</span>}
               </Link>
             </Button>
 
@@ -231,13 +218,13 @@ export function Sidebar({
                 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
                 pathname === '/account/register' &&
                   'bg-sidebar-accent text-sidebar-accent-foreground',
-                isCollapsed && 'justify-center px-2'
+                sidebarCollapsed && 'justify-center px-2'
               )}
-              title={isCollapsed ? 'Get Started' : undefined}
+              title={sidebarCollapsed ? 'Get Started' : undefined}
             >
               <Link href='/account/register'>
                 <UserPlus className='size-4 shrink-0' />
-                {!isCollapsed && <span>Get Started</span>}
+                {!sidebarCollapsed && <span>Get Started</span>}
               </Link>
             </Button>
           </>
@@ -252,18 +239,18 @@ export function Sidebar({
             onClick={() => signOut({ callbackUrl: '/' })}
             className={cn(
               'w-full justify-start gap-3 text-left text-red-400 hover:text-red-700',
-              isCollapsed && 'justify-center px-2'
+              sidebarCollapsed && 'justify-center px-2'
             )}
-            title={isCollapsed ? 'Log Out' : undefined}
+            title={sidebarCollapsed ? 'Log Out' : undefined}
           >
             <LogOut className='size-4 shrink-0' />
-            {!isCollapsed && <span>Log Out</span>}
+            {!sidebarCollapsed && <span>Log Out</span>}
           </Button>
         </div>
       )}
 
       {/* Resize handle - only show when not collapsed */}
-      {onWidthChange && !isCollapsed && (
+      {!sidebarCollapsed && (
         <div
           data-slot='sidebar-resize-handle'
           className={cn(
@@ -274,13 +261,11 @@ export function Sidebar({
           role='separator'
           aria-orientation='vertical'
           aria-label='Resize sidebar'
-          aria-valuenow={width}
-          aria-valuemin={minWidth}
-          aria-valuemax={maxWidth}
+          aria-valuenow={sidebarWidth}
+          aria-valuemin={SIDEBAR_MIN_WIDTH}
+          aria-valuemax={SIDEBAR_MAX_WIDTH}
         />
       )}
     </aside>
   );
 }
-
-export { COLLAPSED_WIDTH };

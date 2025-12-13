@@ -2,46 +2,18 @@
 
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useState, useCallback, useSyncExternalStore, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { Sidebar, COLLAPSED_WIDTH } from '@/components/sidebar';
 import { EmailVerificationBanner } from '@/components/email-verification-banner';
-
-const SIDEBAR_MIN_WIDTH = 200;
-const SIDEBAR_MAX_WIDTH = 360;
-const SIDEBAR_DEFAULT_WIDTH = 256;
-const SIDEBAR_WIDTH_STORAGE_KEY = 'quillify-sidebar-width';
-const SIDEBAR_COLLAPSED_STORAGE_KEY = 'quillify-sidebar-collapsed';
-const FIRST_LOGIN_TOAST_SHOWN_KEY = 'quillify-first-login-toast-shown';
-const VERIFICATION_BANNER_DISMISSED_KEY = 'quillify-verification-banner-dismissed';
-const ACCOUNT_DELETED_KEY = 'quillify-account-deleted';
-
-// Read initial width from localStorage
-function getStoredWidth(): number {
-  if (typeof window === 'undefined') return SIDEBAR_DEFAULT_WIDTH;
-  const stored = localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY);
-  if (stored) {
-    const parsed = parseInt(stored, 10);
-    if (!isNaN(parsed) && parsed >= SIDEBAR_MIN_WIDTH && parsed <= SIDEBAR_MAX_WIDTH) {
-      return parsed;
-    }
-  }
-  return SIDEBAR_DEFAULT_WIDTH;
-}
-
-// Read initial collapsed state from localStorage
-function getStoredCollapsed(): boolean {
-  if (typeof window === 'undefined') return false;
-  const stored = localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
-  return stored === 'true';
-}
-
-// useSyncExternalStore subscription for hydration detection
-const emptySubscribe = () => () => {};
-const getSnapshot = () => true;
-const getServerSnapshot = () => false;
+import {
+  useUIStore,
+  useUIStoreHydrated,
+  useVerificationStore,
+  useNotificationStore,
+} from '@/stores';
 
 interface LayoutShellProps {
   children: React.ReactNode;
@@ -50,11 +22,18 @@ interface LayoutShellProps {
 export function LayoutShell({ children }: LayoutShellProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const isHydrated = useSyncExternalStore(emptySubscribe, getSnapshot, getServerSnapshot);
-  const [sidebarWidth, setSidebarWidth] = useState(getStoredWidth);
-  const [isCollapsed, setIsCollapsed] = useState(getStoredCollapsed);
   const [isResizing, setIsResizing] = useState(false);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // UI Store - for sidebar dimensions
+  const { sidebarWidth, sidebarCollapsed } = useUIStore();
+  const hasHydrated = useUIStoreHydrated();
+
+  // Verification Store - for toast/banner flow
+  const { shouldShowToast, shouldShowBanner, markToastShown, setToastPending, dismissBanner } =
+    useVerificationStore();
+
+  // Notification Store - for ephemeral notifications
+  const { accountDeleted, clearAccountDeleted } = useNotificationStore();
 
   // Hide sidebar when logged out and on auth/landing pages
   const isLandingPage = pathname === '/';
@@ -73,34 +52,20 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
   // Show account deleted toast (after redirect from account deletion)
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!hasHydrated) return;
 
-    const accountDeleted = sessionStorage.getItem(ACCOUNT_DELETED_KEY);
-    if (accountDeleted === 'true') {
-      sessionStorage.removeItem(ACCOUNT_DELETED_KEY);
+    if (accountDeleted) {
+      clearAccountDeleted();
       toast.success('Your account has been deleted');
     }
-  }, [isHydrated]);
+  }, [hasHydrated, accountDeleted, clearAccountDeleted]);
 
-  // Show first-login verification toast (only on very first login, uses localStorage)
-  // We use a separate "pending" key to track that toast is currently showing
-  // This prevents the banner from appearing while the toast is visible
+  // Show first-login verification toast (only on very first login)
   useEffect(() => {
-    if (!needsVerification || !isHydrated || !userId) return;
+    if (!needsVerification || !hasHydrated || !userId) return;
+    if (!shouldShowToast(userId)) return;
 
-    const toastKey = `${FIRST_LOGIN_TOAST_SHOWN_KEY}-${userId}`;
-    const toastPendingKey = `${FIRST_LOGIN_TOAST_SHOWN_KEY}-pending-${userId}`;
-
-    // If toast was already fully shown (completed), don't show again
-    const alreadyCompleted = localStorage.getItem(toastKey) === 'true';
-    if (alreadyCompleted) return;
-
-    // If toast is currently pending (showing), don't trigger again
-    const isPending = sessionStorage.getItem(toastPendingKey) === 'true';
-    if (isPending) return;
-
-    // Mark toast as pending (currently showing)
-    sessionStorage.setItem(toastPendingKey, 'true');
+    setToastPending(userId, true);
 
     toast.info(
       <div className='flex flex-col gap-2'>
@@ -115,59 +80,31 @@ export function LayoutShell({ children }: LayoutShellProps) {
       {
         duration: 30000,
         onDismiss: () => {
-          // Only mark as completed when toast is dismissed
-          localStorage.setItem(toastKey, 'true');
-          sessionStorage.removeItem(toastPendingKey);
+          markToastShown(userId);
         },
         onAutoClose: () => {
-          // Also mark as completed on auto-close
-          localStorage.setItem(toastKey, 'true');
-          sessionStorage.removeItem(toastPendingKey);
+          markToastShown(userId);
         },
       }
     );
-  }, [needsVerification, isHydrated, userId]);
+  }, [needsVerification, hasHydrated, userId, shouldShowToast, setToastPending, markToastShown]);
 
-  // Handle banner dismissal (user-specific)
-  const handleBannerDismiss = useCallback(() => {
-    setBannerDismissed(true);
+  // Handle banner dismissal
+  const handleBannerDismiss = () => {
     if (userId) {
-      sessionStorage.setItem(`${VERIFICATION_BANNER_DISMISSED_KEY}-${userId}`, 'true');
+      dismissBanner(userId);
     }
-  }, [userId]);
-
-  // Show banner if: needs verification, toast already completed (not pending), and not dismissed
-  const showVerificationBanner =
-    isHydrated &&
-    needsVerification &&
-    !bannerDismissed &&
-    (userId ?
-      sessionStorage.getItem(`${VERIFICATION_BANNER_DISMISSED_KEY}-${userId}`) !== 'true'
-    : true) &&
-    // Only show banner if toast was completed (localStorage key exists) AND not currently pending
-    (userId ?
-      localStorage.getItem(`${FIRST_LOGIN_TOAST_SHOWN_KEY}-${userId}`) === 'true' &&
-      sessionStorage.getItem(`${FIRST_LOGIN_TOAST_SHOWN_KEY}-pending-${userId}`) !== 'true'
-    : false);
-
-  // Persist width changes
-  const handleWidthChange = useCallback((width: number) => {
-    const clampedWidth = Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, width));
-    setSidebarWidth(clampedWidth);
-    localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(clampedWidth));
-  }, []);
-
-  // Persist collapsed state changes
-  const handleCollapsedChange = useCallback((collapsed: boolean) => {
-    setIsCollapsed(collapsed);
-    localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(collapsed));
-  }, []);
+  };
 
   // Calculate current sidebar width based on collapsed state
-  const currentSidebarWidth = isCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
+  const currentSidebarWidth = sidebarCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
+
+  // Show verification banner if conditions are met
+  const showVerificationBanner =
+    hasHydrated && userId ? shouldShowBanner(userId, needsVerification) : false;
 
   // Prevent layout shift before hydration
-  if (!isHydrated) {
+  if (!hasHydrated) {
     return null;
   }
 
@@ -200,18 +137,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
       )}
 
       {/* Desktop sidebar */}
-      {showSidebar && (
-        <Sidebar
-          className='hidden md:flex'
-          width={sidebarWidth}
-          onWidthChange={handleWidthChange}
-          minWidth={SIDEBAR_MIN_WIDTH}
-          maxWidth={SIDEBAR_MAX_WIDTH}
-          isCollapsed={isCollapsed}
-          onCollapsedChange={handleCollapsedChange}
-          onResizingChange={setIsResizing}
-        />
-      )}
+      {showSidebar && <Sidebar className='hidden md:flex' onResizingChange={setIsResizing} />}
 
       {/* Main content area */}
       <main

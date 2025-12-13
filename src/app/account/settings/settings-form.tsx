@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { signOut, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { api } from '@/trpc/react';
+import { useNotificationStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ResendVerification from '@/components/auth/resend-verification';
@@ -151,8 +152,8 @@ export function SettingsForm() {
 
   const deleteAccount = api.auth.deleteAccount.useMutation({
     onSuccess: () => {
-      // Store flag to show toast on home page after redirect
-      sessionStorage.setItem('quillify-account-deleted', 'true');
+      // Set flag to show toast on home page after redirect
+      useNotificationStore.getState().setAccountDeleted(true);
       // Sign out and redirect to home
       signOut({ callbackUrl: '/' });
     },
@@ -424,16 +425,18 @@ export function SettingsForm() {
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Your Account</AlertDialogTitle>
-                      <AlertDialogDescription className='space-y-3'>
-                        <span className='block'>
-                          This will permanently delete your account and all your data, including:
-                        </span>
-                        <ul className='list-disc space-y-1 pl-5'>
-                          <li>All books in your library</li>
-                          <li>Your reading history and statistics</li>
-                          <li>Your account settings and preferences</li>
-                        </ul>
-                        <span className='block font-medium'>Enter your password to continue.</span>
+                      <AlertDialogDescription asChild>
+                        <div className='text-muted-foreground space-y-3 text-sm'>
+                          <p>
+                            This will permanently delete your account and all your data, including:
+                          </p>
+                          <ul className='list-disc space-y-1 pl-5'>
+                            <li>All books in your library</li>
+                            <li>Your reading history and statistics</li>
+                            <li>Your account settings and preferences</li>
+                          </ul>
+                          <p className='font-medium'>Enter your password to continue.</p>
+                        </div>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className='space-y-4 py-4'>

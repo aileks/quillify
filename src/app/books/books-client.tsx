@@ -534,6 +534,9 @@ export function BooksClient() {
                 aria-label={`${book.title} by ${book.author} - ${book.isRead ? 'Read' : 'Unread'}`}
                 onMouseEnter={() => prefetchBook(book.id)}
                 onFocus={() => prefetchBook(book.id)}
+                onClick={() => {
+                  sessionStorage.setItem('booksListUrl', window.location.href);
+                }}
               >
                 <div className='relative h-full'>
                   {/* Library Catalog Card */}

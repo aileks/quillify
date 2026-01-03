@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, notFound } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -56,6 +56,23 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
   const router = useRouter();
   const utils = api.useUtils();
   const [isEditing, setIsEditing] = useState(false);
+
+  const referrerRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('booksListUrl');
+      if (stored) {
+        try {
+          const url = new URL(stored);
+          if (url.pathname === '/books') {
+            referrerRef.current = url.pathname + url.search;
+          }
+        } catch {
+          // Invalid URL, ignore
+        }
+      }
+    }
+  }, []);
 
   // Fetch book data - will be instant if prefetched on hover from library
   // Use retry: false for NOT_FOUND to avoid unnecessary retries
@@ -149,11 +166,46 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
   });
 
   const deleteBook = api.books.remove.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Book deleted from your library');
-      void utils.books.list.invalidate();
       void utils.books.stats.invalidate();
-      router.push('/books');
+
+      // Get fresh list data to check if current page is now empty
+      await utils.books.list.invalidate();
+
+      const referrer = referrerRef.current;
+      if (referrer) {
+        const url = new URL(referrer, window.location.origin);
+        const currentPage = parseInt(url.searchParams.get('page') ?? '1', 10);
+
+        if (currentPage > 1) {
+          // Check if current page would be empty after deletion
+          const searchParams = Object.fromEntries(url.searchParams.entries());
+          const listData = utils.books.list.getData({
+            page: currentPage,
+            pageSize: 12,
+            search: searchParams.search ?? '',
+            isRead:
+              searchParams.isRead === 'true' ? true
+              : searchParams.isRead === 'false' ? false
+              : undefined,
+            genre: searchParams.genre?.split(',').filter(Boolean) ?? [],
+            sortBy: (searchParams.sortBy as 'title' | 'author' | 'createdAt') ?? 'createdAt',
+            sortOrder: (searchParams.sortOrder as 'asc' | 'desc') ?? 'desc',
+          });
+
+          // If page would be empty, go to previous page
+          if (listData && listData.items.length === 0 && currentPage > 1) {
+            url.searchParams.set('page', String(currentPage - 1));
+            router.push(url.pathname + url.search);
+            return;
+          }
+        }
+
+        router.push(referrer);
+      } else {
+        router.push('/books');
+      }
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to delete book');

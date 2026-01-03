@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { ChevronDownIcon } from 'lucide-react';
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,10 @@ export function BooksClient() {
   const utils = api.useUtils();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const currentFromUrl =
+    searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
 
   // Parse URL params for initial state
   const parseInitialState = useCallback(() => {
@@ -528,15 +532,12 @@ export function BooksClient() {
             {books.map((book) => (
               <Link
                 key={book.id}
-                href={`/books/${book.id}`}
+                href={`/books/${book.id}?from=${encodeURIComponent(currentFromUrl)}`}
                 className='group'
                 role='listitem'
                 aria-label={`${book.title} by ${book.author} - ${book.isRead ? 'Read' : 'Unread'}`}
                 onMouseEnter={() => prefetchBook(book.id)}
                 onFocus={() => prefetchBook(book.id)}
-                onClick={() => {
-                  sessionStorage.setItem('booksListUrl', window.location.href);
-                }}
               >
                 <div className='relative h-full'>
                   {/* Library Catalog Card */}

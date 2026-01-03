@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter, notFound } from 'next/navigation';
+import { useRouter, notFound, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -55,24 +55,25 @@ interface BookDetailClientProps {
 export function BookDetailClient({ bookId }: BookDetailClientProps) {
   const router = useRouter();
   const utils = api.useUtils();
+  const searchParams = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
 
   const referrerRef = useRef<string | null>(null);
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = sessionStorage.getItem('booksListUrl');
-      if (stored) {
-        try {
-          const url = new URL(stored);
-          if (url.pathname === '/books') {
-            referrerRef.current = url.pathname + url.search;
-          }
-        } catch {
-          // Invalid URL, ignore
+    const fromParam = searchParams.get('from');
+    if (fromParam) {
+      try {
+        const decoded = decodeURIComponent(fromParam);
+        const url = new URL(decoded, window.location.origin);
+        // Validate: must be same-origin and /books path
+        if (url.pathname === '/books') {
+          referrerRef.current = url.pathname + url.search;
         }
+      } catch {
+        // Invalid URL, ignore
       }
     }
-  }, []);
+  }, [searchParams]);
 
   // Fetch book data - will be instant if prefetched on hover from library
   // Use retry: false for NOT_FOUND to avoid unnecessary retries

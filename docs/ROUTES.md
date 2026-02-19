@@ -229,7 +229,8 @@ Mix of public and protected procedures.
     {
       success: true,
       message: 'Email updated successfully. Please verify your new email address.',
-      requiresEmailVerification: true
+      requiresEmailVerification: true,
+      email: string
     }
     ```
 - Errors:

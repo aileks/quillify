@@ -351,6 +351,7 @@ export const authRouter = createTRPCRouter({
           success: true,
           message: 'Email updated successfully. Please verify your new email address.',
           requiresEmailVerification: true,
+          email: newEmail,
         };
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';

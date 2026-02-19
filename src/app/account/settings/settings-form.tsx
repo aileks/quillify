@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { signOut, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { api } from '@/trpc/react';
-import { useNotificationStore } from '@/stores';
+import { useNotificationStore, useVerificationStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ResendVerification from '@/components/auth/resend-verification';
@@ -83,6 +83,7 @@ export function SettingsForm() {
   const currentEmail = session?.user?.email ?? '';
   const currentName = session?.user?.name ?? '';
   const isVerified = session?.user?.emailVerified === true;
+  const resetVerificationState = useVerificationStore((state) => state.resetVerificationState);
 
   // Delete account state
   const [deletePassword, setDeletePassword] = useState('');
@@ -131,8 +132,25 @@ export function SettingsForm() {
   });
 
   const updateEmail = api.auth.updateEmail.useMutation({
-    onSuccess: async () => {
-      await update();
+    onSuccess: async (result, variables) => {
+      const userId = session?.user?.id;
+      if (userId) {
+        resetVerificationState(userId);
+      }
+
+      if (session?.user) {
+        await update({
+          ...session,
+          user: {
+            ...session.user,
+            email: result.email ?? variables.newEmail.trim(),
+            emailVerified: false,
+          },
+        });
+      } else {
+        await update();
+      }
+
       toast.success('Email updated. Please verify your new email address.');
       emailForm.reset();
     },

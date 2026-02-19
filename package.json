@@ -11,8 +11,6 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
-    "send-verification-emails": "tsx scripts/send-verification-to-existing-users.ts",
-    "send-verification-emails:dry-run": "tsx scripts/send-verification-to-existing-users.ts --dry-run",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "lint": "eslint .",

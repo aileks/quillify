@@ -5,6 +5,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 interface BannerState {
   dismissed: Record<string, boolean>;
   dismiss: (userId: string) => void;
+  clearDismissed: (userId: string) => void;
   isDismissed: (userId: string) => boolean;
 }
 
@@ -16,6 +17,12 @@ export const useBannerStore = create<BannerState>()(
         set((state) => ({
           dismissed: { ...state.dismissed, [userId]: true },
         })),
+      clearDismissed: (userId) =>
+        set((state) => {
+          const nextDismissed = { ...state.dismissed };
+          delete nextDismissed[userId];
+          return { dismissed: nextDismissed };
+        }),
       isDismissed: (userId) => get().dismissed[userId] === true,
     }),
     {
@@ -37,6 +44,7 @@ interface VerificationState {
   markToastShown: (userId: string) => void;
   setToastPending: (userId: string, pending: boolean) => void;
   dismissBanner: (userId: string) => void;
+  resetVerificationState: (userId: string) => void;
 
   // Selectors
   shouldShowToast: (userId: string) => boolean;
@@ -63,6 +71,19 @@ export const useVerificationStore = create<VerificationState>()(
       dismissBanner: (userId) => {
         useBannerStore.getState().dismiss(userId);
       },
+
+      resetVerificationState: (userId) =>
+        set((state) => {
+          const nextToastShown = { ...state.toastShownForUsers };
+          const nextToastPending = { ...state.toastPendingForUsers };
+          delete nextToastShown[userId];
+          delete nextToastPending[userId];
+          useBannerStore.getState().clearDismissed(userId);
+          return {
+            toastShownForUsers: nextToastShown,
+            toastPendingForUsers: nextToastPending,
+          };
+        }),
 
       shouldShowToast: (userId) => {
         const state = get();

@@ -218,18 +218,26 @@ Mix of public and protected procedures.
 
 4. auth.updateEmail (mutation) - Protected
 
-- Purpose: Update the current user's email address (requires password verification).
+- Purpose: Update the current user's email address (requires password verification),
+  reset email verification status, and send a new verification email.
 - Input (required):
   - `newEmail: string (email)` - New email address
   - `currentPassword: string` - Current password for verification
 - Success:
-  - 200 OK - Returns `{ success: true, message: 'Email updated successfully' }`.
+  - 200 OK - Returns:
+    ```typescript
+    {
+      success: true,
+      message: 'Email updated successfully. Please verify your new email address.',
+      requiresEmailVerification: true
+    }
+    ```
 - Errors:
-  - 400 BAD_REQUEST - Validation error or account uses different sign-in method.
+  - 400 BAD_REQUEST - Validation error, same email as current, or account uses different sign-in method.
   - 401 UNAUTHORIZED - Not authenticated or current password is incorrect.
   - 404 NOT_FOUND - User not found.
   - 409 CONFLICT - Email already exists.
-  - 500 INTERNAL_SERVER_ERROR - Failed to update email.
+  - 500 INTERNAL_SERVER_ERROR - Failed to update email or send verification email.
 
 5. auth.updatePassword (mutation) - Protected
 

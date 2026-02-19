@@ -137,6 +137,24 @@ export const authConfig = {
         }
       }
 
+      // Refresh token fields after explicit session update() calls
+      if (token.id && trigger === 'update') {
+        try {
+          const userRecord = await db.query.users.findFirst({
+            where: eq(users.id, token.id as string),
+            columns: { email: true, emailVerifiedAt: true },
+          });
+
+          if (userRecord) {
+            token.email = userRecord.email;
+            (token as { emailVerified?: boolean }).emailVerified = !!userRecord.emailVerifiedAt;
+          }
+        } catch (error) {
+          // Log but don't fail session updates
+          console.error('Error refreshing user session state:', error);
+        }
+      }
+
       // For unverified users, check if they've verified since login
       // This allows the session to update without requiring re-login
       const emailVerified = (token as { emailVerified?: boolean }).emailVerified;
@@ -168,6 +186,7 @@ export const authConfig = {
       user: {
         ...session.user,
         id: token.id as string,
+        email: token.email,
         emailVerified: (token as { emailVerified?: boolean }).emailVerified ?? false,
       },
     }),

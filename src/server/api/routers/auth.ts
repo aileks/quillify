@@ -220,7 +220,8 @@ export const authRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { newEmail, currentPassword } = input;
+      const { currentPassword } = input;
+      const newEmail = input.newEmail.trim();
       const userId = ctx.session.user.id;
 
       // Get current user
@@ -248,6 +249,16 @@ export const authRouter = createTRPCRouter({
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'This account uses a different sign-in method',
+        });
+      }
+
+      const currentEmail = (user.email ?? '').trim().toLowerCase();
+      const normalizedNewEmail = newEmail.toLowerCase();
+
+      if (currentEmail === normalizedNewEmail) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'New email must be different from current email',
         });
       }
 
@@ -286,26 +297,67 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // Update email
+      // Generate verification token and email metadata
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+      const verificationUrl = generateVerificationUrl(token);
+      const isExistingUser = user.createdAt < new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      // Update email + invalidate verification state. If email fails, rollback all changes.
       try {
-        await ctx.db
-          .update(users)
-          .set({
-            email: newEmail,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, userId));
+        await ctx.db.transaction(async (tx) => {
+          await tx
+            .update(users)
+            .set({
+              email: newEmail,
+              emailVerifiedAt: null,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, userId));
+
+          await tx
+            .delete(emailVerificationTokens)
+            .where(eq(emailVerificationTokens.userId, userId));
+
+          await tx.insert(emailVerificationTokens).values({
+            userId,
+            token,
+            expiresAt,
+          });
+
+          await sendEmail({
+            to: newEmail,
+            subject:
+              isExistingUser ?
+                'Action Required: Verify Your Email Address'
+              : 'Verify Your Email Address',
+            html: getEmailVerificationHtml({
+              verificationUrl,
+              userName: user.name,
+              expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+              isExistingUser,
+            }),
+            text: getEmailVerificationText({
+              verificationUrl,
+              userName: user.name,
+              expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+              isExistingUser,
+            }),
+            category: 'Email Verification',
+          });
+        });
 
         return {
           success: true,
-          message: 'Email updated successfully',
+          message: 'Email updated successfully. Please verify your new email address.',
+          requiresEmailVerification: true,
         };
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error updating email:', errorMessage);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update email',
+          message: 'Failed to update email. Please try again.',
         });
       }
     }),

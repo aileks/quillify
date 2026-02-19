@@ -79,7 +79,7 @@ function getInitialTab(isVerified: boolean): string {
 }
 
 export function SettingsForm() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const currentEmail = session?.user?.email ?? '';
   const currentName = session?.user?.name ?? '';
   const isVerified = session?.user?.emailVerified === true;
@@ -131,8 +131,9 @@ export function SettingsForm() {
   });
 
   const updateEmail = api.auth.updateEmail.useMutation({
-    onSuccess: () => {
-      toast.success('Email updated successfully');
+    onSuccess: async () => {
+      await update();
+      toast.success('Email updated. Please verify your new email address.');
       emailForm.reset();
     },
     onError: (error) => {

@@ -98,7 +98,7 @@ All procedures are protected and require a valid session.
     {
       items: Book[],
       totalCount: number,
-      page: number,
+      page: number, // Effective page, clamped to the last available page
       pageSize: number,
       totalPages: number
     }
@@ -172,6 +172,18 @@ All procedures are protected and require a valid session.
   - 400 BAD_REQUEST - Validation error.
   - 401 UNAUTHORIZED - Not authenticated.
   - 404 NOT_FOUND - Book not found or not owned by the user.
+
+7. books.removeMany (mutation)
+
+- Purpose: Atomically delete multiple books owned by the current user.
+- Input (required): `{ ids: string[] }` (1-100 unique, non-empty IDs)
+- Success:
+  - 200 OK - Returns `{ ids: string[] }` of the removed books.
+- Errors:
+  - 400 BAD_REQUEST - Validation error.
+  - 401 UNAUTHORIZED - Not authenticated.
+  - 404 NOT_FOUND - At least one book was not found or not owned by the user. No books are
+    deleted.
 
 Schema reference (for context): `src/server/db/schema.ts` → `books` table
 Fields: `id`, `userId`, `title`, `author`, `numberOfPages`, `genre?` (default: 'Other'), `publishYear`, `isRead` (default: false), `createdAt`, `updatedAt`.

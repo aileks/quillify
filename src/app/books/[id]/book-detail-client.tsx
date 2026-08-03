@@ -169,44 +169,8 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
   const deleteBook = api.books.remove.useMutation({
     onSuccess: async () => {
       toast.success('Book deleted from your library');
-      void utils.books.stats.invalidate();
-
-      // Get fresh list data to check if current page is now empty
-      await utils.books.list.invalidate();
-
-      const referrer = referrerRef.current;
-      if (referrer) {
-        const url = new URL(referrer, window.location.origin);
-        const currentPage = parseInt(url.searchParams.get('page') ?? '1', 10);
-
-        if (currentPage > 1) {
-          // Check if current page would be empty after deletion
-          const searchParams = Object.fromEntries(url.searchParams.entries());
-          const listData = utils.books.list.getData({
-            page: currentPage,
-            pageSize: 12,
-            search: searchParams.search ?? '',
-            isRead:
-              searchParams.isRead === 'true' ? true
-              : searchParams.isRead === 'false' ? false
-              : undefined,
-            genre: searchParams.genre?.split(',').filter(Boolean) ?? [],
-            sortBy: (searchParams.sortBy as 'title' | 'author' | 'createdAt') ?? 'createdAt',
-            sortOrder: (searchParams.sortOrder as 'asc' | 'desc') ?? 'desc',
-          });
-
-          // If page would be empty, go to previous page
-          if (listData && listData.items.length === 0 && currentPage > 1) {
-            url.searchParams.set('page', String(currentPage - 1));
-            router.push(url.pathname + url.search);
-            return;
-          }
-        }
-
-        router.push(referrer);
-      } else {
-        router.push('/books');
-      }
+      await Promise.all([utils.books.list.invalidate(), utils.books.stats.invalidate()]);
+      router.push(referrerRef.current ?? '/books');
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to delete book');

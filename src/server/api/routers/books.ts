@@ -126,6 +126,8 @@ export const booksRouter = createTRPCRouter({
       // Get total count for pagination (must run before pagination to get accurate count)
       const countResult = await ctx.db.select({ totalCount: count() }).from(books).where(where);
       const totalCount = countResult[0]?.totalCount ?? 0;
+      const totalPages = Math.ceil(totalCount / pageSize);
+      const effectivePage = totalPages === 0 ? 1 : Math.min(page, totalPages);
 
       // Dynamically select sort column and direction
       const orderByColumn =
@@ -140,14 +142,14 @@ export const booksRouter = createTRPCRouter({
         .where(where)
         .orderBy(orderByFn(orderByColumn), orderByFn(books.id))
         .limit(pageSize)
-        .offset((page - 1) * pageSize);
+        .offset((effectivePage - 1) * pageSize);
 
       return {
         items: rows as Book[],
         totalCount,
-        page,
+        page: effectivePage,
         pageSize,
-        totalPages: Math.ceil(totalCount / pageSize),
+        totalPages,
       };
     }),
 
@@ -283,5 +285,35 @@ export const booksRouter = createTRPCRouter({
 
       await ctx.db.delete(books).where(eq(books.id, input.id));
       return { id: input.id };
+    }),
+
+  // Delete multiple books owned by the current user
+  removeMany: protectedProcedure
+    .input(
+      z.object({
+        ids: z
+          .array(z.string().min(1))
+          .min(1)
+          .max(100)
+          .refine((ids) => new Set(ids).size === ids.length, {
+            message: 'Book IDs must be unique',
+          }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const deleted = await ctx.db.transaction(async (tx) => {
+        const rows = await tx
+          .delete(books)
+          .where(and(eq(books.userId, ctx.session.user.id), inArray(books.id, input.ids)))
+          .returning({ id: books.id });
+
+        if (rows.length !== input.ids.length) {
+          throw new TRPCError({ code: 'NOT_FOUND' });
+        }
+
+        return rows;
+      });
+
+      return { ids: deleted.map(({ id }) => id) };
     }),
 });

@@ -4,10 +4,24 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { ChevronDownIcon } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { api } from '@/trpc/react';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -17,9 +31,98 @@ import {
 } from '@/components/ui/select';
 import { GenreFilterSelect } from '@/components/genre-filter-select';
 import { cn } from '@/lib/utils';
+import type { Book } from '@/types';
 
 type SortBy = 'title' | 'author' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
+
+interface BookCatalogCardProps {
+  book: Book;
+  isSelected?: boolean;
+  selectionMode?: boolean;
+}
+
+function BookCatalogCard({
+  book,
+  isSelected = false,
+  selectionMode = false,
+}: BookCatalogCardProps) {
+  return (
+    <div className='relative h-full'>
+      <article
+        className={cn(
+          'bg-card text-card-foreground border-foreground/10 hover:border-primary/30 focus-within:ring-ring relative h-full rounded-sm border-2 p-4 shadow-sm transition-all group-hover:scale-[1.02] focus-within:ring-2 focus-within:ring-offset-2 hover:shadow-md',
+          isSelected && 'border-primary ring-primary/20 ring-2'
+        )}
+      >
+        <div className='text-muted-foreground/50 absolute top-2 right-2 font-mono text-[10px]'>
+          #{book.id.slice(0, 8).toUpperCase()}
+        </div>
+
+        <div className={cn('mb-3 pr-12', selectionMode && 'pl-7')}>
+          <h3 className='group-hover:text-primary font-serif text-base leading-tight font-bold transition-colors sm:text-lg'>
+            {book.title}
+          </h3>
+        </div>
+
+        <div className='border-primary/20 mb-4 border-l-2 pl-3'>
+          <div className='text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase'>
+            Author
+          </div>
+          <div className='font-serif text-sm leading-snug'>{book.author}</div>
+        </div>
+
+        <div className='mb-3 flex flex-col gap-1.5 text-xs'>
+          <div className='flex items-start gap-2'>
+            <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
+              Pub:
+            </span>
+            <span className='font-medium'>{book.publishYear}</span>
+          </div>
+
+          <div className='flex items-start gap-2'>
+            <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
+              Pages:
+            </span>
+            <span className='font-medium'>{book.numberOfPages}</span>
+          </div>
+
+          {book.genre && (
+            <div className='flex items-start gap-2'>
+              <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
+                Subject:
+              </span>
+              <span className='font-medium'>{book.genre}</span>
+            </div>
+          )}
+        </div>
+
+        <div className='border-foreground/10 mt-4 border-t pt-3'>
+          <div className='flex items-center justify-between'>
+            <span className='text-muted-foreground font-mono text-[10px] tracking-wider uppercase'>
+              Status
+            </span>
+            <div className='flex items-center gap-1.5'>
+              <div
+                className={cn('size-2 rounded-full', book.isRead ? 'bg-chart-3' : 'bg-amber-500')}
+              />
+              <span
+                className={cn(
+                  'text-xs font-semibold tracking-wider uppercase',
+                  book.isRead ? 'text-chart-3' : 'text-amber-700 dark:text-amber-500'
+                )}
+              >
+                {book.isRead ? 'Read' : 'Unread'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className='via-foreground/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r from-transparent to-transparent' />
+      </article>
+    </div>
+  );
+}
 
 export function BooksClient() {
   const utils = api.useUtils();
@@ -32,7 +135,9 @@ export function BooksClient() {
 
   // Parse URL params for initial state
   const parseInitialState = useCallback(() => {
-    const page = parseInt(searchParams.get('page') ?? '1', 10) || 1;
+    const pageParam = searchParams.get('page') ?? '1';
+    const parsedPage = Number(pageParam);
+    const page = /^[1-9]\d*$/.test(pageParam) ? Math.min(parsedPage, Number.MAX_SAFE_INTEGER) : 1;
     const search = searchParams.get('search') ?? '';
     const genre = searchParams.get('genre')?.split(',').filter(Boolean) ?? [];
     const sortBy = (searchParams.get('sortBy') ?? 'createdAt') as SortBy;
@@ -57,6 +162,9 @@ export function BooksClient() {
   const [page, setPage] = useState(initial.page);
   const [pageInput, setPageInput] = useState(String(initial.page));
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedBookIds, setSelectedBookIds] = useState<Set<string>>(() => new Set());
   const pageSize = 12;
 
   // Sync all filters to URL
@@ -74,7 +182,7 @@ export function BooksClient() {
     router.replace(newUrl, { scroll: false });
   }, [search, isRead, genre, sortBy, sortOrder, page, router]);
 
-  const { data, isLoading, error, isFetching } = api.books.list.useQuery(
+  const { data, isLoading, error, isFetching, isPlaceholderData } = api.books.list.useQuery(
     {
       search,
       isRead,
@@ -93,11 +201,59 @@ export function BooksClient() {
   const books = data?.items ?? [];
   const totalPages = data?.totalPages ?? 0;
   const totalCount = data?.totalCount ?? 0;
+  const effectivePage = data?.page;
+
+  // Use the server-normalized page after the current query settles.
+  useEffect(() => {
+    if (!isPlaceholderData && effectivePage !== undefined && effectivePage !== page) {
+      setPage(effectivePage);
+    }
+  }, [effectivePage, isPlaceholderData, page]);
 
   // Sync pageInput when page changes (e.g., from Previous/Next buttons)
   useEffect(() => {
     setPageInput(String(page));
   }, [page]);
+
+  // Selection is intentionally scoped to the current page and query.
+  useEffect(() => {
+    setSelectedBookIds((current) => (current.size === 0 ? current : new Set()));
+  }, [genre, isRead, page, search, sortBy, sortOrder]);
+
+  const selectedBooks = books.filter((book) => selectedBookIds.has(book.id));
+  const allBooksSelected = books.length > 0 && selectedBooks.length === books.length;
+  const someBooksSelected = selectedBooks.length > 0 && !allBooksSelected;
+
+  const toggleBookSelection = useCallback((bookId: string) => {
+    setSelectedBookIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(bookId)) {
+        next.delete(bookId);
+      } else {
+        next.add(bookId);
+      }
+
+      return next;
+    });
+  }, []);
+
+  const cancelSelection = () => {
+    setIsDeleteDialogOpen(false);
+    setSelectedBookIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const deleteBooks = api.books.removeMany.useMutation({
+    onSuccess: async ({ ids }) => {
+      toast.success(`${ids.length} book${ids.length === 1 ? '' : 's'} deleted`);
+      cancelSelection();
+      await Promise.all([utils.books.list.invalidate(), utils.books.stats.invalidate()]);
+    },
+    onError: (mutationError) => {
+      toast.error(mutationError.message || 'Failed to delete books');
+    },
+  });
 
   // Filter helpers
   const hasActiveFilters = search || isRead !== undefined || genre.length > 0;
@@ -178,9 +334,21 @@ export function BooksClient() {
           </p>
         </div>
 
-        <Button asChild className='w-full rounded-sm sm:w-auto'>
-          <Link href='/books/new'>Add Book</Link>
-        </Button>
+        <div className='flex w-full gap-2 sm:w-auto'>
+          {(totalCount > 0 || isSelectionMode) && (
+            <Button
+              variant='outline'
+              onClick={isSelectionMode ? cancelSelection : () => setIsSelectionMode(true)}
+              className='flex-1 rounded-sm sm:flex-none'
+            >
+              {isSelectionMode ? 'Cancel selection' : 'Select'}
+            </Button>
+          )}
+
+          <Button asChild className='flex-1 rounded-sm sm:flex-none'>
+            <Link href='/books/new'>Add Book</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filter Controls */}
@@ -347,6 +515,87 @@ export function BooksClient() {
           </div>
         </CardContent>
       </Card>
+
+      {isSelectionMode && !error && books.length > 0 && (
+        <div
+          className='bg-card border-foreground/10 flex flex-col gap-4 rounded-sm border-2 p-4 sm:flex-row sm:items-center sm:justify-between'
+          role='toolbar'
+          aria-label='Book selection actions'
+        >
+          <div className='flex items-center gap-3'>
+            <Checkbox
+              id='select-all-books'
+              checked={
+                allBooksSelected ? true
+                : someBooksSelected ?
+                  'indeterminate'
+                : false
+              }
+              onCheckedChange={(checked) => {
+                setSelectedBookIds(
+                  checked === true ? new Set(books.map(({ id }) => id)) : new Set()
+                );
+              }}
+              disabled={isFetching || deleteBooks.isPending}
+            />
+            <Label htmlFor='select-all-books' className='cursor-pointer'>
+              Select all on this page
+            </Label>
+            <span className='text-muted-foreground text-sm'>{selectedBooks.length} selected</span>
+          </div>
+
+          <div className='flex'>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant='destructive'
+                  disabled={selectedBooks.length === 0 || deleteBooks.isPending}
+                  className='flex-1 sm:flex-none'
+                >
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Delete {selectedBooks.length} {selectedBooks.length === 1 ? 'book' : 'books'}?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. The selected books will be permanently removed
+                    from your collection.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <ul
+                  className='bg-muted flex max-h-60 flex-col gap-1 overflow-y-auto rounded-sm p-3 text-sm'
+                  aria-label='Books selected for deletion'
+                >
+                  {selectedBooks.map((book) => (
+                    <li key={book.id}>{book.title}</li>
+                  ))}
+                </ul>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <Button
+                    variant='destructive'
+                    disabled={selectedBooks.length === 0 || deleteBooks.isPending}
+                    onClick={() => {
+                      setIsDeleteDialogOpen(false);
+                      deleteBooks.mutate({
+                        ids: selectedBooks.map(({ id }) => id),
+                      });
+                    }}
+                  >
+                    Delete {selectedBooks.length} {selectedBooks.length === 1 ? 'book' : 'books'}
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      )}
 
       {/* Error State */}
       {error && (
@@ -523,102 +772,53 @@ export function BooksClient() {
 
       {/* Books Catalog Grid */}
       {!isLoading && !error && books.length > 0 && (
-        <>
-          <div
-            className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? 'opacity-60' : ''}`}
-            role='list'
-            aria-label='Library catalog entries'
-          >
-            {books.map((book) => (
-              <Link
-                key={book.id}
-                href={`/books/${book.id}?from=${encodeURIComponent(currentFromUrl)}`}
-                className='group'
-                role='listitem'
-                aria-label={`${book.title} by ${book.author} - ${book.isRead ? 'Read' : 'Unread'}`}
-                onMouseEnter={() => prefetchBook(book.id)}
-                onFocus={() => prefetchBook(book.id)}
-              >
-                <div className='relative h-full'>
-                  {/* Library Catalog Card */}
-                  <article className='bg-card text-card-foreground border-foreground/10 hover:border-primary/30 focus-within:ring-ring relative h-full rounded-sm border-2 p-4 shadow-sm transition-all group-hover:scale-[1.02] focus-within:ring-2 focus-within:ring-offset-2 hover:shadow-md'>
-                    {/* Card Number / Call Number Style */}
-                    <div className='text-muted-foreground/50 absolute top-2 right-2 font-mono text-[10px]'>
-                      #{book.id.slice(0, 8).toUpperCase()}
-                    </div>
-
-                    {/* Title - Main Entry */}
-                    <div className='mb-3 pr-12'>
-                      <h3 className='group-hover:text-primary font-serif text-base leading-tight font-bold transition-colors sm:text-lg'>
-                        {book.title}
-                      </h3>
-                    </div>
-
-                    {/* Author - Secondary Entry */}
-                    <div className='border-primary/20 mb-4 border-l-2 pl-3'>
-                      <div className='text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase'>
-                        Author
-                      </div>
-                      <div className='font-serif text-sm leading-snug'>{book.author}</div>
-                    </div>
-
-                    {/* Publication Details */}
-                    <div className='mb-3 space-y-1.5 text-xs'>
-                      <div className='flex items-start gap-2'>
-                        <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
-                          Pub:
-                        </span>
-                        <span className='font-medium'>{book.publishYear}</span>
-                      </div>
-
-                      <div className='flex items-start gap-2'>
-                        <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
-                          Pages:
-                        </span>
-                        <span className='font-medium'>{book.numberOfPages}</span>
-                      </div>
-
-                      {book.genre && (
-                        <div className='flex items-start gap-2'>
-                          <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
-                            Subject:
-                          </span>
-                          <span className='font-medium'>{book.genre}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Status Indicator */}
-                    <div className='border-foreground/10 mt-4 border-t pt-3'>
-                      <div className='flex items-center justify-between'>
-                        <span className='text-muted-foreground font-mono text-[10px] tracking-wider uppercase'>
-                          Status
-                        </span>
-                        <div className='flex items-center gap-1.5'>
-                          <div
-                            className={`h-2 w-2 rounded-full ${
-                              book.isRead ? 'bg-chart-3' : 'bg-amber-500'
-                            }`}
-                          />
-                          <span
-                            className={`text-xs font-semibold tracking-wider uppercase ${
-                              book.isRead ? 'text-chart-3' : 'text-amber-700 dark:text-amber-500'
-                            }`}
-                          >
-                            {book.isRead ? 'Read' : 'Unread'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bottom Edge - Catalog Card Style */}
-                    <div className='via-foreground/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r from-transparent to-transparent' />
-                  </article>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </>
+        <div
+          className={cn(
+            'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+            isFetching && 'opacity-60'
+          )}
+          role='list'
+          aria-label='Library catalog entries'
+        >
+          {books.map((book) => (
+            <div key={book.id} role='listitem'>
+              {isSelectionMode ?
+                <label
+                  htmlFor={`select-book-${book.id}`}
+                  className={cn(
+                    'group relative block h-full',
+                    isFetching || deleteBooks.isPending ? 'cursor-not-allowed' : 'cursor-pointer'
+                  )}
+                >
+                  <BookCatalogCard
+                    book={book}
+                    selectionMode
+                    isSelected={selectedBookIds.has(book.id)}
+                  />
+                  <Checkbox
+                    id={`select-book-${book.id}`}
+                    checked={selectedBookIds.has(book.id)}
+                    onCheckedChange={() => toggleBookSelection(book.id)}
+                    disabled={isFetching || deleteBooks.isPending}
+                    className='absolute top-4 left-4'
+                    aria-label={`Select ${book.title}`}
+                  />
+                </label>
+              : <Link
+                  href={`/books/${book.id}?from=${encodeURIComponent(currentFromUrl)}`}
+                  className='group block h-full'
+                  aria-label={`${book.title} by ${book.author} - ${
+                    book.isRead ? 'Read' : 'Unread'
+                  }`}
+                  onMouseEnter={() => prefetchBook(book.id)}
+                  onFocus={() => prefetchBook(book.id)}
+                >
+                  <BookCatalogCard book={book} />
+                </Link>
+              }
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

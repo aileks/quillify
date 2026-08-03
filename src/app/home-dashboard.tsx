@@ -12,15 +12,7 @@ interface HomeDashboardProps {
 }
 
 export function HomeDashboard({ userName, subtitle }: HomeDashboardProps) {
-  const utils = api.useUtils();
   const { data: stats, isLoading } = api.books.stats.useQuery();
-
-  /**
-   * Prefetch book details on hover for instant navigation.
-   */
-  const prefetchBook = (bookId: string) => {
-    void utils.books.getById.prefetch({ id: bookId });
-  };
 
   if (isLoading || !stats) {
     return (
@@ -238,9 +230,8 @@ export function HomeDashboard({ userName, subtitle }: HomeDashboardProps) {
                   <Link
                     key={book.id}
                     href={`/books/${book.id}`}
+                    prefetch={false}
                     className='hover:bg-muted/50 block rounded-sm p-2 transition-colors'
-                    onMouseEnter={() => prefetchBook(book.id)}
-                    onFocus={() => prefetchBook(book.id)}
                   >
                     <div className='font-serif leading-tight font-medium'>{book.title}</div>
                     <div className='text-muted-foreground text-sm'>by {book.author}</div>

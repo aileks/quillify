@@ -289,14 +289,6 @@ export function BooksClient({ subtitle }: BooksClientProps) {
   };
 
   /**
-   * Prefetch book details on hover for instant navigation.
-   * The data will be cached and served immediately when the user clicks.
-   */
-  const prefetchBook = (bookId: string) => {
-    void utils.books.getById.prefetch({ id: bookId });
-  };
-
-  /**
    * Prefetch next page of results on hover for instant pagination.
    */
   const prefetchNextPage = () => {
@@ -731,12 +723,11 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                 </label>
               : <Link
                   href={`/books/${book.id}?from=${encodeURIComponent(currentFromUrl)}`}
+                  prefetch={false}
                   className='group block h-full'
                   aria-label={`${book.title} by ${book.author} - ${
                     book.isRead ? 'Finished' : 'To Read'
                   }`}
-                  onMouseEnter={() => prefetchBook(book.id)}
-                  onFocus={() => prefetchBook(book.id)}
                 >
                   <BookCatalogCard book={book} imageLoading={index < 4 ? 'eager' : 'lazy'} />
                 </Link>

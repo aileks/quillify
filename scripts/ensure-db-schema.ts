@@ -1,18 +1,25 @@
 import 'dotenv/config';
 import { Pool } from 'pg';
 
-const databaseUrl = process.env.DATABASE_URL;
+async function ensureDatabaseSchema() {
+  const databaseUrl = process.env.DATABASE_URL;
 
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL is required');
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required');
+  }
+
+  const pool = new Pool({
+    connectionString: databaseUrl,
+  });
+
+  try {
+    await pool.query('CREATE SCHEMA IF NOT EXISTS "quillify"');
+  } finally {
+    await pool.end();
+  }
 }
 
-const pool = new Pool({
-  connectionString: databaseUrl,
+ensureDatabaseSchema().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : 'Failed to create database schema');
+  process.exitCode = 1;
 });
-
-try {
-  await pool.query('CREATE SCHEMA IF NOT EXISTS "quillify"');
-} finally {
-  await pool.end();
-}

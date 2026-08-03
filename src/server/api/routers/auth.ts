@@ -1,10 +1,9 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc';
 import { users, passwordResetTokens, emailVerificationTokens } from '@/server/db/schema';
-import { eq, and, gt, lt, desc } from 'drizzle-orm';
+import { eq, and, gt, desc } from 'drizzle-orm';
 import { sendEmail } from '@/lib/email';
 import {
   getPasswordResetEmailHtml,
@@ -15,6 +14,7 @@ import {
   getEmailVerificationText,
 } from '@/lib/email-templates/email-verification';
 import { verifyPassword } from '@/server/auth/password';
+import { createOpaqueToken, hashOpaqueToken } from '@/server/auth/token';
 
 const TOKEN_EXPIRY_MINUTES = 30;
 const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
@@ -95,18 +95,18 @@ export const authRouter = createTRPCRouter({
           .where(eq(emailVerificationTokens.userId, newUser.id));
 
         // Generate verification token
-        const token = crypto.randomBytes(32).toString('hex');
+        const { rawToken, tokenHash } = createOpaqueToken();
         const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
 
         // Store token in database
         await ctx.db.insert(emailVerificationTokens).values({
           userId: newUser.id,
-          token,
+          tokenHash,
           expiresAt,
         });
 
         // Build verification URL
-        const verificationUrl = generateVerificationUrl(token);
+        const verificationUrl = generateVerificationUrl(rawToken);
 
         // Send verification email
         await sendEmail({
@@ -190,19 +190,6 @@ export const authRouter = createTRPCRouter({
       emailVerifiedAt: user.emailVerifiedAt,
     };
   }),
-
-  // Check if an email is already registered
-  checkEmail: publicProcedure
-    .input(z.object({ email: z.email() }))
-    .query(async ({ ctx, input }) => {
-      const user = await ctx.db.query.users.findFirst({
-        where: eq(users.email, input.email),
-      });
-
-      return {
-        exists: !!user,
-      };
-    }),
 
   /**
    * Update user email (requires current password verification)
@@ -288,12 +275,12 @@ export const authRouter = createTRPCRouter({
       }
 
       // Generate verification token and email metadata
-      const token = crypto.randomBytes(32).toString('hex');
+      const { rawToken, tokenHash } = createOpaqueToken();
       const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
-      const verificationUrl = generateVerificationUrl(token);
+      const verificationUrl = generateVerificationUrl(rawToken);
       const isExistingUser = user.createdAt < new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-      // Update email + invalidate verification state. If email fails, rollback all changes.
+      // Keep the database transaction short. Email delivery happens after it commits.
       try {
         await ctx.db.transaction(async (tx) => {
           await tx
@@ -311,30 +298,30 @@ export const authRouter = createTRPCRouter({
 
           await tx.insert(emailVerificationTokens).values({
             userId,
-            token,
+            tokenHash,
             expiresAt,
           });
+        });
 
-          await sendEmail({
-            to: newEmail,
-            subject:
-              isExistingUser ?
-                'Action Required: Verify Your Email Address'
-              : 'Verify Your Email Address',
-            html: getEmailVerificationHtml({
-              verificationUrl,
-              userName: user.name,
-              expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
-              isExistingUser,
-            }),
-            text: getEmailVerificationText({
-              verificationUrl,
-              userName: user.name,
-              expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
-              isExistingUser,
-            }),
-            category: 'Email Verification',
-          });
+        await sendEmail({
+          to: newEmail,
+          subject:
+            isExistingUser ?
+              'Action Required: Verify Your Email Address'
+            : 'Verify Your Email Address',
+          html: getEmailVerificationHtml({
+            verificationUrl,
+            userName: user.name,
+            expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+            isExistingUser,
+          }),
+          text: getEmailVerificationText({
+            verificationUrl,
+            userName: user.name,
+            expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
+            isExistingUser,
+          }),
+          category: 'Email Verification',
         });
 
         return {
@@ -515,14 +502,14 @@ export const authRouter = createTRPCRouter({
       }
 
       // Generate secure token
-      const token = crypto.randomBytes(32).toString('hex');
+      const { rawToken, tokenHash } = createOpaqueToken();
       const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MINUTES * 60 * 1000);
 
       // Store token in database
       try {
         await ctx.db.insert(passwordResetTokens).values({
           userId: user.id,
-          token,
+          tokenHash,
           expiresAt,
         });
       } catch (error: unknown) {
@@ -541,7 +528,7 @@ export const authRouter = createTRPCRouter({
         /\/$/,
         ''
       );
-      const resetUrl = `${appUrl}/account/reset-password?token=${token}`;
+      const resetUrl = `${appUrl}/account/reset-password?token=${rawToken}`;
 
       // Send email
       try {
@@ -583,10 +570,10 @@ export const authRouter = createTRPCRouter({
   validateResetToken: publicProcedure
     .input(z.object({ token: z.string().min(1, 'Token is required') }))
     .query(async ({ ctx, input }) => {
-      const { token } = input;
+      const tokenHash = hashOpaqueToken(input.token);
 
       const resetToken = await ctx.db.query.passwordResetTokens.findFirst({
-        where: eq(passwordResetTokens.token, token),
+        where: eq(passwordResetTokens.tokenHash, tokenHash),
       });
 
       if (!resetToken) {
@@ -619,11 +606,12 @@ export const authRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { token, password } = input;
+      const { password } = input;
+      const tokenHash = hashOpaqueToken(input.token);
 
       // Find and validate token
       const resetToken = await ctx.db.query.passwordResetTokens.findFirst({
-        where: eq(passwordResetTokens.token, token),
+        where: eq(passwordResetTokens.tokenHash, tokenHash),
       });
 
       if (!resetToken) {
@@ -645,28 +633,21 @@ export const authRouter = createTRPCRouter({
       // Hash the new password
       const hashedPassword = await bcrypt.hash(password, 12);
 
-      // Update user password and delete token
+      // Update the password and invalidate every outstanding reset link.
       try {
-        await ctx.db
-          .update(users)
-          .set({
-            password: hashedPassword,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, resetToken.userId));
+        await ctx.db.transaction(async (tx) => {
+          await tx
+            .update(users)
+            .set({
+              password: hashedPassword,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, resetToken.userId));
 
-        // Delete the used token
-        await ctx.db.delete(passwordResetTokens).where(eq(passwordResetTokens.id, resetToken.id));
-
-        // Clean up any other expired tokens for this user
-        await ctx.db
-          .delete(passwordResetTokens)
-          .where(
-            and(
-              eq(passwordResetTokens.userId, resetToken.userId),
-              lt(passwordResetTokens.expiresAt, new Date())
-            )
-          );
+          await tx
+            .delete(passwordResetTokens)
+            .where(eq(passwordResetTokens.userId, resetToken.userId));
+        });
 
         return {
           success: true,
@@ -680,32 +661,6 @@ export const authRouter = createTRPCRouter({
         });
       }
     }),
-
-  /**
-   * Cleanup expired password reset tokens (for cron job)
-   */
-  cleanupExpiredTokens: publicProcedure.mutation(async ({ ctx }) => {
-    try {
-      const result = await ctx.db
-        .delete(passwordResetTokens)
-        .where(lt(passwordResetTokens.expiresAt, new Date()))
-        .returning({ id: passwordResetTokens.id });
-
-      return {
-        success: true,
-        deletedCount: result.length,
-      };
-    } catch (error: unknown) {
-      console.error(
-        'Error cleaning up expired tokens:',
-        error instanceof Error ? error.message : error
-      );
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to cleanup expired tokens.',
-      });
-    }
-  }),
 
   /**
    * Send email verification link to user
@@ -753,20 +708,15 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // Delete any existing tokens for this user
-      await ctx.db
-        .delete(emailVerificationTokens)
-        .where(eq(emailVerificationTokens.userId, user.id));
-
       // Generate secure token
-      const token = crypto.randomBytes(32).toString('hex');
+      const { rawToken, tokenHash } = createOpaqueToken();
       const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
 
       // Store token in database
       try {
         await ctx.db.insert(emailVerificationTokens).values({
           userId: user.id,
-          token,
+          tokenHash,
           expiresAt,
         });
       } catch (error: unknown) {
@@ -781,7 +731,7 @@ export const authRouter = createTRPCRouter({
       }
 
       // Build verification URL
-      const verificationUrl = generateVerificationUrl(token);
+      const verificationUrl = generateVerificationUrl(rawToken);
 
       // Determine if this is for an existing user (based on account age)
       const isExistingUser = user.createdAt < new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -826,46 +776,16 @@ export const authRouter = createTRPCRouter({
     }),
 
   /**
-   * Validate an email verification token
-   */
-  validateVerificationToken: publicProcedure
-    .input(z.object({ token: z.string().min(1, 'Token is required') }))
-    .query(async ({ ctx, input }) => {
-      const { token } = input;
-
-      const verificationToken = await ctx.db.query.emailVerificationTokens.findFirst({
-        where: eq(emailVerificationTokens.token, token),
-      });
-
-      if (!verificationToken) {
-        return { valid: false, message: 'Invalid or expired verification link.' };
-      }
-
-      if (new Date() > verificationToken.expiresAt) {
-        // Clean up expired token
-        await ctx.db
-          .delete(emailVerificationTokens)
-          .where(eq(emailVerificationTokens.id, verificationToken.id));
-        return {
-          valid: false,
-          message: 'This verification link has expired. Please request a new one.',
-        };
-      }
-
-      return { valid: true };
-    }),
-
-  /**
    * Verify email using a valid token
    */
   verifyEmail: publicProcedure
     .input(z.object({ token: z.string().min(1, 'Token is required') }))
     .mutation(async ({ ctx, input }) => {
-      const { token } = input;
+      const tokenHash = hashOpaqueToken(input.token);
 
       // Find and validate token
       const verificationToken = await ctx.db.query.emailVerificationTokens.findFirst({
-        where: eq(emailVerificationTokens.token, token),
+        where: eq(emailVerificationTokens.tokenHash, tokenHash),
       });
 
       if (!verificationToken) {
@@ -886,30 +806,21 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // Update user email verification status and delete token
+      // Verify the email and invalidate every outstanding verification link.
       try {
-        await ctx.db
-          .update(users)
-          .set({
-            emailVerifiedAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, verificationToken.userId));
+        await ctx.db.transaction(async (tx) => {
+          await tx
+            .update(users)
+            .set({
+              emailVerifiedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, verificationToken.userId));
 
-        // Delete the used token
-        await ctx.db
-          .delete(emailVerificationTokens)
-          .where(eq(emailVerificationTokens.id, verificationToken.id));
-
-        // Clean up any other expired tokens for this user
-        await ctx.db
-          .delete(emailVerificationTokens)
-          .where(
-            and(
-              eq(emailVerificationTokens.userId, verificationToken.userId),
-              lt(emailVerificationTokens.expiresAt, new Date())
-            )
-          );
+          await tx
+            .delete(emailVerificationTokens)
+            .where(eq(emailVerificationTokens.userId, verificationToken.userId));
+        });
 
         return {
           success: true,
@@ -923,145 +834,6 @@ export const authRouter = createTRPCRouter({
         });
       }
     }),
-
-  /**
-   * Resend verification email (for authenticated users)
-   */
-  resendVerificationEmail: protectedProcedure.mutation(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
-
-    // Get user
-    const user = await ctx.db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
-
-    if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'User not found',
-      });
-    }
-
-    // Check if email is already verified
-    if (user.emailVerifiedAt) {
-      return {
-        success: true,
-        message: 'Your email is already verified.',
-      };
-    }
-
-    // Check rate limit: max 3 requests per hour per user
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const recentTokens = await ctx.db.query.emailVerificationTokens.findMany({
-      where: and(
-        eq(emailVerificationTokens.userId, user.id),
-        gt(emailVerificationTokens.createdAt, oneHourAgo)
-      ),
-      orderBy: [desc(emailVerificationTokens.createdAt)],
-    });
-
-    if (recentTokens.length >= MAX_VERIFICATION_REQUESTS_PER_HOUR) {
-      throw new TRPCError({
-        code: 'TOO_MANY_REQUESTS',
-        message: 'Too many verification requests. Please try again later.',
-      });
-    }
-
-    // Delete any existing tokens for this user
-    await ctx.db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.userId, user.id));
-
-    // Generate new token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
-
-    // Store token in database
-    try {
-      await ctx.db.insert(emailVerificationTokens).values({
-        userId: user.id,
-        token,
-        expiresAt,
-      });
-    } catch (error: unknown) {
-      console.error(
-        'Error creating email verification token:',
-        error instanceof Error ? error.message : error
-      );
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create verification request. Please try again.',
-      });
-    }
-
-    // Build verification URL
-    const verificationUrl = generateVerificationUrl(token);
-
-    // Determine if this is for an existing user
-    const isExistingUser = user.createdAt < new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    // Send email
-    try {
-      await sendEmail({
-        to: user.email!,
-        subject:
-          isExistingUser ?
-            'Action Required: Verify Your Email Address'
-          : 'Verify Your Email Address',
-        html: getEmailVerificationHtml({
-          verificationUrl,
-          userName: user.name,
-          expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
-          isExistingUser,
-        }),
-        text: getEmailVerificationText({
-          verificationUrl,
-          userName: user.name,
-          expiresInHours: VERIFICATION_TOKEN_EXPIRY_HOURS,
-          isExistingUser,
-        }),
-        category: 'Email Verification',
-      });
-    } catch (error: unknown) {
-      console.error(
-        'Error sending verification email:',
-        error instanceof Error ? error.message : error
-      );
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to send verification email. Please try again.',
-      });
-    }
-
-    return {
-      success: true,
-      message: 'Verification email sent successfully.',
-    };
-  }),
-
-  /**
-   * Cleanup expired email verification tokens (for cron job)
-   */
-  cleanupExpiredVerificationTokens: publicProcedure.mutation(async ({ ctx }) => {
-    try {
-      const result = await ctx.db
-        .delete(emailVerificationTokens)
-        .where(lt(emailVerificationTokens.expiresAt, new Date()))
-        .returning({ id: emailVerificationTokens.id });
-
-      return {
-        success: true,
-        deletedCount: result.length,
-      };
-    } catch (error: unknown) {
-      console.error(
-        'Error cleaning up expired verification tokens:',
-        error instanceof Error ? error.message : error
-      );
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to cleanup expired verification tokens.',
-      });
-    }
-  }),
 
   /**
    * Delete user account (requires password verification)

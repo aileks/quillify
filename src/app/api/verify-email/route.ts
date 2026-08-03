@@ -5,6 +5,7 @@ import { TRPCError } from '@trpc/server';
 import { db } from '@/server/db';
 import { emailVerificationTokens } from '@/server/db/schema';
 import { createCaller } from '@/server/api/root';
+import { hashOpaqueToken } from '@/server/auth/token';
 
 // Helper to create redirect response with verification cookie
 function createVerifyRedirect(url: URL): NextResponse {
@@ -30,8 +31,9 @@ export async function GET(request: NextRequest) {
   // Look up the token with associated user to get email (for error cases)
   let userEmail: string | null = null;
   try {
+    const tokenHash = hashOpaqueToken(token);
     const tokenRecord = await db.query.emailVerificationTokens.findFirst({
-      where: eq(emailVerificationTokens.token, token),
+      where: eq(emailVerificationTokens.tokenHash, tokenHash),
       with: {
         user: true,
       },

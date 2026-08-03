@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/db';
-import { passwordResetTokens } from '@/server/db/schema';
+import { emailVerificationTokens, passwordResetTokens } from '@/server/db/schema';
 import { lt } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
@@ -18,16 +18,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await db
-      .delete(passwordResetTokens)
-      .where(lt(passwordResetTokens.expiresAt, new Date()))
-      .returning({ id: passwordResetTokens.id });
-
-    console.log(`Cleaned up ${result.length} expired password reset tokens`);
+    const now = new Date();
+    const [passwordTokens, verificationTokens] = await Promise.all([
+      db
+        .delete(passwordResetTokens)
+        .where(lt(passwordResetTokens.expiresAt, now))
+        .returning({ id: passwordResetTokens.id }),
+      db
+        .delete(emailVerificationTokens)
+        .where(lt(emailVerificationTokens.expiresAt, now))
+        .returning({ id: emailVerificationTokens.id }),
+    ]);
 
     return NextResponse.json({
       success: true,
-      deletedCount: result.length,
+      deletedCount: passwordTokens.length + verificationTokens.length,
       timestamp: new Date().toISOString(),
     });
   } catch (error: unknown) {

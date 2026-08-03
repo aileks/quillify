@@ -103,17 +103,12 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const showVerificationBanner =
     hasHydrated && userId ? shouldShowBanner(userId, needsVerification) : false;
 
-  // Prevent layout shift before hydration
-  if (!hasHydrated) {
-    return null;
-  }
-
   return (
     <>
       {/* Skip to main content link */}
       <a
         href='#main-content'
-        className='focus:bg-primary focus:text-primary-foreground focus-visible:ring-ring focus:rounded-sm-md sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
+        className='focus:bg-primary focus:text-primary-foreground focus-visible:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:px-4 focus:py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
         style={{ left: showSidebar ? `${currentSidebarWidth + 16}px` : '16px' }}
       >
         Skip to main content

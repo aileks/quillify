@@ -25,8 +25,11 @@ const courierPrime = Courier_Prime({
 });
 
 export const metadata: Metadata = {
-  title: 'Quillify',
-  description: 'Your Book Tracker',
+  title: {
+    default: 'Quillify',
+    template: '%s | Quillify',
+  },
+  description: 'Turn your scattered TBR into a reading list you can finish.',
   icons: {
     icon: 'favicon.ico',
     apple: 'apple-touch-icon.ico',
@@ -41,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body
-        className={`${merriweather.variable} ${workSans.variable} ${courierPrime.variable} bg-background text-foreground font-serif antialiased`}
+        className={`${merriweather.variable} ${workSans.variable} ${courierPrime.variable} bg-background text-foreground font-sans antialiased`}
       >
         <SessionProvider>
           <TRPCReactProvider>

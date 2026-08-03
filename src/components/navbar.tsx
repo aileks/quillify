@@ -1,22 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
+import { BookOpen, Home, LogIn, LogOut, Menu, Settings, UserPlus } from 'lucide-react';
+
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu';
-import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -27,6 +25,7 @@ interface NavbarProps {
 
 export function Navbar({ className }: NavbarProps) {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const utils = api.useUtils();
 
   // Prefetch books data on hover/focus for instant navigation
@@ -38,112 +37,108 @@ export function Navbar({ className }: NavbarProps) {
       sortBy: 'title',
       sortOrder: 'asc',
     });
-    // Prefetch stats data (pageSize 100) - used by home dashboard
-    void utils.books.list.prefetch({
-      page: 1,
-      pageSize: 100,
-    });
+    void utils.books.stats.prefetch();
   };
 
   return (
     <nav
       className={cn(
-        'border-sidebar-accent text-sidebar-foreground bg-sidebar sticky top-0 z-50 mx-auto border-b-2 font-serif',
+        'border-sidebar-accent text-sidebar-foreground bg-sidebar sticky top-0 z-50 mx-auto border-b-2',
         className
       )}
       aria-label='Main navigation'
     >
       <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
-        <Link href='/' className='text-xl font-bold' aria-label='Quillify home'>
+        <Link href='/' className='font-serif text-xl font-bold' aria-label='Quillify home'>
           Quillify
         </Link>
 
         {status === 'loading' ?
-          <Skeleton className='h-9 w-32' />
-        : session?.user ?
-          <NavigationMenu>
-            <NavigationMenuList>
-              <NavigationMenuItem onMouseEnter={prefetchBooksData} onFocus={prefetchBooksData}>
-                <NavigationMenuLink asChild>
-                  <Button
-                    variant='outline'
-                    asChild
-                    className='text-background hover:text-background'
-                  >
-                    <Link href='/' className={navigationMenuTriggerStyle()}>
-                      Home
-                    </Link>
-                  </Button>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem onMouseEnter={prefetchBooksData} onFocus={prefetchBooksData}>
-                <NavigationMenuLink asChild>
-                  <Button
-                    variant='outline'
-                    asChild
-                    className='text-background hover:text-background'
-                  >
-                    <Link href='/books' className={navigationMenuTriggerStyle()}>
-                      Books
-                    </Link>
-                  </Button>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button className='rounded-sm'>
-                      {session.user.name || session.user.email || 'Account'}
-                    </Button>
-                  </DropdownMenuTrigger>
-
-                  <DropdownMenuContent align='end'>
-                    <DropdownMenuItem asChild>
-                      <Link href='/account/settings'>Settings</Link>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-
+          <Skeleton className='h-9 w-24' />
+        : <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant='outline'
+                className='border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground'
+              >
+                <Menu data-icon='inline-start' />
+                Menu
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-56'>
+              {session?.user ?
+                <>
+                  <DropdownMenuLabel className='truncate'>
+                    {session.user.name || session.user.email || 'Account'}
+                  </DropdownMenuLabel>
+                  <DropdownMenuGroup>
                     <DropdownMenuItem
-                      onClick={() => signOut({ callbackUrl: '/' })}
-                      className='text-destructive cursor-pointer'
+                      asChild
+                      onMouseEnter={prefetchBooksData}
+                      onFocus={prefetchBooksData}
                     >
+                      <Link href='/' aria-current={pathname === '/' ? 'page' : undefined}>
+                        <Home />
+                        Home
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      asChild
+                      onMouseEnter={prefetchBooksData}
+                      onFocus={prefetchBooksData}
+                    >
+                      <Link
+                        href='/books'
+                        aria-current={pathname.startsWith('/books') ? 'page' : undefined}
+                      >
+                        <BookOpen />
+                        Reading List
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href='/account/settings'
+                        aria-current={pathname === '/account/settings' ? 'page' : undefined}
+                      >
+                        <Settings />
+                        Settings
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      variant='destructive'
+                      onClick={() => signOut({ callbackUrl: '/' })}
+                    >
+                      <LogOut />
                       Sign Out
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
-        : <NavigationMenu>
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Button
-                    variant='outline'
-                    asChild
-                    className='text-background hover:text-background'
-                  >
-                    <Link href='/account/login' className={navigationMenuTriggerStyle()}>
+                  </DropdownMenuGroup>
+                </>
+              : <DropdownMenuGroup>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href='/account/login'
+                      aria-current={pathname === '/account/login' ? 'page' : undefined}
+                    >
+                      <LogIn />
                       Log In
                     </Link>
-                  </Button>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Button asChild>
-                    <Link href='/account/register' className={navigationMenuTriggerStyle()}>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href='/account/register'
+                      aria-current={pathname === '/account/register' ? 'page' : undefined}
+                    >
+                      <UserPlus />
                       Get Started
                     </Link>
-                  </Button>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              }
+            </DropdownMenuContent>
+          </DropdownMenu>
         }
       </div>
     </nav>

@@ -18,7 +18,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            'group toast font-serif bg-popover text-popover-foreground border-border shadow-lg rounded-sm cursor-pointer',
+            'group toast font-sans bg-popover text-popover-foreground border-border shadow-lg rounded-sm cursor-pointer',
           title: 'text-sm font-medium',
           description: 'text-sm text-muted-foreground',
           success: 'border-l-4 border-l-chart-3 [&_[data-icon]]:text-chart-3',

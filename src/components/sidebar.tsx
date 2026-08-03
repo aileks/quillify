@@ -95,11 +95,29 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
 
   const currentWidth = sidebarCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
 
+  const handleResizeKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const widthStep = event.shiftKey ? 32 : 8;
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      setSidebarWidth(sidebarWidth - widthStep);
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      setSidebarWidth(sidebarWidth + widthStep);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      setSidebarWidth(SIDEBAR_MIN_WIDTH);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      setSidebarWidth(SIDEBAR_MAX_WIDTH);
+    }
+  };
+
   return (
     <aside
       ref={sidebarRef}
       className={cn(
-        'border-sidebar-border bg-sidebar text-sidebar-foreground fixed top-0 left-0 z-50 flex h-screen flex-col border-r font-serif',
+        'border-sidebar-border bg-sidebar text-sidebar-foreground fixed top-0 left-0 z-50 flex h-screen flex-col border-r',
         // Only animate width when not actively resizing (e.g., collapse/expand)
         !isResizing && 'transition-[width] duration-200 ease-out',
         className
@@ -111,7 +129,7 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
       <div className='border-sidebar-border flex flex-col border-b px-4 py-4'>
         <div className='flex items-center justify-between'>
           {!sidebarCollapsed && (
-            <div className='text-sidebar-foreground text-xl font-bold'>Quillify</div>
+            <div className='text-sidebar-foreground font-serif text-xl font-bold'>Quillify</div>
           )}
           <Button
             variant='ghost'
@@ -124,8 +142,8 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ?
-              <PanelLeft className='size-4' />
-            : <PanelLeftClose className='size-4' />}
+              <PanelLeft />
+            : <PanelLeftClose />}
           </Button>
         </div>
         {session?.user && !sidebarCollapsed && (
@@ -152,7 +170,7 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
                 title={sidebarCollapsed ? 'Home' : undefined}
               >
                 <Link href='/'>
-                  <Home className='size-4 shrink-0' />
+                  <Home />
                   {!sidebarCollapsed && <span>Home</span>}
                 </Link>
               </Button>
@@ -168,11 +186,11 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
                     'bg-sidebar-accent text-sidebar-accent-foreground',
                   sidebarCollapsed && 'justify-center px-2'
                 )}
-                title={sidebarCollapsed ? 'Books' : undefined}
+                title={sidebarCollapsed ? 'Reading List' : undefined}
               >
                 <Link href='/books'>
-                  <BookOpen className='size-4 shrink-0' />
-                  {!sidebarCollapsed && <span>Books</span>}
+                  <BookOpen />
+                  {!sidebarCollapsed && <span>Reading List</span>}
                 </Link>
               </Button>
             </div>
@@ -189,7 +207,7 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
               title={sidebarCollapsed ? 'Settings' : undefined}
             >
               <Link href='/account/settings'>
-                <Settings className='size-4 shrink-0' />
+                <Settings />
                 {!sidebarCollapsed && <span>Settings</span>}
               </Link>
             </Button>
@@ -206,7 +224,7 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
               title={sidebarCollapsed ? 'Log In' : undefined}
             >
               <Link href='/account/login'>
-                <LogIn className='size-4 shrink-0' />
+                <LogIn />
                 {!sidebarCollapsed && <span>Log In</span>}
               </Link>
             </Button>
@@ -223,7 +241,7 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
               title={sidebarCollapsed ? 'Get Started' : undefined}
             >
               <Link href='/account/register'>
-                <UserPlus className='size-4 shrink-0' />
+                <UserPlus />
                 {!sidebarCollapsed && <span>Get Started</span>}
               </Link>
             </Button>
@@ -238,12 +256,12 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
             variant='ghost'
             onClick={() => signOut({ callbackUrl: '/' })}
             className={cn(
-              'w-full justify-start gap-3 text-left text-red-400 hover:text-red-700',
+              'text-destructive hover:text-destructive w-full justify-start gap-3 text-left',
               sidebarCollapsed && 'justify-center px-2'
             )}
             title={sidebarCollapsed ? 'Log Out' : undefined}
           >
-            <LogOut className='size-4 shrink-0' />
+            <LogOut />
             {!sidebarCollapsed && <span>Log Out</span>}
           </Button>
         </div>
@@ -258,7 +276,9 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
             isResizing && 'bg-sidebar-accent'
           )}
           onMouseDown={handleResizeStart}
+          onKeyDown={handleResizeKeyDown}
           role='separator'
+          tabIndex={0}
           aria-orientation='vertical'
           aria-label='Resize sidebar'
           aria-valuenow={sidebarWidth}

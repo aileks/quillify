@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
@@ -129,7 +130,20 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
       <div className='border-sidebar-border flex flex-col border-b px-4 py-4'>
         <div className='flex items-center justify-between'>
           {!sidebarCollapsed && (
-            <div className='text-sidebar-foreground font-serif text-xl font-bold'>Quillify</div>
+            <Link
+              href='/'
+              className='text-sidebar-foreground flex items-center gap-2 font-serif text-xl font-bold'
+              aria-label='Quillify home'
+            >
+              <Image
+                src='/quill-logo.png'
+                alt=''
+                width={32}
+                height={32}
+                className='size-8 shrink-0'
+              />
+              <span>Quillify</span>
+            </Link>
           )}
           <Button
             variant='ghost'

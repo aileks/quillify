@@ -40,18 +40,17 @@ export default async function Home() {
         <div className='container mx-auto'>
           <div className='mx-auto max-w-4xl text-center'>
             <h1 className='mb-6 font-serif text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl'>
-              Turn Your Scattered TBR Into a{' '}
-              <span className='text-primary'>Library You Can Finish</span>
+              Keep Your Reading List <span className='text-primary'>in One Place</span>
             </h1>
 
             <p className='text-muted-foreground mx-auto mb-10 max-w-2xl text-lg leading-relaxed sm:text-xl'>
-              {subtitle}
+              Save books to To Read. Move them to Finished when you are done.
             </p>
 
             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
               <Button asChild size='lg' className='w-full px-8 py-6 text-lg sm:w-auto'>
                 <Link href='/account/register'>
-                  Get Started Free
+                  Create a Free Account
                   <ArrowRight data-icon='inline-end' />
                 </Link>
               </Button>
@@ -73,10 +72,10 @@ export default async function Home() {
         <div className='container mx-auto'>
           <div className='mb-16 text-center'>
             <h2 className='mb-4 font-serif text-3xl font-bold tracking-tight sm:text-4xl'>
-              A Clear Path Through Your TBR
+              Keep Track of Your Books
             </h2>
             <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>
-              Add what caught your attention, find it quickly, and keep your momentum visible.
+              Add books, update their status, and find them again.
             </p>
           </div>
 
@@ -86,11 +85,11 @@ export default async function Home() {
                 <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
                   <Library className='size-6' />
                 </div>
-                <CardTitle className='font-serif text-xl'>Build Your Library</CardTitle>
+                <CardTitle className='font-serif text-xl'>Add Books</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className='text-muted-foreground'>
-                  Save the books you want to read with the details that help you find them later.
+                  Save the title, author, genre, and other useful details.
                 </p>
               </CardContent>
             </Card>
@@ -100,11 +99,11 @@ export default async function Home() {
                 <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
                   <BookOpen className='size-6' />
                 </div>
-                <CardTitle className='font-serif text-xl'>Finish With One Tap</CardTitle>
+                <CardTitle className='font-serif text-xl'>Update Their Status</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className='text-muted-foreground'>
-                  Move books between To Read and Finished without losing their catalog details.
+                  Move books from To Read to Finished.
                 </p>
               </CardContent>
             </Card>
@@ -114,11 +113,11 @@ export default async function Home() {
                 <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
                   <BarChart3 className='size-6' />
                 </div>
-                <CardTitle className='font-serif text-xl'>See Your Momentum</CardTitle>
+                <CardTitle className='font-serif text-xl'>Track Your Progress</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className='text-muted-foreground'>
-                  See your finished books, remaining TBR, completion rate, and pages read.
+                  See how many books and pages you have finished.
                 </p>
               </CardContent>
             </Card>
@@ -128,11 +127,11 @@ export default async function Home() {
                 <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
                   <Search className='size-6' />
                 </div>
-                <CardTitle className='font-serif text-xl'>Search and Filter</CardTitle>
+                <CardTitle className='font-serif text-xl'>Find Books</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className='text-muted-foreground'>
-                  Search by title, author, or genre, then filter by To Read or Finished.
+                  Search by title or author. Filter by genre or status.
                 </p>
               </CardContent>
             </Card>
@@ -149,10 +148,10 @@ export default async function Home() {
         <div className='container mx-auto'>
           <div className='mb-16 text-center'>
             <h2 className='mb-4 font-serif text-3xl font-bold tracking-tight sm:text-4xl'>
-              Start Clearing Your TBR in Three Steps
+              How It Works
             </h2>
             <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>
-              From scattered recommendations to a list you can act on.
+              Set up your Library in a few minutes.
             </p>
           </div>
 
@@ -161,30 +160,24 @@ export default async function Home() {
               <div className='bg-primary text-primary-foreground mb-4 flex h-12 w-12 items-center justify-center rounded-full font-mono text-lg font-bold'>
                 1
               </div>
-              <h3 className='mb-2 font-serif text-xl font-semibold'>Create Your Account</h3>
-              <p className='text-muted-foreground'>
-                Sign up for free and get instant access to your personal library dashboard.
-              </p>
+              <h3 className='mb-2 font-serif text-xl font-semibold'>Create an Account</h3>
+              <p className='text-muted-foreground'>Sign up for free.</p>
             </div>
 
             <div className='flex flex-col items-center text-center'>
               <div className='bg-primary text-primary-foreground mb-4 flex h-12 w-12 items-center justify-center rounded-full font-mono text-lg font-bold'>
                 2
               </div>
-              <h3 className='mb-2 font-serif text-xl font-semibold'>Build Your TBR</h3>
-              <p className='text-muted-foreground'>
-                Add the books you plan to read and keep their key details together.
-              </p>
+              <h3 className='mb-2 font-serif text-xl font-semibold'>Add Your Books</h3>
+              <p className='text-muted-foreground'>Add books you want to read.</p>
             </div>
 
             <div className='flex flex-col items-center text-center'>
               <div className='bg-primary text-primary-foreground mb-4 flex h-12 w-12 items-center justify-center rounded-full font-mono text-lg font-bold'>
                 3
               </div>
-              <h3 className='mb-2 font-serif text-xl font-semibold'>Mark Them Finished</h3>
-              <p className='text-muted-foreground'>
-                Move each completed book out of your TBR and watch your progress grow.
-              </p>
+              <h3 className='mb-2 font-serif text-xl font-semibold'>Mark Books Finished</h3>
+              <p className='text-muted-foreground'>Update a book when you finish it.</p>
             </div>
           </div>
         </div>
@@ -194,12 +187,12 @@ export default async function Home() {
       <section
         data-slot='social-proof-section'
         className='px-4 py-20'
-        aria-label='Why readers love Quillify'
+        aria-label='Quillify details'
       >
         <div className='container mx-auto'>
           <div className='mx-auto max-w-3xl text-center'>
             <h2 className='mb-8 font-serif text-3xl font-bold tracking-tight sm:text-4xl'>
-              Built for Book Lovers
+              What You Get
             </h2>
 
             <div className='mb-10 grid gap-6 sm:grid-cols-3'>
@@ -229,11 +222,9 @@ export default async function Home() {
         <div className='container mx-auto'>
           <div className='mx-auto max-w-3xl text-center'>
             <h2 className='mb-4 font-serif text-3xl font-bold sm:text-4xl'>
-              Ready to Tackle Your TBR?
+              Start Your Library
             </h2>
-            <p className='mb-8 text-lg opacity-90'>
-              Build a focused library and make your next choice obvious.
-            </p>
+            <p className='mb-8 text-lg opacity-90'>Create an account and add your first book.</p>
 
             <Button
               asChild
@@ -242,7 +233,7 @@ export default async function Home() {
               className='w-full px-8 py-6 text-lg sm:w-auto'
             >
               <Link href='/account/register'>
-                Create Your Free Account
+                Create Account
                 <ArrowRight data-icon='inline-end' />
               </Link>
             </Button>

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -111,7 +112,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           <div className='bg-destructive/20 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full'>
             <XCircle className='text-destructive h-6 w-6' />
           </div>
-          <CardTitle className='text-center'>Invalid Reset Link</CardTitle>
+          <CardTitle className='text-center'>
+            <h1>Invalid Reset Link</h1>
+          </CardTitle>
           <CardDescription className='text-center'>
             {tokenValidation?.message || 'This password reset link is invalid or has expired.'}
           </CardDescription>
@@ -123,7 +126,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           </Button>
           <Button type='button' variant='outline' className='w-full' asChild>
             <Link href='/account/login'>
-              <ArrowLeft className='mr-2 h-4 w-4' />
+              <ArrowLeft data-icon='inline-start' />
               Back to Login
             </Link>
           </Button>
@@ -140,7 +143,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           <div className='bg-chart-3/20 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full'>
             <CheckCircle className='text-chart-3 h-6 w-6' />
           </div>
-          <CardTitle className='text-center'>Password Reset Successful</CardTitle>
+          <CardTitle className='text-center'>
+            <h1>Password Reset Successful</h1>
+          </CardTitle>
           <CardDescription className='text-center'>
             Your password has been reset successfully. You will be redirected to the login page
             shortly.
@@ -159,7 +164,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   return (
     <Card className='w-full max-w-lg'>
       <CardHeader>
-        <CardTitle>Reset Password</CardTitle>
+        <CardTitle>
+          <h1>Reset Password</h1>
+        </CardTitle>
         <CardDescription>Enter your new password below.</CardDescription>
       </CardHeader>
 
@@ -180,6 +187,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                       disabled={isLoading}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Use at least 8 characters with uppercase, lowercase, and a number.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -213,7 +223,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             <Button type='submit' className='w-full' disabled={isLoading}>
               {isLoading ?
                 <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <Loader2 data-icon='inline-start' className='animate-spin' />
                   Resetting Password...
                 </>
               : <>Reset Password</>}
@@ -234,7 +244,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
         <Button type='button' variant='outline' className='w-full' asChild>
           <Link href='/account/login'>
-            <ArrowLeft className='mr-2 h-4 w-4' />
+            <ArrowLeft data-icon='inline-start' />
             Back to Login
           </Link>
         </Button>

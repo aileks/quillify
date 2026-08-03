@@ -222,7 +222,11 @@ export function SettingsForm() {
   }
 
   return (
-    <div className='container mx-auto max-w-2xl px-4 py-6 md:px-6 md:py-10'>
+    <div className='container mx-auto max-w-3xl space-y-6 px-4 py-6 md:px-6 md:py-10'>
+      <header>
+        <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>Account Settings</h1>
+      </header>
+
       <Tabs defaultValue={getInitialTab(isVerified)} className='space-y-6'>
         <TabsList className='w-full justify-start'>
           <TabsTrigger value='profile'>Profile</TabsTrigger>

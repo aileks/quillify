@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -49,13 +50,12 @@ const registerSchema = z
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-export function RegisterForm() {
+interface RegisterFormProps {
+  callbackUrl?: string;
+}
+
+export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
   const [error, setError] = React.useState<string>('');
-  const [isSigningIn, setIsSigningIn] = React.useState(false);
-  const [pendingCredentials, setPendingCredentials] = React.useState<{
-    email: string;
-    password: string;
-  } | null>(null);
   const router = useRouter();
 
   const form = useForm<RegisterFormValues>({
@@ -68,60 +68,52 @@ export function RegisterForm() {
     },
   });
 
-  const registerMutation = api.auth.register.useMutation({
-    onSuccess: async () => {
-      setError('');
-      // Auto-login will be triggered by the effect when pendingCredentials is set
-    },
-    onError: (error) => {
-      setError(error.message || 'Failed to register. Please try again.');
-      setPendingCredentials(null);
-    },
-  });
+  const registerMutation = api.auth.register.useMutation();
 
-  // Auto-login after successful registration
-  React.useEffect(() => {
-    if (!pendingCredentials || !registerMutation.isSuccess) return;
+  const onSubmit = async (data: RegisterFormValues) => {
+    setError('');
 
-    const performSignIn = async () => {
-      setIsSigningIn(true);
+    try {
+      await registerMutation.mutateAsync({
+        email: data.email,
+        password: data.password,
+        name: data.name || undefined,
+      });
+
       const result = await signIn('credentials', {
-        email: pendingCredentials.email,
-        password: pendingCredentials.password,
+        email: data.email,
+        password: data.password,
         redirect: false,
       });
 
       if (result?.ok) {
-        router.push('/');
+        router.push(callbackUrl);
         router.refresh();
       } else {
-        // If auto-login fails, redirect to login page
-        router.push('/account/login');
+        router.push(
+          `/account/login?callbackUrl=${encodeURIComponent(callbackUrl)}&email=${encodeURIComponent(
+            data.email
+          )}`
+        );
       }
-      setIsSigningIn(false);
-      setPendingCredentials(null);
-    };
-
-    performSignIn();
-  }, [pendingCredentials, registerMutation.isSuccess, router]);
-
-  const onSubmit = (data: RegisterFormValues) => {
-    setError('');
-    // Store credentials for auto-login after registration
-    setPendingCredentials({ email: data.email, password: data.password });
-    registerMutation.mutate({
-      email: data.email,
-      password: data.password,
-      name: data.name || undefined,
-    });
+    } catch (registrationError) {
+      setError(
+        registrationError instanceof Error ?
+          registrationError.message
+        : 'Failed to register. Please try again.'
+      );
+    }
   };
 
-  const isLoading = form.formState.isSubmitting || registerMutation.isPending || isSigningIn;
+  const isLoading = form.formState.isSubmitting || registerMutation.isPending;
+  const loginHref = `/account/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
   return (
     <Card className='w-full max-w-lg'>
       <CardHeader>
-        <CardTitle>Register</CardTitle>
+        <CardTitle>
+          <h1>Create Account</h1>
+        </CardTitle>
         <CardDescription>Enter your details to create a new account</CardDescription>
       </CardHeader>
 
@@ -137,6 +129,9 @@ export function RegisterForm() {
                   <FormControl>
                     <Input placeholder='John Doe' {...field} disabled={isLoading} />
                   </FormControl>
+                  <FormDescription>
+                    Use at least 8 characters with uppercase, lowercase, and a number.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -200,7 +195,7 @@ export function RegisterForm() {
             />
 
             {error && (
-              <div className='rounded-sm-md bg-destructive/10 text-destructive p-3 text-sm'>
+              <div className='bg-destructive/10 text-destructive rounded-md p-3 text-sm'>
                 {error}
               </div>
             )}
@@ -208,7 +203,7 @@ export function RegisterForm() {
             <Button type='submit' className='w-full' disabled={isLoading}>
               {isLoading ?
                 <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <Loader2 data-icon='inline-start' className='animate-spin' />
                   Creating account...
                 </>
               : <>Register</>}
@@ -228,7 +223,7 @@ export function RegisterForm() {
         </div>
 
         <Button type='button' variant='outline' className='w-full' asChild>
-          <Link href='/account/login'>Already have an account? Log in</Link>
+          <Link href={loginHref}>Already have an account? Log in</Link>
         </Button>
       </CardFooter>
     </Card>

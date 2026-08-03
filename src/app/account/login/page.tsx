@@ -1,8 +1,15 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+
 import { auth } from '@/server/auth';
 import { LoginForm } from '@/components/auth/login-form';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getSafeCallbackUrl } from '@/lib/safe-callback-url';
+
+export const metadata: Metadata = {
+  title: 'Log In',
+};
 
 interface LoginPageProps {
   searchParams: Promise<{
@@ -16,7 +23,7 @@ interface LoginPageProps {
 async function LoginContent({ searchParams }: LoginPageProps) {
   const session = await auth();
   const resolvedParams = await searchParams;
-  const callbackUrl = resolvedParams.callbackUrl || '/';
+  const callbackUrl = getSafeCallbackUrl(resolvedParams.callbackUrl);
   const error = resolvedParams.error;
   const email = resolvedParams.email;
   const verified = resolvedParams.verified;

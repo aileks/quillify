@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     default: 'Quillify',
     template: '%s | Quillify',
   },
-  description: 'Turn your scattered TBR into a reading list you can finish.',
+  description: 'Turn your scattered TBR into a library you can finish.',
   icons: {
     icon: 'favicon.ico',
     apple: 'apple-touch-icon.ico',

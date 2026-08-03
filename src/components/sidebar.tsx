@@ -186,11 +186,11 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
                     'bg-sidebar-accent text-sidebar-accent-foreground',
                   sidebarCollapsed && 'justify-center px-2'
                 )}
-                title={sidebarCollapsed ? 'Reading List' : undefined}
+                title={sidebarCollapsed ? 'Library' : undefined}
               >
                 <Link href='/books'>
                   <BookOpen />
-                  {!sidebarCollapsed && <span>Reading List</span>}
+                  {!sidebarCollapsed && <span>Library</span>}
                 </Link>
               </Button>
             </div>

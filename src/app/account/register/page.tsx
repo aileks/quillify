@@ -1,8 +1,15 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+
 import { auth } from '@/server/auth';
 import { RegisterForm } from '@/components/auth/register-form';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getSafeCallbackUrl } from '@/lib/safe-callback-url';
+
+export const metadata: Metadata = {
+  title: 'Create Account',
+};
 
 interface RegisterPageProps {
   searchParams: Promise<{ callbackUrl?: string }>;
@@ -11,7 +18,7 @@ interface RegisterPageProps {
 async function RegisterContent({ searchParams }: RegisterPageProps) {
   const session = await auth();
   const resolvedParams = await searchParams;
-  const callbackUrl = resolvedParams.callbackUrl || '/';
+  const callbackUrl = getSafeCallbackUrl(resolvedParams.callbackUrl);
 
   if (session?.user) {
     redirect(callbackUrl);
@@ -19,7 +26,7 @@ async function RegisterContent({ searchParams }: RegisterPageProps) {
 
   return (
     <div className='flex min-h-screen items-center justify-center p-4'>
-      <RegisterForm />
+      <RegisterForm callbackUrl={callbackUrl} />
     </div>
   );
 }

@@ -134,7 +134,7 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
 
   const deleteBook = api.books.remove.useMutation({
     onSuccess: async () => {
-      toast.success('Book removed from your reading list');
+      toast.success('Book removed from your library');
       await Promise.all([utils.books.list.invalidate(), utils.books.stats.invalidate()]);
       router.push(referrerRef.current ?? '/books');
     },
@@ -187,7 +187,7 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
           aria-label='Return to books list'
         >
           <ArrowLeft data-icon='inline-start' />
-          Back to Reading List
+          Back to Library
         </Button>
       </div>
 
@@ -318,7 +318,7 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
                   <AlertDialogTitle>Delete this book?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete &quot;
-                    {book.title}&quot; from your reading list.
+                    {book.title}&quot; from your library.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
 

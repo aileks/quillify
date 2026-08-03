@@ -117,7 +117,9 @@ export function LoginForm({ callbackUrl = '/', errorParam, emailParam, verified 
   return (
     <Card className='w-full max-w-lg'>
       <CardHeader>
-        <CardTitle>Log In</CardTitle>
+        <CardTitle>
+          <h1>Log In</h1>
+        </CardTitle>
         <CardDescription>Enter your credentials to access your account</CardDescription>
       </CardHeader>
 

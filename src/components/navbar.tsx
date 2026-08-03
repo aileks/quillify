@@ -92,7 +92,7 @@ export function Navbar({ className }: NavbarProps) {
                         aria-current={pathname.startsWith('/books') ? 'page' : undefined}
                       >
                         <BookOpen />
-                        Reading List
+                        Library
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

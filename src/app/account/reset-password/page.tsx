@@ -21,7 +21,9 @@ function ResetPasswordContent() {
           <div className='bg-destructive/20 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full'>
             <XCircle className='text-destructive h-6 w-6' />
           </div>
-          <CardTitle className='text-center'>Missing Reset Token</CardTitle>
+          <CardTitle className='text-center'>
+            <h1>Missing Reset Token</h1>
+          </CardTitle>
           <CardDescription className='text-center'>
             No password reset token was provided. Please use the link from your email or request a
             new reset link.
@@ -34,7 +36,7 @@ function ResetPasswordContent() {
           </Button>
           <Button type='button' variant='outline' className='w-full' asChild>
             <Link href='/account/login'>
-              <ArrowLeft className='mr-2 h-4 w-4' />
+              <ArrowLeft data-icon='inline-start' />
               Back to Login
             </Link>
           </Button>
@@ -60,10 +62,10 @@ function ResetPasswordLoading() {
 
 export default function ResetPasswordPage() {
   return (
-    <main className='flex min-h-screen items-center justify-center p-4'>
+    <div className='flex min-h-screen items-center justify-center p-4'>
       <Suspense fallback={<ResetPasswordLoading />}>
         <ResetPasswordContent />
       </Suspense>
-    </main>
+    </div>
   );
 }

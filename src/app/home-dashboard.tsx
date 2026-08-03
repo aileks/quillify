@@ -106,7 +106,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
         <Card className='rounded-sm'>
           <CardHeader>
             <CardTitle className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-              Reading List
+              Library
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -176,7 +176,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
           <CardContent className='space-y-4'>
             {totalBooks === 0 ?
               <p className='text-muted-foreground text-sm'>
-                Add books to see insights about your reading list.
+                Add books to see insights about your library.
               </p>
             : <>
                 <div className='flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3'>
@@ -232,7 +232,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
           <CardContent>
             {recentlyAdded.length === 0 ?
               <p className='text-muted-foreground text-sm'>
-                Your reading list is empty. Add the first book on your TBR.
+                Your library is empty. Add the first book on your TBR.
               </p>
             : <div className='space-y-3'>
                 {recentlyAdded.map((book) => (
@@ -256,7 +256,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
       {/* Call to Action */}
       <div className='flex justify-center pt-2 sm:pt-4'>
         <Button asChild size='lg' className='w-full px-7 py-4 text-base sm:w-auto sm:text-lg'>
-          <Link href='/books'>View Reading List</Link>
+          <Link href='/books'>View Library</Link>
         </Button>
       </div>
     </div>

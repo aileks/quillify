@@ -1,7 +1,12 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import VerifyEmailClient from './verify-email-client';
+
+export const metadata: Metadata = {
+  title: 'Verify Email',
+};
 
 interface VerifyEmailPageProps {
   searchParams: Promise<{ status?: string; email?: string }>;
@@ -21,8 +26,8 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
   const email = params.email;
 
   return (
-    <main className='flex min-h-screen items-center justify-center p-4'>
+    <div className='flex min-h-screen items-center justify-center p-4'>
       <VerifyEmailClient status={status} email={email} />
-    </main>
+    </div>
   );
 }

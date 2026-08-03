@@ -63,7 +63,9 @@ export function ForgotPasswordForm() {
           <div className='bg-primary/10 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full'>
             <Mail className='text-primary h-6 w-6' />
           </div>
-          <CardTitle className='text-center'>Check Your Email</CardTitle>
+          <CardTitle className='text-center'>
+            <h1>Check Your Email</h1>
+          </CardTitle>
           <CardDescription className='text-center'>
             If an account with that email exists, we sent a password reset link. Please check your
             inbox and spam folder.
@@ -73,7 +75,7 @@ export function ForgotPasswordForm() {
         <CardFooter className='flex flex-col gap-4'>
           <Button type='button' variant='outline' className='w-full' asChild>
             <Link href='/account/login'>
-              <ArrowLeft className='mr-2 h-4 w-4' />
+              <ArrowLeft data-icon='inline-start' />
               Back to Login
             </Link>
           </Button>
@@ -85,7 +87,9 @@ export function ForgotPasswordForm() {
   return (
     <Card className='w-full max-w-lg'>
       <CardHeader>
-        <CardTitle>Forgot Password</CardTitle>
+        <CardTitle>
+          <h1>Forgot Password</h1>
+        </CardTitle>
         <CardDescription>
           Enter your email address and we&apos;ll send you a link to reset your password.
         </CardDescription>
@@ -122,7 +126,7 @@ export function ForgotPasswordForm() {
             <Button type='submit' className='w-full' disabled={isLoading}>
               {isLoading ?
                 <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <Loader2 data-icon='inline-start' className='animate-spin' />
                   Sending...
                 </>
               : <>Send Reset Link</>}
@@ -143,7 +147,7 @@ export function ForgotPasswordForm() {
 
         <Button type='button' variant='outline' className='w-full' asChild>
           <Link href='/account/login'>
-            <ArrowLeft className='mr-2 h-4 w-4' />
+            <ArrowLeft data-icon='inline-start' />
             Back to Login
           </Link>
         </Button>

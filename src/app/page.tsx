@@ -39,7 +39,7 @@ export default async function Home() {
           <div className='mx-auto max-w-4xl text-center'>
             <h1 className='mb-6 font-serif text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl'>
               Turn Your Scattered TBR Into a{' '}
-              <span className='text-primary'>Reading List You Can Finish</span>
+              <span className='text-primary'>Library You Can Finish</span>
             </h1>
 
             <p className='text-muted-foreground mx-auto mb-10 max-w-2xl text-lg leading-relaxed sm:text-xl'>
@@ -85,7 +85,7 @@ export default async function Home() {
                 <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
                   <Library className='size-6' />
                 </div>
-                <CardTitle className='font-serif text-xl'>Build Your Reading List</CardTitle>
+                <CardTitle className='font-serif text-xl'>Build Your Library</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className='text-muted-foreground'>
@@ -231,7 +231,7 @@ export default async function Home() {
               Ready to Tackle Your TBR?
             </h2>
             <p className='mb-8 text-lg opacity-90'>
-              Build a focused reading list and make your next choice obvious.
+              Build a focused library and make your next choice obvious.
             </p>
 
             <Button

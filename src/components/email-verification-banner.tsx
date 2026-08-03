@@ -167,7 +167,7 @@ export function EmailVerificationBanner({ email, onDismiss }: EmailVerificationB
           >
             {sendVerificationEmail.isPending ?
               <>
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Loader2 data-icon='inline-start' className='animate-spin' />
                 Sending...
               </>
             : 'Resend Verification Email'}

@@ -307,12 +307,13 @@ export function BooksClient() {
       <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
         <div>
           <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
-            My Reading List
+            My Library
           </h1>
           <p className='text-muted-foreground mt-2 text-sm'>
             {totalCount === 0 ?
-              'No books yet'
-            : `${totalCount} ${totalCount === 1 ? 'book' : 'books'}`}
+              'Your library is empty. Add a book to start your TBR.'
+            : `${totalCount} ${totalCount === 1 ? 'book' : 'books'} across your TBR and finished reads.`
+            }
           </p>
         </div>
 
@@ -341,7 +342,7 @@ export function BooksClient() {
             <div className='mb-4'>
               <Input
                 type='search'
-                placeholder='Search your reading list'
+                placeholder='Search your library'
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -533,7 +534,7 @@ export function BooksClient() {
             'flex flex-col items-center gap-3 sm:flex-row sm:justify-end sm:gap-4',
             isFetching && 'opacity-70'
           )}
-          aria-label='Reading list pagination'
+          aria-label='Library pagination'
         >
           {totalPages <= 5 ?
             <p className='text-muted-foreground text-sm font-bold sm:text-base'>
@@ -672,7 +673,7 @@ export function BooksClient() {
                   </AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. The selected books will be permanently removed
-                    from your reading list.
+                    from your library.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
 
@@ -768,7 +769,7 @@ export function BooksClient() {
             <p className='text-muted-foreground mb-4 text-center'>
               {hasActiveFilters ?
                 'No books found matching your filters.'
-              : 'Your reading list is empty. Add the first book on your TBR.'}
+              : 'Your library is empty. Add the first book on your TBR.'}
             </p>
 
             {!hasActiveFilters && (
@@ -794,7 +795,7 @@ export function BooksClient() {
             isFetching && 'opacity-60'
           )}
           role='list'
-          aria-label='Reading list'
+          aria-label='Library'
         >
           {books.map((book) => (
             <div key={book.id} role='listitem'>

@@ -24,7 +24,7 @@ export function NewBookForm() {
 
   const createBook = api.books.create.useMutation({
     onSuccess: (book) => {
-      toast.success(`"${book.title}" added to your reading list`);
+      toast.success(`"${book.title}" added to your library`);
       void utils.books.list.invalidate();
       void utils.books.stats.invalidate();
       router.push('/books');
@@ -59,13 +59,13 @@ export function NewBookForm() {
         <Button variant='outline' asChild>
           <Link href='/books'>
             <ArrowLeft data-icon='inline-start' />
-            Back to Reading List
+            Back to Library
           </Link>
         </Button>
       </div>
 
       <header className='flex flex-col gap-2'>
-        <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>Add to your reading list</h1>
+        <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>Add to your library</h1>
         <p className='text-muted-foreground'>
           Add the details now, then mark the book finished whenever you reach the last page.
         </p>

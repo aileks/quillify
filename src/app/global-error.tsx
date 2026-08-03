@@ -42,14 +42,14 @@ export default function GlobalError({
             <div className='flex flex-col gap-3 sm:flex-row sm:justify-center'>
               <button
                 onClick={reset}
-                className='rounded-sm-md bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring inline-flex h-10 items-center justify-center px-6 py-2 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+                className='bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-6 py-2 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
               >
                 Try Again
               </button>
 
               <button
                 onClick={() => (window.location.href = '/books')}
-                className='rounded-sm-md border-foreground/10 bg-background hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring inline-flex h-10 items-center justify-center border px-6 py-2 text-sm font-medium shadow-xs transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+                className='border-foreground/10 bg-background hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md border px-6 py-2 text-sm font-medium shadow-xs transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
               >
                 Go Home
               </button>

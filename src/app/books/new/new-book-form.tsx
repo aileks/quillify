@@ -18,7 +18,11 @@ const EMPTY_BOOK = {
   genre: '',
 };
 
-export function NewBookForm() {
+interface NewBookFormProps {
+  saying: string;
+}
+
+export function NewBookForm({ saying }: NewBookFormProps) {
   const router = useRouter();
   const utils = api.useUtils();
 
@@ -64,18 +68,11 @@ export function NewBookForm() {
         </Button>
       </div>
 
-      <header className='flex flex-col gap-2'>
-        <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>Add to your library</h1>
-        <p className='text-muted-foreground'>
-          Add the details now, then mark the book finished whenever you reach the last page.
-        </p>
-      </header>
-
       <BookForm
         defaultValues={EMPTY_BOOK}
-        title='Book details'
-        description='Use the publication details from your copy when possible.'
-        actionLabel='Add to List'
+        title='Add New Book'
+        saying={saying}
+        actionLabel='Add Book'
         pendingLabel='Adding...'
         isPending={createBook.isPending}
         onSubmit={createReadingListBook}

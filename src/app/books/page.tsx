@@ -1,5 +1,6 @@
 import { BooksClient } from './books-client';
 import { api, HydrateClient } from '@/trpc/server';
+import { pickRandomSaying } from '@/lib/product-sayings';
 
 // Force dynamic rendering since this page requires authentication
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,8 @@ export const dynamic = 'force-dynamic';
  * instant subsequent navigations within the staleTime window.
  */
 export default function BooksPage() {
+  const subtitle = pickRandomSaying('library');
+
   void api.books.list.prefetch({
     page: 1,
     pageSize: 12,
@@ -20,7 +23,7 @@ export default function BooksPage() {
 
   return (
     <HydrateClient>
-      <BooksClient />
+      <BooksClient subtitle={subtitle} />
     </HydrateClient>
   );
 }

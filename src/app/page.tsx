@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { auth } from '@/server/auth';
 import { api, HydrateClient } from '@/trpc/server';
+import { pickRandomSaying } from '@/lib/product-sayings';
 import { BookOpen, BarChart3, Library, Search, CheckCircle2, ArrowRight } from 'lucide-react';
 import { HomeDashboard } from './home-dashboard';
 
 export default async function Home() {
   const session = await auth();
+  const subtitle = pickRandomSaying('home');
 
   // If user is logged in, show dashboard
   // Data fetching is handled client-side for instant cached navigation
@@ -16,7 +18,7 @@ export default async function Home() {
     void api.books.stats.prefetch();
     return (
       <HydrateClient>
-        <HomeDashboard userName={userName} />
+        <HomeDashboard userName={userName} subtitle={subtitle} />
       </HydrateClient>
     );
   }
@@ -43,8 +45,7 @@ export default async function Home() {
             </h1>
 
             <p className='text-muted-foreground mx-auto mb-10 max-w-2xl text-lg leading-relaxed sm:text-xl'>
-              Keep every book you want to read in one calm place, then move it to Finished when you
-              reach the last page.
+              {subtitle}
             </p>
 
             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>

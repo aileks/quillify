@@ -37,7 +37,7 @@ import {
 interface BookFormProps {
   defaultValues: BookFormValues;
   title: string;
-  description?: string;
+  saying: string;
   actionLabel: string;
   pendingLabel: string;
   isPending: boolean;
@@ -48,7 +48,7 @@ interface BookFormProps {
 export function BookForm({
   defaultValues,
   title,
-  description,
+  saying,
   actionLabel,
   pendingLabel,
   isPending,
@@ -65,8 +65,10 @@ export function BookForm({
       <form onSubmit={form.handleSubmit((values) => onSubmit(toBookInput(values)))}>
         <Card className='rounded-sm'>
           <CardHeader>
-            <CardTitle>{title}</CardTitle>
-            {description && <CardDescription>{description}</CardDescription>}
+            <CardTitle>
+              <h1>{title}</h1>
+            </CardTitle>
+            <CardDescription>{saying}</CardDescription>
           </CardHeader>
           <CardContent className='flex flex-col gap-6'>
             <FormField

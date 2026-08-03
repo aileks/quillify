@@ -25,6 +25,7 @@ import type { BookInput } from '@/lib/book-validation';
 
 interface BookDetailClientProps {
   bookId: string;
+  editSaying: string;
 }
 
 /**
@@ -34,7 +35,7 @@ interface BookDetailClientProps {
  * Data is fetched client-side, leveraging React Query's cache for instant
  * navigation when prefetched from the library/dashboard views.
  */
-export function BookDetailClient({ bookId }: BookDetailClientProps) {
+export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) {
   const router = useRouter();
   const utils = api.useUtils();
   const searchParams = useSearchParams();
@@ -192,11 +193,7 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
       </div>
 
       {isEditing ?
-        <div className='flex flex-col gap-6'>
-          <header className='flex flex-col gap-2'>
-            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>Edit book</h1>
-            <p className='text-muted-foreground'>Update the details for “{book.title}”.</p>
-          </header>
+        <div>
           <BookForm
             defaultValues={{
               title: book.title,
@@ -205,7 +202,8 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
               publishYear: String(book.publishYear),
               genre: book.genre || '',
             }}
-            title='Book details'
+            title={`Editing ${book.title}`}
+            saying={editSaying}
             actionLabel='Save Changes'
             pendingLabel='Saving...'
             isPending={updateBook.isPending}

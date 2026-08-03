@@ -121,7 +121,11 @@ function BookCatalogCard({
   );
 }
 
-export function BooksClient() {
+interface BooksClientProps {
+  subtitle: string;
+}
+
+export function BooksClient({ subtitle }: BooksClientProps) {
   const utils = api.useUtils();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -309,12 +313,7 @@ export function BooksClient() {
           <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
             My Library
           </h1>
-          <p className='text-muted-foreground mt-2 text-sm'>
-            {totalCount === 0 ?
-              'Your library is empty. Add a book to start your TBR.'
-            : `${totalCount} ${totalCount === 1 ? 'book' : 'books'} across your TBR and finished reads.`
-            }
-          </p>
+          <p className='text-muted-foreground mt-2 text-sm'>{subtitle}</p>
         </div>
 
         <div className='flex w-full gap-2 sm:w-auto'>

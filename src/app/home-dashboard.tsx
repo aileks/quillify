@@ -8,9 +8,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface HomeDashboardProps {
   userName: string;
+  subtitle: string;
 }
 
-export function HomeDashboard({ userName }: HomeDashboardProps) {
+export function HomeDashboard({ userName, subtitle }: HomeDashboardProps) {
   const utils = api.useUtils();
   const { data: stats, isLoading } = api.books.stats.useQuery();
 
@@ -96,9 +97,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
         <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
           Welcome back, {userName}!
         </h1>
-        <p className='text-muted-foreground text-base sm:text-lg md:text-xl'>
-          Here&apos;s an overview of your reading journey.
-        </p>
+        <p className='text-muted-foreground text-base sm:text-lg md:text-xl'>{subtitle}</p>
       </div>
 
       {/* Statistics Cards */}

@@ -1,4 +1,5 @@
 import { api, HydrateClient } from '@/trpc/server';
+import { pickRandomSaying } from '@/lib/product-sayings';
 import { BookDetailClient } from './book-detail-client';
 
 interface BookDetailPageProps {
@@ -20,7 +21,7 @@ export default async function BookDetailPage({ params }: BookDetailPageProps) {
 
   return (
     <HydrateClient>
-      <BookDetailClient bookId={id} />
+      <BookDetailClient bookId={id} editSaying={pickRandomSaying('editBook')} />
     </HydrateClient>
   );
 }

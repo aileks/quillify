@@ -177,6 +177,7 @@ export function BookCoverPicker({
               title={title}
               author={author}
               sizes='128px'
+              loading='eager'
               className='w-full'
             />
             <span className='text-xs font-medium'>Selected cover</span>

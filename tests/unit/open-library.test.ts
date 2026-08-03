@@ -99,10 +99,10 @@ describe('Open Library metadata service', () => {
     ).toEqual([]);
   });
 
-  it('returns up to 12 distinct cover choices', () => {
+  it('returns up to 15 distinct cover choices', () => {
     const results = normalizeOpenLibrarySearchResponse(
       {
-        docs: Array.from({ length: 15 }, (_, index) => ({
+        docs: Array.from({ length: 18 }, (_, index) => ({
           key: `/works/OL${index}W`,
           title: `The Hobbit edition ${index}`,
           author_name: ['J.R.R. Tolkien'],
@@ -112,26 +112,30 @@ describe('Open Library metadata service', () => {
       { title: 'The Hobbit', author: 'J.R.R. Tolkien' }
     );
 
-    expect(results).toHaveLength(12);
-    expect(new Set(results.map(({ coverId }) => coverId))).toHaveProperty('size', 12);
+    expect(results).toHaveLength(15);
+    expect(new Set(results.map(({ coverId }) => coverId))).toHaveProperty('size', 15);
   });
 
   it('uses relevance matching for title and author', async () => {
     let requestUrl: URL | undefined;
+    let requestInit: RequestInit | undefined;
 
     await searchOpenLibrary(
       { title: 'Jane Eyre', author: 'Charlotte Bronte' },
       {
-        fetchImplementation: async (input) => {
+        fetchImplementation: async (input, init) => {
           requestUrl = new URL(input.toString());
+          requestInit = init;
           return Response.json({ docs: [] });
         },
       }
     );
 
     expect(requestUrl?.searchParams.get('q')).toBe('Jane Eyre Charlotte Bronte');
+    expect(requestUrl?.searchParams.get('limit')).toBe('15');
     expect(requestUrl?.searchParams.has('title')).toBe(false);
     expect(requestUrl?.searchParams.has('author')).toBe(false);
+    expect(requestInit?.next?.revalidate).toBe(24 * 60 * 60);
   });
 
   it('searches by title without an author', async () => {

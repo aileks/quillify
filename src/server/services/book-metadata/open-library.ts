@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { getOpenLibraryCoverUrl, type OpenLibrarySearchResult } from '@/lib/open-library';
 
 const OPEN_LIBRARY_SEARCH_URL = 'https://openlibrary.org/search.json';
-const OPEN_LIBRARY_SEARCH_LIMIT = 40;
-export const OPEN_LIBRARY_RESULT_LIMIT = 12;
+const OPEN_LIBRARY_SEARCH_LIMIT = 15;
+export const OPEN_LIBRARY_RESULT_LIMIT = 15;
 export const OPEN_LIBRARY_TIMEOUT_MS = 5_000;
 
 const publicationDateSchema = z.union([z.string(), z.array(z.string())]).optional();
@@ -259,6 +259,9 @@ export async function searchOpenLibrary(
       headers: {
         Accept: 'application/json',
         'User-Agent': 'Quillify book cover search',
+      },
+      next: {
+        revalidate: 24 * 60 * 60,
       },
       signal: abortController.signal,
     });

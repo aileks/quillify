@@ -38,7 +38,7 @@ Every books procedure is protected.
 | `books.stats`      | Query    | None                                          | Totals, page counts, genres, years, recent books |
 | `books.list`       | Query    | Search, status, genres, sort, page, page size | Paginated library                                |
 | `books.getById`    | Query    | `{ id }`                                      | Owned book or `NOT_FOUND`                        |
-| `books.create`     | Mutation | Book fields and optional Open Library cover    | Created book                                     |
+| `books.create`     | Mutation | Book fields and optional Open Library cover   | Created book                                     |
 | `books.update`     | Mutation | `{ id }` plus optional editable fields        | Updated owned book                               |
 | `books.setRead`    | Mutation | `{ id, isRead }`                              | Updated owned book                               |
 | `books.remove`     | Mutation | `{ id }`                                      | Removed ID                                       |
@@ -61,14 +61,14 @@ Unverified accounts can hold up to 10 books.
 
 Every book metadata procedure is protected. Open Library requests run on the server.
 
-| Procedure                        | Kind  | Input                         | Result                         |
-| -------------------------------- | ----- | ----------------------------- | ------------------------------ |
-| `bookMetadata.searchOpenLibrary` | Query | `{ title, author? }`          | Up to 12 normalized matches    |
+| Procedure                        | Kind  | Input                | Result                      |
+| -------------------------------- | ----- | -------------------- | --------------------------- |
+| `bookMetadata.searchOpenLibrary` | Query | `{ title, author? }` | Up to 15 normalized matches |
 
 A title is required and the author is optional. Search uses Open Library relevance matching, then
-ranks exact and near-exact title and author matches ahead of weaker results. Matches without cover
-IDs are omitted. Returned fields include an Open Library identifier, cover ID, title, authors,
-publication years, available ISBNs, and a derived cover preview URL.
+ranks exact and near-exact title and author matches ahead of weaker results. Up to 15 distinct
+matches with covers are returned. Returned fields include an Open Library identifier, cover ID,
+title, authors, publication years, available ISBNs, and a derived cover preview URL.
 
 ## `auth.*`
 

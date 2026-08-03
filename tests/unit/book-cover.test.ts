@@ -32,6 +32,19 @@ describe('BookCover', () => {
     expect(markup).toContain('data-testid="book-cover-image"');
   });
 
+  it('forwards eager loading for above-the-fold covers', () => {
+    const markup = renderToStaticMarkup(
+      createElement(BookCover, {
+        coverSourceId: '12345',
+        title: 'Jane Eyre',
+        author: 'Charlotte Brontë',
+        loading: 'eager',
+      })
+    );
+
+    expect(markup).toContain('loading="eager"');
+  });
+
   it('renders the literary fallback when no cover is selected', () => {
     const markup = renderToStaticMarkup(
       createElement(BookCover, {

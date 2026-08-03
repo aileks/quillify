@@ -128,11 +128,13 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
     >
       {/* Header */}
       <div className='border-sidebar-border flex flex-col border-b px-4 py-4'>
-        <div className='flex items-center justify-between'>
+        <div
+          className={cn('flex items-center justify-between', sidebarCollapsed && 'justify-center')}
+        >
           {!sidebarCollapsed && (
             <Link
               href='/'
-              className='text-sidebar-foreground flex items-center gap-2 font-serif text-xl font-bold'
+              className='text-sidebar-foreground flex min-w-0 items-center gap-2 font-serif text-xl font-bold'
               aria-label='Quillify home'
             >
               <Image
@@ -142,17 +144,14 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
                 height={32}
                 className='size-8 shrink-0'
               />
-              <span>Quillify</span>
+              <span className='truncate'>Quillify</span>
             </Link>
           )}
           <Button
             variant='ghost'
             size='icon'
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={cn(
-              'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-8 w-8 shrink-0',
-              sidebarCollapsed && 'mx-auto'
-            )}
+            className='text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-8 w-8 shrink-0'
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ?

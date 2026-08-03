@@ -527,104 +527,6 @@ export function BooksClient({ subtitle }: BooksClientProps) {
         </CardContent>
       </Card>
 
-      {!error && books.length > 0 && totalPages > 1 && (
-        <nav
-          className={cn(
-            'flex flex-col items-center gap-3 sm:flex-row sm:justify-end sm:gap-4',
-            isFetching && 'opacity-70'
-          )}
-          aria-label='Library pagination'
-        >
-          {totalPages <= 5 ?
-            <p className='text-muted-foreground text-sm font-bold sm:text-base'>
-              Page {currentPage} of {totalPages}
-            </p>
-          : <div className='flex items-center gap-2'>
-              <Label htmlFor='reading-list-page'>Page</Label>
-              <Input
-                id='reading-list-page'
-                type='number'
-                min={1}
-                max={totalPages}
-                key={currentPage}
-                defaultValue={currentPage}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    const requestedPage = Number.parseInt(event.currentTarget.value, 10);
-                    if (
-                      Number.isInteger(requestedPage) &&
-                      requestedPage >= 1 &&
-                      requestedPage <= totalPages
-                    ) {
-                      goToPage(requestedPage);
-                    } else {
-                      event.currentTarget.value = String(currentPage);
-                    }
-                  }
-                }}
-                onBlur={(event) => {
-                  event.currentTarget.value = String(currentPage);
-                }}
-                className='h-8 w-12 [appearance:textfield] rounded-sm text-center text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
-              />
-              <span className='text-muted-foreground text-sm font-bold sm:text-base'>
-                of {totalPages}
-              </span>
-            </div>
-          }
-
-          <div className='flex w-full justify-center gap-2 sm:w-auto'>
-            {totalPages > 15 && (
-              <Button
-                variant='secondary'
-                size='icon'
-                onClick={() => goToPage(1)}
-                disabled={currentPage === 1}
-                aria-label='Go to first page'
-              >
-                <ChevronsLeft />
-              </Button>
-            )}
-
-            <Button
-              variant='secondary'
-              onClick={() => goToPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className='flex-1 sm:flex-none'
-              aria-label={`Go to previous page, page ${currentPage - 1}`}
-            >
-              <ChevronLeft data-icon='inline-start' />
-              Previous
-            </Button>
-
-            <Button
-              variant='secondary'
-              onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className='flex-1 sm:flex-none'
-              aria-label={`Go to next page, page ${currentPage + 1}`}
-              onMouseEnter={prefetchNextPage}
-              onFocus={prefetchNextPage}
-            >
-              Next
-              <ChevronRight data-icon='inline-end' />
-            </Button>
-
-            {totalPages > 15 && (
-              <Button
-                variant='secondary'
-                size='icon'
-                onClick={() => goToPage(totalPages)}
-                disabled={currentPage === totalPages}
-                aria-label='Go to last page'
-              >
-                <ChevronsRight />
-              </Button>
-            )}
-          </div>
-        </nav>
-      )}
-
       {isSelectionMode && !error && books.length > 0 && (
         <div
           className='bg-card border-foreground/10 flex flex-col gap-4 rounded-sm border-2 p-4 sm:flex-row sm:items-center sm:justify-between'
@@ -835,6 +737,104 @@ export function BooksClient({ subtitle }: BooksClientProps) {
             </div>
           ))}
         </div>
+      )}
+
+      {!error && books.length > 0 && totalPages > 1 && (
+        <nav
+          className={cn(
+            'flex flex-col items-center gap-3 sm:flex-row sm:justify-end sm:gap-4',
+            isFetching && 'opacity-70'
+          )}
+          aria-label='Library pagination'
+        >
+          {totalPages <= 5 ?
+            <p className='text-muted-foreground text-sm font-bold sm:text-base'>
+              Page {currentPage} of {totalPages}
+            </p>
+          : <div className='flex items-center gap-2'>
+              <Label htmlFor='reading-list-page'>Page</Label>
+              <Input
+                id='reading-list-page'
+                type='number'
+                min={1}
+                max={totalPages}
+                key={currentPage}
+                defaultValue={currentPage}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    const requestedPage = Number.parseInt(event.currentTarget.value, 10);
+                    if (
+                      Number.isInteger(requestedPage) &&
+                      requestedPage >= 1 &&
+                      requestedPage <= totalPages
+                    ) {
+                      goToPage(requestedPage);
+                    } else {
+                      event.currentTarget.value = String(currentPage);
+                    }
+                  }
+                }}
+                onBlur={(event) => {
+                  event.currentTarget.value = String(currentPage);
+                }}
+                className='h-8 w-12 [appearance:textfield] rounded-sm text-center text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+              />
+              <span className='text-muted-foreground text-sm font-bold sm:text-base'>
+                of {totalPages}
+              </span>
+            </div>
+          }
+
+          <div className='flex w-full justify-center gap-2 sm:w-auto'>
+            {totalPages > 15 && (
+              <Button
+                variant='secondary'
+                size='icon'
+                onClick={() => goToPage(1)}
+                disabled={currentPage === 1}
+                aria-label='Go to first page'
+              >
+                <ChevronsLeft />
+              </Button>
+            )}
+
+            <Button
+              variant='secondary'
+              onClick={() => goToPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className='flex-1 sm:flex-none'
+              aria-label={`Go to previous page, page ${currentPage - 1}`}
+            >
+              <ChevronLeft data-icon='inline-start' />
+              Previous
+            </Button>
+
+            <Button
+              variant='secondary'
+              onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className='flex-1 sm:flex-none'
+              aria-label={`Go to next page, page ${currentPage + 1}`}
+              onMouseEnter={prefetchNextPage}
+              onFocus={prefetchNextPage}
+            >
+              Next
+              <ChevronRight data-icon='inline-end' />
+            </Button>
+
+            {totalPages > 15 && (
+              <Button
+                variant='secondary'
+                size='icon'
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+                aria-label='Go to last page'
+              >
+                <ChevronsRight />
+              </Button>
+            )}
+          </div>
+        </nav>
       )}
     </div>
   );

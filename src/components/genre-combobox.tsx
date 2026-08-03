@@ -8,11 +8,13 @@ import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import genres from '@/data/genres.json';
 
-interface GenreComboboxProps {
+interface GenreComboboxProps extends Omit<
+  React.ComponentProps<'button'>,
+  'onChange' | 'value' | 'children'
+> {
   value?: string;
   onValueChange: (value: string | undefined) => void;
   placeholder?: string;
-  className?: string;
 }
 
 export function GenreCombobox({
@@ -20,6 +22,7 @@ export function GenreCombobox({
   onValueChange,
   placeholder = 'Select a genre',
   className,
+  ...triggerProps
 }: GenreComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState('');
@@ -54,6 +57,7 @@ export function GenreCombobox({
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <button
+          {...triggerProps}
           type='button'
           role='combobox'
           aria-expanded={open}

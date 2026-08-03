@@ -83,6 +83,8 @@ Unauthenticated users see a landing page that showcases the application's featur
     ```
 
 4.  **Set up the database**:
+    The database commands create the `quillify` schema automatically when needed.
+
     Run the database migrations to create the necessary tables:
 
     ```bash

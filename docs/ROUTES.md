@@ -38,7 +38,7 @@ Every books procedure is protected.
 | `books.stats`      | Query    | None                                          | Totals, page counts, genres, years, recent books |
 | `books.list`       | Query    | Search, status, genres, sort, page, page size | Paginated library                                |
 | `books.getById`    | Query    | `{ id }`                                      | Owned book or `NOT_FOUND`                        |
-| `books.create`     | Mutation | Title, author, pages, genre, publication year | Created book                                     |
+| `books.create`     | Mutation | Book fields and optional Open Library cover    | Created book                                     |
 | `books.update`     | Mutation | `{ id }` plus optional editable fields        | Updated owned book                               |
 | `books.setRead`    | Mutation | `{ id, isRead }`                              | Updated owned book                               |
 | `books.remove`     | Mutation | `{ id }`                                      | Removed ID                                       |
@@ -56,6 +56,18 @@ Shared book validation limits:
 - publication year: 1000 through five years after the current year
 
 Unverified accounts can hold up to 10 books.
+
+## `bookMetadata.*`
+
+Every book metadata procedure is protected. Open Library requests run on the server.
+
+| Procedure                        | Kind  | Input                         | Result                         |
+| -------------------------------- | ----- | ----------------------------- | ------------------------------ |
+| `bookMetadata.searchOpenLibrary` | Query | `{ title, author? }`          | Up to 12 normalized matches    |
+
+Matches without cover IDs are omitted. Exact and near-exact title and author matches rank ahead of
+weaker results. Returned fields include an Open Library identifier, cover ID, title, authors,
+publication years, available ISBNs, and a derived cover preview URL.
 
 ## `auth.*`
 

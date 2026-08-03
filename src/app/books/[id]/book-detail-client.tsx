@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { api } from '@/trpc/react';
+import { BookCover } from '@/components/book-cover';
 import { BookForm } from '@/components/book-form';
 import { Button } from '@/components/ui/button';
 import {
@@ -157,14 +158,15 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
         <div className='flex items-center gap-4'>
           <Skeleton className='h-10 w-40' />
         </div>
-        <div className='bg-card border-foreground/10 rounded-sm border-2 p-6 shadow-sm md:p-8'>
-          <div className='space-y-6'>
+        <div className='bg-card border-foreground/10 grid gap-6 rounded-sm border-2 p-6 shadow-sm md:grid-cols-[minmax(160px,220px)_1fr] md:p-8'>
+          <Skeleton className='aspect-[2/3] w-40 justify-self-center rounded-sm md:w-full' />
+          <div className='flex flex-col gap-6'>
             <Skeleton className='h-12 w-3/4' />
             <div className='border-primary/20 border-l-2 pl-3'>
               <Skeleton className='mb-2 h-4 w-16' />
               <Skeleton className='h-6 w-48' />
             </div>
-            <div className='space-y-3'>
+            <div className='flex flex-col gap-3'>
               <Skeleton className='h-4 w-32' />
               <Skeleton className='h-4 w-24' />
               <Skeleton className='h-4 w-28' />
@@ -201,6 +203,8 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
               numberOfPages: String(book.numberOfPages),
               publishYear: String(book.publishYear),
               genre: book.genre || '',
+              coverSource: book.coverSource === 'open_library' ? 'open_library' : null,
+              coverSourceId: book.coverSourceId,
             }}
             title={`Editing ${book.title}`}
             saying={editSaying}
@@ -211,130 +215,140 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
             onCancel={() => setIsEditing(false)}
           />
         </div>
-      : <article className='bg-card text-card-foreground border-foreground/10 relative rounded-sm border-2 p-6 shadow-sm md:p-8'>
-          <h1 className='font-serif text-3xl leading-tight font-bold sm:text-4xl md:text-5xl'>
-            {book.title}
-          </h1>
+      : <article className='bg-card text-card-foreground border-foreground/10 relative grid gap-6 rounded-sm border-2 p-6 shadow-sm md:grid-cols-[minmax(160px,220px)_1fr] md:p-8'>
+          <BookCover
+            coverSourceId={book.coverSource === 'open_library' ? book.coverSourceId : null}
+            title={book.title}
+            author={book.author}
+            size='L'
+            sizes='(max-width: 768px) 160px, 220px'
+            loading='eager'
+            className='w-40 justify-self-center md:w-full'
+          />
 
-          {/* Author - Secondary Entry */}
-          <div className='border-primary/20 mt-6 mb-8 border-l-2 pl-3'>
-            <div className='text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase'>
-              Author
-            </div>
-            <div className='font-serif text-xl leading-snug'>{book.author}</div>
-          </div>
+          <div className='min-w-0'>
+            <h1 className='font-serif text-3xl leading-tight font-bold sm:text-4xl md:text-5xl'>
+              {book.title}
+            </h1>
 
-          {/* Publication Details */}
-          <div className='mb-6 space-y-3 text-sm'>
-            <div className='flex items-start gap-3'>
-              <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
-                Publication Year
-              </span>
-              <span className='text-base font-medium'>{book.publishYear}</span>
-            </div>
-
-            <div className='flex items-start gap-3'>
-              <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
-                Pages:
-              </span>
-              <span className='text-base font-medium'>{book.numberOfPages}</span>
+            {/* Author - Secondary Entry */}
+            <div className='border-primary/20 mt-6 mb-8 border-l-2 pl-3'>
+              <div className='text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase'>
+                Author
+              </div>
+              <div className='font-serif text-xl leading-snug'>{book.author}</div>
             </div>
 
-            {book.genre && (
+            {/* Publication Details */}
+            <div className='mb-6 flex flex-col gap-3 text-sm'>
               <div className='flex items-start gap-3'>
                 <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
-                  Genre
+                  Publication Year
                 </span>
-                <span className='text-base font-medium'>{book.genre}</span>
+                <span className='text-base font-medium'>{book.publishYear}</span>
               </div>
-            )}
 
-            {book.createdAt && (
               <div className='flex items-start gap-3'>
                 <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
-                  Added:
+                  Pages:
                 </span>
-                <span className='text-base font-medium'>
-                  {new Date(book.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </span>
+                <span className='text-base font-medium'>{book.numberOfPages}</span>
               </div>
-            )}
-          </div>
 
-          <div className='border-foreground/10 mb-6 border-t pt-4'>
-            <div className='flex items-center gap-3'>
-              <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-                Status
-              </span>
-              <Badge variant={book.isRead ? 'default' : 'secondary'}>
-                {book.isRead ? 'Finished' : 'To Read'}
-              </Badge>
+              {book.genre && (
+                <div className='flex items-start gap-3'>
+                  <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                    Genre
+                  </span>
+                  <span className='text-base font-medium'>{book.genre}</span>
+                </div>
+              )}
+
+              {book.createdAt && (
+                <div className='flex items-start gap-3'>
+                  <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                    Added:
+                  </span>
+                  <span className='text-base font-medium'>
+                    {new Date(book.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </span>
+                </div>
+              )}
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className='border-foreground/10 flex flex-col gap-3 border-t pt-4 sm:flex-row'>
-            <Button
-              variant='outline'
-              onClick={() => toggleRead.mutate({ id: book.id, isRead: !book.isRead })}
-              disabled={toggleRead.isPending}
-              className='flex-1 sm:flex-none'
-            >
-              {toggleRead.isPending ?
-                'Updating...'
-              : book.isRead ?
-                'Move Back to TBR'
-              : 'Mark Finished'}
-            </Button>
+            <div className='border-foreground/10 mb-6 border-t pt-4'>
+              <div className='flex items-center gap-3'>
+                <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+                  Status
+                </span>
+                <Badge variant={book.isRead ? 'default' : 'secondary'}>
+                  {book.isRead ? 'Finished' : 'To Read'}
+                </Badge>
+              </div>
+            </div>
 
-            <Button
-              variant='outline'
-              onClick={() => setIsEditing(true)}
-              className='flex-1 sm:flex-none'
-              aria-label={`Edit ${book.title}`}
-            >
-              Edit Book
-            </Button>
+            {/* Action Buttons */}
+            <div className='border-foreground/10 flex flex-col gap-3 border-t pt-4 sm:flex-row'>
+              <Button
+                variant='outline'
+                onClick={() => toggleRead.mutate({ id: book.id, isRead: !book.isRead })}
+                disabled={toggleRead.isPending}
+                className='flex-1 sm:flex-none'
+              >
+                {toggleRead.isPending ?
+                  'Updating...'
+                : book.isRead ?
+                  'Move Back to TBR'
+                : 'Mark Finished'}
+              </Button>
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant='destructive'
-                  className='flex-1 sm:flex-none'
-                  aria-label={`Delete ${book.title}`}
-                >
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
+              <Button
+                variant='outline'
+                onClick={() => setIsEditing(true)}
+                className='flex-1 sm:flex-none'
+                aria-label={`Edit ${book.title}`}
+              >
+                Edit Book
+              </Button>
 
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this book?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete &quot;
-                    {book.title}&quot; from your library.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-
-                  <AlertDialogAction
-                    onClick={() => deleteBook.mutate({ id: book.id })}
-                    className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant='destructive'
+                    className='flex-1 sm:flex-none'
+                    aria-label={`Delete ${book.title}`}
                   >
                     Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+                  </Button>
+                </AlertDialogTrigger>
 
-          <div className='via-foreground/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r from-transparent to-transparent' />
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this book?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete &quot;
+                      {book.title}&quot; from your library.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+                    <AlertDialogAction
+                      onClick={() => deleteBook.mutate({ id: book.id })}
+                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
         </article>
       }
     </div>

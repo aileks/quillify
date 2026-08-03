@@ -19,6 +19,8 @@ interface LayoutShellProps {
   children: React.ReactNode;
 }
 
+const BOOK_COVER_NOTICE_KEY = 'quillify-book-cover-notice-2026-08';
+
 export function LayoutShell({ children }: LayoutShellProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
@@ -49,6 +51,24 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const needsVerification = isAuthenticated && session?.user?.emailVerified === false;
   const userEmail = session?.user?.email ?? '';
   const userId = session?.user?.id;
+
+  useEffect(() => {
+    if (!isAuthenticated || !userId) return;
+
+    const storageKey = `${BOOK_COVER_NOTICE_KEY}:${userId}`;
+    if (window.localStorage.getItem(storageKey)) return;
+
+    window.localStorage.setItem(storageKey, 'shown');
+    toast.info(
+      <div className='flex flex-col gap-2'>
+        <span>Book cover art is here! Edit a book to find and choose its cover.</span>
+        <Link href='/books' className='text-primary underline underline-offset-2'>
+          Open your Library
+        </Link>
+      </div>,
+      { duration: 15000 }
+    );
+  }, [isAuthenticated, userId]);
 
   // Show account deleted toast (after redirect from account deletion)
   useEffect(() => {

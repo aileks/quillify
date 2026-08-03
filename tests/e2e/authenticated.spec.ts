@@ -6,6 +6,22 @@ async function logInWithDemoAccount(page: import('@playwright/test').Page) {
   await expect(page).toHaveURL(/\/$/);
 }
 
+test('login announces book cover art', async ({ page }) => {
+  await logInWithDemoAccount(page);
+  await expect(
+    page.getByText('Book cover art is here! Edit a book to find and choose its cover.')
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open your Library' })).toHaveAttribute(
+    'href',
+    '/books'
+  );
+
+  await page.reload();
+  await expect(
+    page.getByText('Book cover art is here! Edit a book to find and choose its cover.')
+  ).not.toBeVisible();
+});
+
 test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) => {
   test.setTimeout(60_000);
 
@@ -13,7 +29,7 @@ test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) =
   await page.goto('/books');
 
   await expect(page.getByRole('heading', { name: 'My Library' })).toBeVisible();
-  await expect(page.getByText(/^#[A-F0-9]{8}$/).first()).toBeVisible();
+  await expect(page.getByTestId('book-cover-image').first()).toBeVisible();
   await expect(page.locator('[role="listitem"]')).toHaveCount(12);
   const firstBookHref = await page.locator('[role="listitem"] a').first().getAttribute('href');
   expect(firstBookHref).toBeTruthy();
@@ -62,6 +78,7 @@ test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) =
   expect(genreBounds?.width).toBeLessThanOrEqual(250);
 
   await page.goto(firstBookHref!);
+  await expect(page.getByTestId('book-cover-image')).toBeVisible();
   await page.getByRole('button', { name: /^Edit / }).click();
   await expect(page.getByRole('heading', { name: /^Editing / })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Title' }).first()).toBeVisible();

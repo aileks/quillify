@@ -1,8 +1,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
+import { BookCoverPicker } from '@/components/book-cover-picker';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -59,6 +60,23 @@ export function BookForm({
     resolver: zodResolver(bookFormSchema),
     defaultValues,
   });
+  const titleValue = useWatch({ control: form.control, name: 'title' });
+  const authorValue = useWatch({ control: form.control, name: 'author' });
+  const selectedCoverId = useWatch({
+    control: form.control,
+    name: 'coverSourceId',
+  });
+
+  const selectCover = (coverSourceId: string | null) => {
+    form.setValue('coverSource', coverSourceId ? 'open_library' : null, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue('coverSourceId', coverSourceId, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
 
   return (
     <Form {...form}>
@@ -70,7 +88,7 @@ export function BookForm({
             </CardTitle>
             <CardDescription>{saying}</CardDescription>
           </CardHeader>
-          <CardContent className='flex flex-col gap-6'>
+          <CardContent className='flex min-w-0 flex-col gap-6'>
             <FormField
               control={form.control}
               name='title'
@@ -172,6 +190,13 @@ export function BookForm({
                   <FormMessage />
                 </FormItem>
               )}
+            />
+
+            <BookCoverPicker
+              title={titleValue}
+              author={authorValue}
+              selectedCoverId={selectedCoverId ?? null}
+              onSelectionChange={selectCover}
             />
           </CardContent>
           <CardFooter className='flex flex-col gap-3 sm:flex-row'>

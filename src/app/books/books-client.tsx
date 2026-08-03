@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 
 import { api } from '@/trpc/react';
+import { BookCover } from '@/components/book-cover';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -47,66 +48,74 @@ interface BookCatalogCardProps {
   book: Book;
   isSelected?: boolean;
   selectionMode?: boolean;
+  imageLoading?: 'eager' | 'lazy';
 }
 
 function BookCatalogCard({
   book,
   isSelected = false,
   selectionMode = false,
+  imageLoading = 'lazy',
 }: BookCatalogCardProps) {
   return (
     <div className='relative h-full'>
       <article
         className={cn(
-          'bg-card text-card-foreground border-foreground/10 hover:border-primary/30 focus-within:ring-ring relative h-full rounded-sm border-2 p-4 shadow-sm transition-colors focus-within:ring-2 focus-within:ring-offset-2',
+          'bg-card text-card-foreground border-foreground/10 hover:border-primary/30 focus-within:ring-ring relative flex h-full gap-3 rounded-sm border-2 p-3 shadow-sm transition-colors focus-within:ring-2 focus-within:ring-offset-2',
           isSelected && 'border-primary ring-primary/20 ring-2'
         )}
       >
-        <div className='text-muted-foreground/50 absolute top-2 right-2 font-mono text-[10px]'>
-          #{book.id.slice(0, 8).toUpperCase()}
-        </div>
+        <BookCover
+          coverSourceId={book.coverSource === 'open_library' ? book.coverSourceId : null}
+          title={book.title}
+          author={book.author}
+          sizes='(max-width: 640px) 96px, (max-width: 1280px) 112px, 128px'
+          loading={imageLoading}
+          className='w-24 shrink-0 self-start sm:w-28 2xl:w-32'
+        />
 
-        <div className={cn('mb-3 pr-12', selectionMode && 'pl-7')}>
-          <h3 className='group-hover:text-primary font-serif text-base leading-tight font-bold transition-colors sm:text-lg'>
-            {book.title}
-          </h3>
-        </div>
-
-        <div className='border-primary/20 mb-4 border-l-2 pl-3'>
-          <div className='text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase'>
-            Author
-          </div>
-          <div className='font-serif text-sm leading-snug'>{book.author}</div>
-        </div>
-
-        <div className='mb-3 flex flex-col gap-1.5 text-xs'>
-          <div className='flex items-start gap-2'>
-            <span className='text-muted-foreground min-w-[72px] font-mono text-xs tracking-wider uppercase'>
-              Year
-            </span>
-            <span className='font-medium'>{book.publishYear}</span>
+        <div className='flex min-w-0 flex-1 flex-col'>
+          <div className={cn('mb-2', selectionMode && 'pr-7')}>
+            <h3 className='group-hover:text-primary line-clamp-3 font-serif text-base leading-tight font-bold transition-colors sm:text-lg'>
+              {book.title}
+            </h3>
           </div>
 
-          <div className='flex items-start gap-2'>
-            <span className='text-muted-foreground min-w-[72px] font-mono text-xs tracking-wider uppercase'>
-              Pages
-            </span>
-            <span className='font-medium'>{book.numberOfPages}</span>
-          </div>
-
-          {book.genre && (
-            <div className='flex items-start gap-2'>
-              <span className='text-muted-foreground min-w-[72px] font-mono text-xs tracking-wider uppercase'>
-                Genre
-              </span>
-              <span className='font-medium'>{book.genre}</span>
+          <div className='border-primary/20 mb-3 border-l-2 pl-2'>
+            <div className='text-muted-foreground mb-0.5 text-[10px] font-medium tracking-wide uppercase'>
+              Author
             </div>
-          )}
-        </div>
+            <div className='line-clamp-2 font-serif text-sm leading-snug'>{book.author}</div>
+          </div>
 
-        <div className='border-foreground/10 mt-4 border-t pt-3'>
-          <div className='flex items-center justify-between'>
-            <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+          <div className='flex flex-col gap-1 text-xs'>
+            <div className='flex flex-wrap gap-x-3 gap-y-1'>
+              <span>
+                <span className='text-muted-foreground font-mono text-[10px] tracking-wide uppercase'>
+                  Year{' '}
+                </span>
+                <span className='font-medium'>{book.publishYear}</span>
+              </span>
+              <span>
+                <span className='text-muted-foreground font-mono text-[10px] tracking-wide uppercase'>
+                  Pages{' '}
+                </span>
+                <span className='font-medium'>{book.numberOfPages}</span>
+              </span>
+            </div>
+
+            {book.genre && (
+              <div className='line-clamp-2'>
+                <span className='text-muted-foreground font-mono text-[10px] tracking-wide uppercase'>
+                  Genre{' '}
+                </span>
+                <span className='font-medium'>{book.genre}</span>
+              </div>
+            )}
+          </div>
+
+          <div className='border-foreground/10 mt-auto flex items-center justify-between gap-2 border-t pt-3'>
+            <span className='text-muted-foreground font-mono text-[10px] tracking-wider uppercase'>
               Status
             </span>
             <Badge variant={book.isRead ? 'default' : 'secondary'}>
@@ -114,8 +123,6 @@ function BookCatalogCard({
             </Badge>
           </div>
         </div>
-
-        <div className='via-foreground/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r from-transparent to-transparent' />
       </article>
     </div>
   );
@@ -640,21 +647,21 @@ export function BooksClient({ subtitle }: BooksClientProps) {
           {Array.from({ length: pageSize }).map((_, i) => (
             <div
               key={i}
-              className='bg-card border-foreground/10 rounded-sm border-2 p-4'
+              className='bg-card border-foreground/10 flex gap-3 rounded-sm border-2 p-3'
               aria-hidden='true'
             >
-              <div className='space-y-3'>
+              <Skeleton className='aspect-[2/3] w-24 shrink-0 rounded-sm sm:w-28' />
+              <div className='flex min-w-0 flex-1 flex-col gap-3'>
                 <Skeleton className='h-5 w-3/4' />
                 <div className='border-primary/20 border-l-2 pl-3'>
                   <Skeleton className='mb-1 h-3 w-16' />
                   <Skeleton className='h-4 w-2/3' />
                 </div>
-                <div className='flex flex-col gap-2'>
-                  <Skeleton className='h-3 w-full' />
-                  <Skeleton className='h-3 w-full' />
-                  <Skeleton className='h-3 w-3/4' />
+                <div className='flex gap-2'>
+                  <Skeleton className='h-3 w-16' />
+                  <Skeleton className='h-3 w-16' />
                 </div>
-                <div className='border-foreground/10 border-t pt-3'>
+                <div className='border-foreground/10 mt-auto border-t pt-3'>
                   <Skeleton className='h-3 w-20' />
                 </div>
               </div>
@@ -698,7 +705,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
           role='list'
           aria-label='Library'
         >
-          {books.map((book) => (
+          {books.map((book, index) => (
             <div key={book.id} role='listitem'>
               {isSelectionMode ?
                 <label
@@ -731,7 +738,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                   onMouseEnter={() => prefetchBook(book.id)}
                   onFocus={() => prefetchBook(book.id)}
                 >
-                  <BookCatalogCard book={book} />
+                  <BookCatalogCard book={book} imageLoading={index < 4 ? 'eager' : 'lazy'} />
                 </Link>
               }
             </div>

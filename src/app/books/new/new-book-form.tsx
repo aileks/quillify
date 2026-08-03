@@ -16,6 +16,8 @@ const EMPTY_BOOK = {
   numberOfPages: '',
   publishYear: '',
   genre: '',
+  coverSource: null,
+  coverSourceId: null,
 };
 
 interface NewBookFormProps {

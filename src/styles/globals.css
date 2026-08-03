@@ -208,30 +208,12 @@
   }
 }
 
-/* Landing page section styles */
 [data-slot='hero-section'] {
   background: linear-gradient(
     to bottom,
     var(--background) 0%,
     color-mix(in oklch, var(--primary) 5%, var(--background)) 100%
   );
-}
-
-[data-slot='features-section'] {
-  background: var(--background);
-}
-
-[data-slot='how-it-works-section'] {
-  background: color-mix(in oklch, var(--muted) 50%, var(--background));
-}
-
-[data-slot='social-proof-section'] {
-  background: var(--background);
-}
-
-[data-slot='cta-section'] {
-  background: var(--primary);
-  color: var(--primary-foreground);
 }
 
 /* Main content transition on sidebar resize */

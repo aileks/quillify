@@ -227,10 +227,7 @@ export async function searchOpenLibrary(
   } = {}
 ): Promise<OpenLibrarySearchResult[]> {
   const searchUrl = new URL(OPEN_LIBRARY_SEARCH_URL);
-  searchUrl.searchParams.set('title', input.title);
-  if (input.author) {
-    searchUrl.searchParams.set('author', input.author);
-  }
+  searchUrl.searchParams.set('q', [input.title, input.author].filter(Boolean).join(' '));
   searchUrl.searchParams.set('limit', String(OPEN_LIBRARY_SEARCH_LIMIT));
   searchUrl.searchParams.set(
     'fields',

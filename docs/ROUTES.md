@@ -65,8 +65,9 @@ Every book metadata procedure is protected. Open Library requests run on the ser
 | -------------------------------- | ----- | ----------------------------- | ------------------------------ |
 | `bookMetadata.searchOpenLibrary` | Query | `{ title, author? }`          | Up to 12 normalized matches    |
 
-Matches without cover IDs are omitted. Exact and near-exact title and author matches rank ahead of
-weaker results. Returned fields include an Open Library identifier, cover ID, title, authors,
+A title is required and the author is optional. Search uses Open Library relevance matching, then
+ranks exact and near-exact title and author matches ahead of weaker results. Matches without cover
+IDs are omitted. Returned fields include an Open Library identifier, cover ID, title, authors,
 publication years, available ISBNs, and a derived cover preview URL.
 
 ## `auth.*`

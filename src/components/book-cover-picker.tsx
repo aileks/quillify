@@ -84,7 +84,7 @@ export function BookCoverPicker({
   const inputName = `book-cover-${useId()}`;
   const normalizedTitle = title.trim();
   const normalizedAuthor = author.trim();
-  const canSearch = normalizedTitle.length > 0 && normalizedAuthor.length > 0;
+  const canSearch = normalizedTitle.length > 0;
 
   const search = api.bookMetadata.searchOpenLibrary.useQuery(
     {
@@ -117,9 +117,7 @@ export function BookCoverPicker({
           <Search data-icon='inline-start' />
           {search.isFetching ? 'Finding covers...' : 'Find covers'}
         </Button>
-        {!canSearch && (
-          <p className='text-muted-foreground text-sm'>Enter a title and author first.</p>
-        )}
+        {!canSearch && <p className='text-muted-foreground text-sm'>Enter a title first.</p>}
       </div>
 
       <label

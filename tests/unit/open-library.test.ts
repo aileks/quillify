@@ -116,6 +116,40 @@ describe('Open Library metadata service', () => {
     expect(new Set(results.map(({ coverId }) => coverId))).toHaveProperty('size', 12);
   });
 
+  it('uses relevance matching for title and author', async () => {
+    let requestUrl: URL | undefined;
+
+    await searchOpenLibrary(
+      { title: 'Jane Eyre', author: 'Charlotte Bronte' },
+      {
+        fetchImplementation: async (input) => {
+          requestUrl = new URL(input.toString());
+          return Response.json({ docs: [] });
+        },
+      }
+    );
+
+    expect(requestUrl?.searchParams.get('q')).toBe('Jane Eyre Charlotte Bronte');
+    expect(requestUrl?.searchParams.has('title')).toBe(false);
+    expect(requestUrl?.searchParams.has('author')).toBe(false);
+  });
+
+  it('searches by title without an author', async () => {
+    let requestUrl: URL | undefined;
+
+    await searchOpenLibrary(
+      { title: 'Jane Eyre' },
+      {
+        fetchImplementation: async (input) => {
+          requestUrl = new URL(input.toString());
+          return Response.json({ docs: [] });
+        },
+      }
+    );
+
+    expect(requestUrl?.searchParams.get('q')).toBe('Jane Eyre');
+  });
+
   it('reports third-party HTTP failures', async () => {
     await expect(
       searchOpenLibrary(

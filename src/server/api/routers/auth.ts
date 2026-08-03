@@ -14,6 +14,7 @@ import {
   getEmailVerificationHtml,
   getEmailVerificationText,
 } from '@/lib/email-templates/email-verification';
+import { verifyPassword } from '@/server/auth/password';
 
 const TOKEN_EXPIRY_MINUTES = 30;
 const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
@@ -173,13 +174,7 @@ export const authRouter = createTRPCRouter({
       });
     }
 
-    // Normalize bcrypt hash format: Laravel uses $2y$ prefix, Node.js bcrypt uses $2b$
-    // Both are compatible, but bcrypt.compare requires matching prefix format
-    const passwordHash = user.password;
-    const normalizedHash =
-      passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
-
-    const isValidPassword = await bcrypt.compare(password, normalizedHash);
+    const isValidPassword = await verifyPassword(password, user.password);
 
     if (!isValidPassword) {
       throw new TRPCError({
@@ -262,12 +257,7 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // Verify current password (normalize hash format for Laravel compatibility)
-      const passwordHash = user.password;
-      const normalizedHash =
-        passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
-
-      const isValidPassword = await bcrypt.compare(currentPassword, normalizedHash);
+      const isValidPassword = await verifyPassword(currentPassword, user.password);
 
       if (!isValidPassword) {
         throw new TRPCError({
@@ -411,12 +401,7 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // Verify current password (normalize hash format for Laravel compatibility)
-      const passwordHash = user.password;
-      const normalizedHash =
-        passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
-
-      const isValidPassword = await bcrypt.compare(currentPassword, normalizedHash);
+      const isValidPassword = await verifyPassword(currentPassword, user.password);
 
       if (!isValidPassword) {
         throw new TRPCError({
@@ -1111,12 +1096,7 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      // Verify current password (normalize hash format for Laravel compatibility)
-      const passwordHash = user.password;
-      const normalizedHash =
-        passwordHash.startsWith('$2y$') ? passwordHash.replace(/^\$2y\$/, '$2b$') : passwordHash;
-
-      const isValidPassword = await bcrypt.compare(currentPassword, normalizedHash);
+      const isValidPassword = await verifyPassword(currentPassword, user.password);
 
       if (!isValidPassword) {
         throw new TRPCError({

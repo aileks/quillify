@@ -199,6 +199,8 @@ export const booksRouter = createTRPCRouter({
         numberOfPages: input.numberOfPages,
         genre: input.genre,
         publishYear: input.publishYear,
+        coverSource: input.coverSource ?? null,
+        coverSourceId: input.coverSourceId ?? null,
       })
       .returning();
 
@@ -222,6 +224,9 @@ export const booksRouter = createTRPCRouter({
         // Special handling: undefined means "don't change", null means "set to null"
         genre: input.genre === undefined ? existing.genre : input.genre,
         publishYear: input.publishYear ?? existing.publishYear,
+        coverSource: input.coverSource === undefined ? existing.coverSource : input.coverSource,
+        coverSourceId:
+          input.coverSourceId === undefined ? existing.coverSourceId : input.coverSourceId,
       })
       .where(eq(books.id, input.id))
       .returning();

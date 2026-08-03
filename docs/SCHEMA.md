@@ -29,6 +29,8 @@ Laravel bcrypt hashes using the `$2y$` prefix remain supported by
 | `numberOfPages` | integer     | not null                                        |
 | `genre`         | text        | nullable, defaults to `Other`                   |
 | `publishYear`   | integer     | not null                                        |
+| `coverSource`   | text        | nullable, currently `open_library`              |
+| `coverSourceId` | text        | nullable Open Library cover ID                  |
 | `isRead`        | boolean     | not null, defaults to false                     |
 | `createdAt`     | timestamptz | not null, defaults to now                       |
 | `updatedAt`     | timestamptz | not null, defaults to now                       |
@@ -79,5 +81,6 @@ Migrations live in `src/server/drizzle/`.
 - Do not use `db:push` against production.
 - Migration `0010` invalidates existing reset and verification links before renaming plaintext token
   columns to `tokenHash`.
+- Migration `0011` adds nullable cover source and cover ID columns to books.
 
 The daily cron route removes expired rows from both token tables.

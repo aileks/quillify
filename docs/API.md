@@ -78,6 +78,8 @@ Required settings:
 - `src/server/api/trpc.ts` - context, middleware, and procedure bases
 - `src/server/api/routers/auth.ts` - account procedures
 - `src/server/api/routers/books.ts` - library procedures
+- `src/server/api/routers/book-metadata.ts` - authenticated metadata search
+- `src/server/services/book-metadata/open-library.ts` - Open Library client and normalization
 - `src/trpc/server.ts` - RSC caller and hydration
 - `src/trpc/react.tsx` - browser provider and hooks
 - `src/server/db/schema.ts` - Drizzle schema

@@ -90,22 +90,6 @@ Server Components use `api` and `HydrateClient` from `@/trpc/server`. Client Com
 from `@/trpc/react`. Keep `AppRouter` imports in client code type-only so PostgreSQL and other Node.js
 modules are never bundled for the browser.
 
-## Database and Laravel compatibility
-
-The schema lives in `src/server/db/schema.ts`; migrations live in `src/server/drizzle/`.
-
-- Migrations `0000` through `0009` and their snapshots are historical compatibility records. Never
-  edit, replace, reorder, or delete them.
-- Add schema changes as new migrations only.
-- Keep `scripts/ensure-db-schema.ts`. Database commands use it to create the namespaced schema.
-- Existing Laravel bcrypt hashes beginning with `$2y$` are normalized in
-  `src/server/auth/password.ts`. Do not remove that compatibility path.
-- Password reset and email verification tokens are hashed before storage. Raw values only appear in
-  emailed links.
-
-Migration `0010` invalidates outstanding recovery and verification links while moving token storage
-to SHA-256 hashes.
-
 ## Documentation
 
 - [API architecture](./docs/API.md)

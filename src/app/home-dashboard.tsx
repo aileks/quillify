@@ -172,7 +172,7 @@ export function HomeDashboard({ userName, subtitle }: HomeDashboardProps) {
           <CardHeader>
             <CardTitle className='font-serif text-xl font-bold'>Reading Insights</CardTitle>
           </CardHeader>
-          <CardContent className='space-y-4'>
+          <CardContent className='space-y-4 font-serif'>
             {totalBooks === 0 ?
               <p className='text-muted-foreground text-sm'>
                 Add books to see insights about your library.

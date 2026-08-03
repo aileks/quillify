@@ -1,189 +1,83 @@
 # Quillify API Architecture
 
-This document describes the API layer architecture and tRPC setup used in Quillify.
+Quillify uses tRPC 11, SuperJSON, TanStack Query, Drizzle ORM, and Auth.js credentials sessions.
+Procedure details are in [ROUTES.md](./ROUTES.md).
 
-For detailed endpoint documentation, see [ROUTES.md](./ROUTES.md).
+## Entry points
 
-## Overview
+| Context          | Import             | Use                                          |
+| ---------------- | ------------------ | -------------------------------------------- |
+| Server Component | `@/trpc/server`    | RSC caller, prefetching, and `HydrateClient` |
+| Client Component | `@/trpc/react`     | TanStack Query hooks and mutations           |
+| HTTP             | `/api/trpc/[trpc]` | Batched tRPC transport                       |
 
-Quillify uses [tRPC v11](https://trpc.io/) for type-safe client-server communication, providing automatic type inference from server to client without code generation.
+Client code must import `AppRouter` with `import type`. A runtime import from
+`src/server/api/root.ts` pulls PostgreSQL and Node.js modules into the browser bundle.
 
-## tRPC Setup
+## Context and procedures
 
-Quillify uses two tRPC clients for different contexts:
+`src/server/api/trpc.ts` creates a request context containing:
 
-### 1. Server-side (RSC)
+- `db`: Drizzle PostgreSQL client
+- `session`: Auth.js session or `null`
+- request headers
 
-**Import**: `import { api } from '@/trpc/server'`
+`publicProcedure` is unauthenticated. `protectedProcedure` requires
+`ctx.session.user`; otherwise it throws `UNAUTHORIZED`.
 
-- Uses `createCaller` for direct server-to-server calls
-- No React Query wrapper needed
-- Defined in `src/trpc/server.ts`
-
-**Example usage**:
-
-```typescript
-import { api } from '@/trpc/server';
-
-export default async function BooksPage() {
-  const books = await api.books.list();
-  return <BookList books={books} />;
-}
-```
-
-### 2. Client-side (Tanstack Query)
-
-**Import**: `import { api } from '@/trpc/react'`
-
-- Provides React hooks (`useQuery`, `useMutation`)
-- Requires `TRPCReactProvider` wrapper in component tree
-- Automatic caching and optimistic updates
-- Defined in `src/trpc/react.tsx`
-
-**Example usage**:
-
-```typescript
-'use client';
-import { api } from '@/trpc/react';
-
-export function BookList() {
-  const { data: books } = api.books.list.useQuery();
-  const deleteMutation = api.books.remove.useMutation();
-  // ...
-}
-```
-
-## Procedures
-
-All tRPC procedures are defined in `src/server/api/trpc.ts` and organized into feature-specific routers in `src/server/api/routers/`.
-
-### Public Procedures
-
-**Base**: `publicProcedure`
-
-- Open endpoints accessible without authentication
-- Example use cases: login, registration, public data
-
-### Protected Procedures
-
-**Base**: `protectedProcedure`
-
-- Require valid user authentication
-- Session data available in `ctx.session.user`
-- Automatically returns 401 UNAUTHORIZED if not authenticated
-
-**Example**:
-
-```typescript
-export const booksRouter = createTRPCRouter({
-  list: protectedProcedure
-    .input(z.object({ isRead: z.boolean().optional() }))
-    .query(async ({ ctx, input }) => {
-      // ctx.session.user is guaranteed to exist
-      const userId = ctx.session.user.id;
-      // ...
-    }),
-});
-```
-
-## Middleware
-
-Both procedure types include timing middleware for performance monitoring, which logs execution duration:
-
-```
-[TRPC] books.list took 45ms
-```
-
-## Router Organization
-
-Routers are organized by feature in `src/server/api/routers/` and composed in `src/server/api/root.ts`:
-
-See [ROUTES.md](./ROUTES.md) for a complete list of available procedures and their endpoints.
-
-## Context
-
-The tRPC context (`ctx`) is created per-request and includes:
-
-- `db`: Drizzle database instance
-- `session`: NextAuth session (null if not authenticated)
-
-Context is defined in `src/server/api/trpc.ts` and populated via `auth()` from NextAuth v5.
-
-## Error Handling
-
-### Error Formatting
-
-Zod validation errors are automatically flattened for typed client errors via `errorFormatter` in `src/server/api/trpc.ts`.
-
-### HTTP Status Codes
-
-tRPC errors map to standard HTTP status codes:
-
-- `BAD_REQUEST` → 400
-- `UNAUTHORIZED` → 401
-- `FORBIDDEN` → 403
-- `NOT_FOUND` → 404
-- `CONFLICT` → 409
-- `INTERNAL_SERVER_ERROR` → 500
-
-Success responses default to HTTP 200 OK (even for mutations).
+Inputs are validated with Zod. The error formatter exposes flattened Zod errors to typed clients.
+Expected failures use `TRPCError`.
 
 ## Transport
 
-- **HTTP endpoint**: `/api/trpc/[trpc]`
-- **Method**: POST (via `httpBatchStreamLink`)
-- **Serialization**: SuperJSON end-to-end for complex types (Date, Map, Set, etc.)
-- **Batching**: Enabled for multiple parallel queries
-- **Headers**: Both clients set `x-trpc-source` header for request tracing
+- SuperJSON serializes dates and other non-JSON-native values
+- Browser requests use `httpBatchStreamLink`
+- Client requests set `x-trpc-source: nextjs-react`
+- RSC calls set `x-trpc-source: rsc`
+- TanStack Query caches prefetched and client-fetched data
 
-## Cron Jobs
+## Authentication
 
-Quillify uses Vercel cron jobs for scheduled maintenance tasks.
+Auth configuration lives in `src/server/auth/config.ts`.
 
-### Token Cleanup
+- Credentials provider with JWT sessions
+- Passwords are hashed with bcrypt
+- Laravel `$2y$` hashes are normalized before verification
+- Unverified users can sign in but are limited to 10 books
+- "Remember me" selects a 30-day session; the default is one day
+- Callback URLs are restricted to local paths
 
-- **Endpoint**: `/api/cron/cleanup-tokens`
-- **Schedule**: Daily at 3:00 AM UTC
-- **Configuration**: `vercel.json`
-- **Authentication**: Requires `Authorization: Bearer <CRON_SECRET>` header
-- **Purpose**: Removes expired password reset tokens from the database
+Password reset and verification links use 32 random bytes encoded as hex. Only a SHA-256 hash is
+stored. Successful use invalidates every outstanding link of that type for the user.
 
-## Email Service
+## Route handlers
 
-Quillify uses [Mailtrap](https://mailtrap.io/) for transactional emails.
+- `/api/auth/[...nextauth]` exposes Auth.js handlers
+- `/api/verify-email` consumes an email verification link and redirects to a result screen
+- `/api/cron/cleanup-tokens` removes expired reset and verification tokens
+- `/api/trpc/[trpc]` serves tRPC requests
 
-### Configuration
+The cron route requires `Authorization: Bearer <CRON_SECRET>` and runs daily at 03:00 UTC from
+`vercel.json`.
 
-- **Client**: `src/lib/email.ts`
-- **Templates**: `src/lib/email-templates/`
+## Email
 
-### Email Types
+`src/lib/email.ts` sends Mailtrap transactional email. Templates live in
+`src/lib/email-templates/`.
 
-- **Password Reset**: Styled HTML email with reset link (30-minute expiration)
+Required settings:
 
-### Environment Variables
+- `MAILTRAP_API_KEY`
+- `MAIL_FROM_ADDRESS`
+- `MAIL_FROM_NAME`
+- `NEXT_PUBLIC_APP_URL`
 
-- `MAILTRAP_API_KEY`: API key from Mailtrap dashboard
-- `MAIL_FROM_ADDRESS`: Sender email address
-- `MAIL_FROM_NAME`: Sender display name
-- `NEXT_PUBLIC_APP_URL`: Base URL for email links
+## Source map
 
-## Adding New Endpoints
-
-1. **Create or update a router** in `src/server/api/routers/`
-2. **Define the procedure** using `publicProcedure` or `protectedProcedure`
-3. **Register the router** in `src/server/api/root.ts`
-4. **Use from RSC** via `import { api } from '@/trpc/server'`
-5. **Use from client** via `import { api } from '@/trpc/react'`
-
-## Related Files
-
-- `src/server/api/trpc.ts` - Context, procedures, middleware, error formatting
-- `src/server/api/root.ts` - Main app router composition
-- `src/server/api/routers/*` - Feature-specific routers
-- `src/trpc/server.ts` - RSC caller and hydration helpers
-- `src/trpc/react.tsx` - React Query + tRPC client and provider
-- `src/trpc/query-client.ts` - React Query configuration
-- `src/app/api/trpc/[trpc]/route.ts` - Next.js API route handler
-- `src/app/api/cron/cleanup-tokens/route.ts` - Cron endpoint for token cleanup
-- [ROUTES.md](./ROUTES.md) - Complete endpoint documentation
+- `src/server/api/root.ts` - app router composition
+- `src/server/api/trpc.ts` - context, middleware, and procedure bases
+- `src/server/api/routers/auth.ts` - account procedures
+- `src/server/api/routers/books.ts` - library procedures
+- `src/trpc/server.ts` - RSC caller and hydration
+- `src/trpc/react.tsx` - browser provider and hooks
+- `src/server/db/schema.ts` - Drizzle schema

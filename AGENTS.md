@@ -1,30 +1,78 @@
 # AGENTS.md
 
+## Runtime
+
+- Node.js 20.9 or newer; current LTS preferred
+- pnpm 10; use the pinned package manager from `package.json`
+- Do not start a development server when one is already running
+- Playwright targets an existing server through `PLAYWRIGHT_BASE_URL`; its config has no `webServer`
+- Arch Linux browser dependency warnings may be ignored when the installed browsers run
+
 ## Commands
 
-- `pnpm dev` - Start dev server | `pnpm build` - Production build | `pnpm lint` - ESLint
-- `pnpm format:write` - Fix formatting | `pnpm format:check` - Check formatting
-- `pnpm db:generate` - Generate migrations | `pnpm db:migrate` - Run migrations | `pnpm db:push` - Push schema
-- No test framework configured
+- `pnpm dev` - Turbopack development server
+- `pnpm build` - production build
+- `pnpm lint` - ESLint
+- `pnpm typecheck` - TypeScript
+- `pnpm test` - Vitest
+- `pnpm test:e2e` - Playwright against the existing server
+- `pnpm format:write` / `pnpm format:check` - Prettier
+- `pnpm db:generate` - generate a new migration
+- `pnpm db:migrate` - ensure the schema exists and apply migrations
+- `pnpm db:push` - direct development schema push
 
-## Code Style
+## Architecture
 
-- **Imports**: External packages first, then internal with `@/` alias. Use `import type` for type-only imports
-- **Formatting**: 2-space indent, single quotes (including JSX), semicolons, 100 char line width, trailing commas (ES5)
-- **Naming**: Files in kebab-case, components/types in PascalCase, functions/variables in camelCase
-- **TypeScript**: Strict mode, `noUncheckedIndexedAccess` enabled - always check array/object access before use
+- Next.js App Router; Server Components are the default
+- Client Components require `'use client';`
+- Server tRPC: `@/trpc/server`; client tRPC hooks: `@/trpc/react`
+- Import `AppRouter` with strict `import type` in client code to keep Node.js database modules out of
+  browser bundles
+- tRPC input uses Zod; authenticated endpoints use `protectedProcedure`; expected failures use
+  `TRPCError`
+- Forms use react-hook-form, Zod, and `@hookform/resolvers/zod`
+- Styling uses Tailwind and `cn()` from `@/lib/utils`
+- UI primitives follow the local shadcn new-york style and Radix behavior
+- Icons come from `lucide-react`; do not use text glyphs, emoji, handmade SVG, or CSS drawings
 
-## Patterns
+## Product language and UX
 
-- Client components: Add `'use client';` directive. Server components are default (no directive needed)
-- tRPC: Use `protectedProcedure` for authenticated routes, Zod for input validation, `TRPCError` for errors
-- Forms: react-hook-form + Zod schemas with `@hookform/resolvers/zod`
-- Styling: Tailwind CSS with `cn()` utility from `@/lib/utils` for conditional classes
-- Error handling: `TRPCError` with codes (`NOT_FOUND`, `UNAUTHORIZED`, etc.), `notFound()` for missing pages
-- Email: Use `sendEmail()` from `@/lib/email` with HTML + text templates from `@/lib/email-templates/`
-
-## Product Copy
-
+- Use Library, To Read, and Finished consistently
+- Add and edit books through `src/components/book-form.tsx`; keep their layouts aligned
+- Contextual sayings live in `src/lib/product-sayings.ts` and must use the relevant category
 - Write only copy that helps users understand the product or complete their task
-- Never expose implementation details, component reuse, validation consistency, frameworks, or internal architecture in user-facing copy
-- Do not add explanatory filler merely to occupy space in a layout
+- Never expose implementation details, component reuse, validation consistency, frameworks, or
+  internal architecture in user-facing copy
+- Do not add explanatory filler to occupy space
+- Keep app controls and badges near the established small radius; avoid pill styling
+- Book cards may change border or text color on hover but must not scale, lift, or add a larger shadow
+- The Library uses 12 books per page at every viewport width
+- Font sizing scales above 1080px through `src/styles/globals.css`
+
+## Code style
+
+- External imports first, then `@/` imports; use `import type` for type-only imports
+- 2-space indent, single quotes, semicolons, 100-character width, ES5 trailing commas
+- Files use kebab-case; components and types use PascalCase; values and functions use camelCase
+- Strict TypeScript and `noUncheckedIndexedAccess`; check indexed access
+- Preserve existing behavior and nearby patterns; avoid unrelated refactors
+
+## Database compatibility
+
+- `src/server/drizzle/0000` through `0009` and matching snapshots are immutable historical records
+- Never edit, overwrite, rename, reorder, or delete historical migrations or snapshots
+- All schema changes are append-only. Generate and review a new migration.
+- Never run `db:migrate` or `db:push` unless the user asks
+- Keep `scripts/ensure-db-schema.ts`; database commands depend on this compatibility check
+- Preserve Laravel `$2y$` bcrypt support in `src/server/auth/password.ts` and its regression test
+- Store only hashes of password reset and email verification tokens; raw tokens belong only in links
+- Schema changes must preserve the `quillify` PostgreSQL namespace and cascade relationships
+
+## Verification
+
+- Run the narrowest test first
+- Before completion run `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and
+  `pnpm build`
+- Run `pnpm test:e2e` only when the existing app server is available
+- Verify historical migration hashes or a zero diff for `0000` through `0009`
+- Do not claim browser verification when Playwright could not connect

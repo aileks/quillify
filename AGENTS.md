@@ -22,3 +22,9 @@
 - Styling: Tailwind CSS with `cn()` utility from `@/lib/utils` for conditional classes
 - Error handling: `TRPCError` with codes (`NOT_FOUND`, `UNAUTHORIZED`, etc.), `notFound()` for missing pages
 - Email: Use `sendEmail()` from `@/lib/email` with HTML + text templates from `@/lib/email-templates/`
+
+## Product Copy
+
+- Write only copy that helps users understand the product or complete their task
+- Never expose implementation details, component reuse, validation consistency, frameworks, or internal architecture in user-facing copy
+- Do not add explanatory filler merely to occupy space in a layout

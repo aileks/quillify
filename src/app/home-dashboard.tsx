@@ -93,7 +93,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
     <div className='container mx-auto space-y-6 px-4 py-6 sm:space-y-8 sm:py-8 md:px-6'>
       {/* Welcome Section */}
       <div className='space-y-2'>
-        <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl'>
+        <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
           Welcome back, {userName}!
         </h1>
         <p className='text-muted-foreground text-base sm:text-lg md:text-xl'>
@@ -106,13 +106,13 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
         <Card className='rounded-sm'>
           <CardHeader>
             <CardTitle className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-              Total Books
+              Reading List
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className='font-serif text-3xl font-bold'>{totalBooks}</div>
             <p className='text-muted-foreground mt-1 text-sm'>
-              {totalBooks === 1 ? 'book in your library' : 'books in your library'}
+              {totalBooks === 1 ? 'book on your list' : 'books on your list'}
             </p>
           </CardContent>
         </Card>
@@ -120,11 +120,11 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
         <Card className='rounded-sm'>
           <CardHeader>
             <CardTitle className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-              Books Read
+              Finished
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-chart-3 font-serif text-3xl font-bold'>{readBooks}</div>
+            <div className='text-primary font-serif text-3xl font-bold'>{readBooks}</div>
             <p className='text-muted-foreground mt-1 text-sm'>
               {readBooks === 1 ? 'book completed' : 'books completed'}
               {totalBooks > 0 && (
@@ -137,13 +137,11 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
         <Card className='rounded-sm'>
           <CardHeader>
             <CardTitle className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-              Books to Read
+              To Read
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='font-serif text-3xl font-bold text-amber-700 dark:text-amber-500'>
-              {unreadBooks}
-            </div>
+            <div className='font-serif text-3xl font-bold'>{unreadBooks}</div>
             <p className='text-muted-foreground mt-1 text-sm'>
               {unreadBooks === 1 ? 'book waiting' : 'books waiting'}
               {totalBooks > 0 && (
@@ -173,12 +171,12 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
         {/* Library Insights Card */}
         <Card className='rounded-sm'>
           <CardHeader>
-            <CardTitle className='font-serif text-xl font-bold'>Library Insights</CardTitle>
+            <CardTitle className='font-serif text-xl font-bold'>Reading Insights</CardTitle>
           </CardHeader>
           <CardContent className='space-y-4'>
             {totalBooks === 0 ?
               <p className='text-muted-foreground text-sm'>
-                Add some books to see insights about your collection.
+                Add books to see insights about your reading list.
               </p>
             : <>
                 <div className='flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3'>
@@ -198,7 +196,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
                     <span className='text-sm font-medium'>
                       {oldestPublishYear === newestPublishYear ?
                         oldestPublishYear
-                      : `${oldestPublishYear} – ${newestPublishYear}`}
+                      : `${oldestPublishYear} - ${newestPublishYear}`}
                     </span>
                   </div>
                 )}
@@ -234,7 +232,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
           <CardContent>
             {recentlyAdded.length === 0 ?
               <p className='text-muted-foreground text-sm'>
-                No books in your library yet. Start by adding your first book!
+                Your reading list is empty. Add the first book on your TBR.
               </p>
             : <div className='space-y-3'>
                 {recentlyAdded.map((book) => (
@@ -258,7 +256,7 @@ export function HomeDashboard({ userName }: HomeDashboardProps) {
       {/* Call to Action */}
       <div className='flex justify-center pt-2 sm:pt-4'>
         <Button asChild size='lg' className='w-full px-7 py-4 text-base sm:w-auto sm:text-lg'>
-          <Link href='/books'>View Library</Link>
+          <Link href='/books'>View Reading List</Link>
         </Button>
       </div>
     </div>

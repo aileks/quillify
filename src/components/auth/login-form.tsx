@@ -8,7 +8,6 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import ResendVerification from './resend-verification';
 
@@ -47,35 +46,26 @@ interface LoginFormProps {
   verified?: boolean;
 }
 
-export function LoginForm({ callbackUrl = '/', emailParam, verified }: LoginFormProps) {
+export function LoginForm({ callbackUrl = '/', errorParam, emailParam, verified }: LoginFormProps) {
   const [error, setError] = React.useState<string>('');
-  const [emailForVerification, setEmailForVerification] = React.useState<string>(emailParam || '');
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const routeError =
+    errorParam === 'email_not_verified' ?
+      'Please verify your email before logging in. Check your inbox for the verification link.'
+    : errorParam === 'invalid_token' ? 'Invalid verification link. Please request a new one.'
+    : errorParam === 'expired_token' ?
+      'This verification link has expired. Please request a new one.'
+    : errorParam ? 'An error occurred. Please try again.'
+    : '';
+  const displayedError = error || routeError;
 
   React.useEffect(() => {
-    const error = searchParams.get('error');
-    const email = searchParams.get('email');
-
-    if (error === 'email_not_verified' && email) {
-      setError(
-        'Please verify your email before logging in. Check your inbox for the verification link.'
-      );
-      setEmailForVerification(email);
-    } else if (error === 'invalid_token') {
-      setError('Invalid verification link. Please request a new one.');
-    } else if (error === 'expired_token') {
-      setError('This verification link has expired. Please request a new one.');
-    } else if (error) {
-      setError('An error occurred. Please try again.');
-    } else if (verified) {
-      setError('');
-      // Show success message for verification
+    if (verified) {
       toast.success('Email verified successfully!', {
-        duration: Infinity,
+        duration: 6000,
       });
     }
-  }, [searchParams, verified]);
+  }, [verified]);
 
   const form = useForm({
     resolver: zodResolver(loginSchema),
@@ -199,22 +189,22 @@ export function LoginForm({ callbackUrl = '/', emailParam, verified }: LoginForm
               </Link>
             </div>
 
-            {error && (
-              <div className='rounded-sm-md bg-destructive/10 text-destructive p-3 text-sm'>
-                {error}
+            {displayedError && (
+              <div className='bg-destructive/10 text-destructive rounded-md p-3 text-sm'>
+                {displayedError}
               </div>
             )}
 
-            {emailForVerification && error.includes('verify') && (
+            {emailParam && displayedError.includes('verify') && (
               <div className='pt-2'>
-                <ResendVerification email={emailForVerification} />
+                <ResendVerification email={emailParam} />
               </div>
             )}
 
             <Button type='submit' className='w-full' disabled={isLoading}>
               {isLoading ?
                 <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <Loader2 data-icon='inline-start' className='animate-spin' />
                   Logging in...
                 </>
               : <>Log In</>}

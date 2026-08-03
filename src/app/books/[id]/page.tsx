@@ -1,4 +1,4 @@
-import { HydrateClient } from '@/trpc/server';
+import { api, HydrateClient } from '@/trpc/server';
 import { BookDetailClient } from './book-detail-client';
 
 interface BookDetailPageProps {
@@ -16,6 +16,7 @@ interface BookDetailPageProps {
  */
 export default async function BookDetailPage({ params }: BookDetailPageProps) {
   const { id } = await params;
+  void api.books.getById.prefetch({ id });
 
   return (
     <HydrateClient>

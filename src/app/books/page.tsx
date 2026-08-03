@@ -1,4 +1,5 @@
 import { BooksClient } from './books-client';
+import { api, HydrateClient } from '@/trpc/server';
 
 // Force dynamic rendering since this page requires authentication
 export const dynamic = 'force-dynamic';
@@ -10,5 +11,16 @@ export const dynamic = 'force-dynamic';
  * instant subsequent navigations within the staleTime window.
  */
 export default function BooksPage() {
-  return <BooksClient />;
+  void api.books.list.prefetch({
+    page: 1,
+    pageSize: 12,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+  });
+
+  return (
+    <HydrateClient>
+      <BooksClient />
+    </HydrateClient>
+  );
 }

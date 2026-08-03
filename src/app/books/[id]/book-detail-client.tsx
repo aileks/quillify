@@ -2,21 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, notFound, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+
 import { api } from '@/trpc/react';
+import { BookForm } from '@/components/book-form';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,18 +19,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GenreCombobox } from '@/components/genre-combobox';
-
-const bookFormSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  author: z.string().min(1, 'Author is required'),
-  numberOfPages: z.string().min(1, 'Number of pages is required'),
-  genre: z.string().optional(),
-  publishYear: z.string().min(1, 'Publish year is required'),
-});
-
-type BookFormValues = z.infer<typeof bookFormSchema>;
+import type { BookInput } from '@/lib/book-validation';
 
 interface BookDetailClientProps {
   bookId: string;
@@ -98,22 +80,6 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
     notFound();
   }
 
-  const form = useForm<BookFormValues>({
-    resolver: zodResolver(bookFormSchema),
-    // Use `values` instead of `defaultValues` to keep form in sync with real-time data updates
-    values:
-      book ?
-        {
-          title: book.title,
-          author: book.author,
-          // Convert numbers to strings for form inputs (HTML inputs return strings)
-          numberOfPages: String(book.numberOfPages),
-          genre: book.genre || undefined,
-          publishYear: String(book.publishYear),
-        }
-      : undefined,
-  });
-
   const updateBook = api.books.update.useMutation({
     onSuccess: (book) => {
       toast.success(`"${book.title}" updated successfully`);
@@ -148,7 +114,7 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
     },
     onSuccess: (book) => {
       toast.success(
-        book.isRead ? `"${book.title}" marked as read` : `"${book.title}" marked as unread`
+        book.isRead ? `"${book.title}" marked finished` : `"${book.title}" moved back to your TBR`
       );
     },
     onError: (err, newData, context) => {
@@ -168,7 +134,7 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
 
   const deleteBook = api.books.remove.useMutation({
     onSuccess: async () => {
-      toast.success('Book deleted from your library');
+      toast.success('Book removed from your reading list');
       await Promise.all([utils.books.list.invalidate(), utils.books.stats.invalidate()]);
       router.push(referrerRef.current ?? '/books');
     },
@@ -177,31 +143,10 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
     },
   });
 
-  function onSubmit(data: BookFormValues) {
-    // Convert form strings to numbers and validate
-    const numberOfPages = Number(data.numberOfPages);
-    const publishYear = Number(data.publishYear);
-
-    if (isNaN(numberOfPages) || numberOfPages <= 0) {
-      form.setError('numberOfPages', { message: 'Must be a positive number' });
-      return;
-    }
-    // Allow future years up to 5 years ahead for pre-orders
-    if (isNaN(publishYear) || publishYear < 1000 || publishYear > new Date().getFullYear() + 5) {
-      form.setError('publishYear', {
-        message: `Year must be between 1000 and ${new Date().getFullYear() + 5}`,
-      });
-      return;
-    }
-
+  function onSubmit(data: BookInput) {
     updateBook.mutate({
       id: bookId,
-      title: data.title,
-      author: data.author,
-      numberOfPages,
-      // Use null instead of 'Other' for updates to allow clearing genre
-      genre: data.genre || null,
-      publishYear,
+      ...data,
     });
   }
 
@@ -241,292 +186,159 @@ export function BookDetailClient({ bookId }: BookDetailClientProps) {
           className='w-full sm:w-auto'
           aria-label='Return to books list'
         >
-          ← Back to Catalog
+          <ArrowLeft data-icon='inline-start' />
+          Back to Reading List
         </Button>
       </div>
 
-      {/* Library Catalog Card - Detailed View */}
-      <article className='bg-card text-card-foreground border-foreground/10 relative rounded-sm border-2 p-6 shadow-sm md:p-8'>
-        {/* Card Number / Call Number Style */}
-        <div className='text-muted-foreground/50 absolute top-4 right-4 font-mono text-xs md:top-6 md:right-6'>
-          #{book.id.slice(0, 8).toUpperCase()}
+      {isEditing ?
+        <div className='flex flex-col gap-6'>
+          <header className='flex flex-col gap-2'>
+            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>Edit book</h1>
+            <p className='text-muted-foreground'>Update the details for “{book.title}”.</p>
+          </header>
+          <BookForm
+            defaultValues={{
+              title: book.title,
+              author: book.author,
+              numberOfPages: String(book.numberOfPages),
+              publishYear: String(book.publishYear),
+              genre: book.genre || '',
+            }}
+            title='Book details'
+            actionLabel='Save Changes'
+            pendingLabel='Saving...'
+            isPending={updateBook.isPending}
+            onSubmit={onSubmit}
+            onCancel={() => setIsEditing(false)}
+          />
         </div>
+      : <article className='bg-card text-card-foreground border-foreground/10 relative rounded-sm border-2 p-6 shadow-sm md:p-8'>
+          <h1 className='font-serif text-3xl leading-tight font-bold sm:text-4xl md:text-5xl'>
+            {book.title}
+          </h1>
 
-        {/* Content */}
-        {isEditing ?
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
-              <FormField
-                control={form.control}
-                name='title'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className='foreground font-serif text-base font-semibold uppercase sm:text-lg'>
-                      Title
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='The Art of War'
-                        className='placeholder:text-muted-foreground font-serif text-2xl'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {/* Author - Secondary Entry */}
+          <div className='border-primary/20 mt-6 mb-8 border-l-2 pl-3'>
+            <div className='text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase'>
+              Author
+            </div>
+            <div className='font-serif text-xl leading-snug'>{book.author}</div>
+          </div>
 
-              <FormField
-                control={form.control}
-                name='author'
-                render={({ field }) => (
-                  <FormItem>
-                    <div className='border-primary/20 border-l-2 pl-3'>
-                      <FormLabel className='mb-1 text-base font-semibold tracking-wide uppercase sm:text-lg'>
-                        Author
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder='Sun Tzu'
-                          className='placeholder:text-muted-foreground font-serif text-lg'
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </div>
-                  </FormItem>
-                )}
-              />
+          {/* Publication Details */}
+          <div className='mb-6 space-y-3 text-sm'>
+            <div className='flex items-start gap-3'>
+              <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                Publication Year
+              </span>
+              <span className='text-base font-medium'>{book.publishYear}</span>
+            </div>
 
-              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-                <FormField
-                  control={form.control}
-                  name='publishYear'
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className='flex items-start gap-2'>
-                        <FormLabel className='text-muted-foreground min-w-[80px] pt-2 font-mono text-xs tracking-wider uppercase'>
-                          Pub:
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            placeholder='1999'
-                            className='placeholder:text-muted-foreground font-medium'
-                            {...field}
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <div className='flex items-start gap-3'>
+              <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                Pages:
+              </span>
+              <span className='text-base font-medium'>{book.numberOfPages}</span>
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name='numberOfPages'
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className='flex items-start gap-2'>
-                        <FormLabel className='text-muted-foreground min-w-[80px] pt-2 font-mono text-xs tracking-wider uppercase'>
-                          Pages:
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            placeholder='352'
-                            className='placeholder:text-muted-foreground font-medium'
-                            {...field}
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {book.genre && (
+              <div className='flex items-start gap-3'>
+                <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                  Genre
+                </span>
+                <span className='text-base font-medium'>{book.genre}</span>
               </div>
+            )}
 
-              <FormField
-                control={form.control}
-                name='genre'
-                render={({ field }) => (
-                  <FormItem>
-                    <div className='flex flex-col gap-2 sm:flex-row sm:items-start'>
-                      <FormLabel className='text-muted-foreground font-mono text-xs tracking-wider uppercase sm:min-w-[80px] sm:pt-2'>
-                        Subject:
-                      </FormLabel>
-                      <FormControl>
-                        <GenreCombobox
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          placeholder='Select a genre...'
-                          className='font-medium'
-                        />
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {book.createdAt && (
+              <div className='flex items-start gap-3'>
+                <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                  Added:
+                </span>
+                <span className='text-base font-medium'>
+                  {new Date(book.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </span>
+              </div>
+            )}
+          </div>
 
-              <div className='border-foreground/10 flex flex-col gap-4 border-t pt-4 sm:flex-row'>
-                <Button type='submit' disabled={updateBook.isPending} className='w-full sm:w-auto'>
-                  {updateBook.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
+          <div className='border-foreground/10 mb-6 border-t pt-4'>
+            <div className='flex items-center gap-3'>
+              <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+                Status
+              </span>
+              <Badge variant={book.isRead ? 'default' : 'secondary'}>
+                {book.isRead ? 'Finished' : 'To Read'}
+              </Badge>
+            </div>
+          </div>
 
+          {/* Action Buttons */}
+          <div className='border-foreground/10 flex flex-col gap-3 border-t pt-4 sm:flex-row'>
+            <Button
+              variant='outline'
+              onClick={() => toggleRead.mutate({ id: book.id, isRead: !book.isRead })}
+              disabled={toggleRead.isPending}
+              className='flex-1 sm:flex-none'
+            >
+              {toggleRead.isPending ?
+                'Updating...'
+              : book.isRead ?
+                'Move Back to TBR'
+              : 'Mark Finished'}
+            </Button>
+
+            <Button
+              variant='outline'
+              onClick={() => setIsEditing(true)}
+              className='flex-1 sm:flex-none'
+              aria-label={`Edit ${book.title}`}
+            >
+              Edit Book
+            </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
                 <Button
-                  type='button'
-                  variant='outline'
-                  onClick={() => {
-                    setIsEditing(false);
-                    form.reset();
-                  }}
-                  disabled={updateBook.isPending}
-                  className='w-full sm:w-auto'
+                  variant='destructive'
+                  className='flex-1 sm:flex-none'
+                  aria-label={`Delete ${book.title}`}
                 >
-                  Cancel
+                  Delete
                 </Button>
-              </div>
-            </form>
-          </Form>
-        : <>
-            <h1 className='font-serif text-3xl leading-tight font-bold sm:text-4xl md:text-5xl'>
-              {book.title}
-            </h1>
+              </AlertDialogTrigger>
 
-            {/* Author - Secondary Entry */}
-            <div className='border-primary/20 mt-6 mb-8 border-l-2 pl-3'>
-              <div className='text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase'>
-                Author
-              </div>
-              <div className='font-serif text-xl leading-snug'>{book.author}</div>
-            </div>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this book?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete &quot;
+                    {book.title}&quot; from your reading list.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
 
-            {/* Publication Details */}
-            <div className='mb-6 space-y-3 text-sm'>
-              <div className='flex items-start gap-3'>
-                <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
-                  Pub:
-                </span>
-                <span className='text-base font-medium'>{book.publishYear}</span>
-              </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
 
-              <div className='flex items-start gap-3'>
-                <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
-                  Pages:
-                </span>
-                <span className='text-base font-medium'>{book.numberOfPages}</span>
-              </div>
-
-              {book.genre && (
-                <div className='flex items-start gap-3'>
-                  <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
-                    Subject:
-                  </span>
-                  <span className='text-base font-medium'>{book.genre}</span>
-                </div>
-              )}
-
-              {book.createdAt && (
-                <div className='flex items-start gap-3'>
-                  <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
-                    Added:
-                  </span>
-                  <span className='text-base font-medium'>
-                    {new Date(book.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Status Indicator */}
-            <div className='border-foreground/10 mb-6 border-t pt-4'>
-              <div className='flex items-center gap-3'>
-                <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-                  Status
-                </span>
-                <div className='flex items-center gap-2'>
-                  <div
-                    className={`h-2.5 w-2.5 rounded-full ${
-                      book.isRead ? 'bg-chart-3' : 'bg-amber-500'
-                    }`}
-                  />
-                  <span
-                    className={`text-sm font-semibold tracking-wider uppercase ${
-                      book.isRead ? 'text-chart-3' : 'text-amber-700 dark:text-amber-500'
-                    }`}
-                  >
-                    {book.isRead ? 'Read' : 'Unread'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className='border-foreground/10 flex flex-col gap-3 border-t pt-4 sm:flex-row'>
-              <Button
-                variant='outline'
-                onClick={() => toggleRead.mutate({ id: book.id, isRead: !book.isRead })}
-                disabled={toggleRead.isPending}
-                className='flex-1 sm:flex-none'
-              >
-                {toggleRead.isPending ?
-                  'Updating...'
-                : `Mark as ${book.isRead ? 'Unread' : 'Read'}`}
-              </Button>
-
-              <Button
-                variant='outline'
-                onClick={() => setIsEditing(true)}
-                className='flex-1 sm:flex-none'
-                aria-label={`Edit ${book.title}`}
-              >
-                Edit Book
-              </Button>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant='destructive'
-                    className='flex-1 sm:flex-none'
-                    aria-label={`Delete ${book.title}`}
+                  <AlertDialogAction
+                    onClick={() => deleteBook.mutate({ id: book.id })}
+                    className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
                   >
                     Delete
-                  </Button>
-                </AlertDialogTrigger>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
 
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete this book?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete &quot;
-                      {book.title}&quot; from your collection.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-
-                    <AlertDialogAction
-                      onClick={() => deleteBook.mutate({ id: book.id })}
-                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-
-            {/* Bottom Edge - Catalog Card Style */}
-            <div className='via-foreground/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r from-transparent to-transparent' />
-          </>
-        }
-      </article>
+          <div className='via-foreground/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r from-transparent to-transparent' />
+        </article>
+      }
     </div>
   );
 }

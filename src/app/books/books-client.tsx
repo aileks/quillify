@@ -3,7 +3,13 @@
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { ChevronDownIcon } from 'lucide-react';
+import {
+  ChevronDownIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { api } from '@/trpc/react';
@@ -18,6 +24,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -25,16 +32,16 @@ import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { GenreFilterSelect } from '@/components/genre-filter-select';
+import { parseBookQueryParams, type BookSortBy, type BookSortOrder } from '@/lib/book-query';
 import { cn } from '@/lib/utils';
 import type { Book } from '@/types';
-
-type SortBy = 'title' | 'author' | 'createdAt';
-type SortOrder = 'asc' | 'desc';
 
 interface BookCatalogCardProps {
   book: Book;
@@ -51,7 +58,7 @@ function BookCatalogCard({
     <div className='relative h-full'>
       <article
         className={cn(
-          'bg-card text-card-foreground border-foreground/10 hover:border-primary/30 focus-within:ring-ring relative h-full rounded-sm border-2 p-4 shadow-sm transition-all group-hover:scale-[1.02] focus-within:ring-2 focus-within:ring-offset-2 hover:shadow-md',
+          'bg-card text-card-foreground border-foreground/10 hover:border-primary/30 focus-within:ring-ring relative h-full rounded-sm border-2 p-4 shadow-sm transition-colors focus-within:ring-2 focus-within:ring-offset-2',
           isSelected && 'border-primary ring-primary/20 ring-2'
         )}
       >
@@ -74,23 +81,23 @@ function BookCatalogCard({
 
         <div className='mb-3 flex flex-col gap-1.5 text-xs'>
           <div className='flex items-start gap-2'>
-            <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
-              Pub:
+            <span className='text-muted-foreground min-w-[72px] font-mono text-xs tracking-wider uppercase'>
+              Year
             </span>
             <span className='font-medium'>{book.publishYear}</span>
           </div>
 
           <div className='flex items-start gap-2'>
-            <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
-              Pages:
+            <span className='text-muted-foreground min-w-[72px] font-mono text-xs tracking-wider uppercase'>
+              Pages
             </span>
             <span className='font-medium'>{book.numberOfPages}</span>
           </div>
 
           {book.genre && (
             <div className='flex items-start gap-2'>
-              <span className='text-muted-foreground min-w-[60px] font-mono text-[10px] tracking-wider uppercase'>
-                Subject:
+              <span className='text-muted-foreground min-w-[72px] font-mono text-xs tracking-wider uppercase'>
+                Genre
               </span>
               <span className='font-medium'>{book.genre}</span>
             </div>
@@ -99,22 +106,12 @@ function BookCatalogCard({
 
         <div className='border-foreground/10 mt-4 border-t pt-3'>
           <div className='flex items-center justify-between'>
-            <span className='text-muted-foreground font-mono text-[10px] tracking-wider uppercase'>
+            <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
               Status
             </span>
-            <div className='flex items-center gap-1.5'>
-              <div
-                className={cn('size-2 rounded-full', book.isRead ? 'bg-chart-3' : 'bg-amber-500')}
-              />
-              <span
-                className={cn(
-                  'text-xs font-semibold tracking-wider uppercase',
-                  book.isRead ? 'text-chart-3' : 'text-amber-700 dark:text-amber-500'
-                )}
-              >
-                {book.isRead ? 'Read' : 'Unread'}
-              </span>
-            </div>
+            <Badge variant={book.isRead ? 'default' : 'secondary'}>
+              {book.isRead ? 'Finished' : 'To Read'}
+            </Badge>
           </div>
         </div>
 
@@ -133,45 +130,45 @@ export function BooksClient() {
   const currentFromUrl =
     searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
 
-  // Parse URL params for initial state
-  const parseInitialState = useCallback(() => {
-    const pageParam = searchParams.get('page') ?? '1';
-    const parsedPage = Number(pageParam);
-    const page = /^[1-9]\d*$/.test(pageParam) ? Math.min(parsedPage, Number.MAX_SAFE_INTEGER) : 1;
-    const search = searchParams.get('search') ?? '';
-    const genre = searchParams.get('genre')?.split(',').filter(Boolean) ?? [];
-    const sortBy = (searchParams.get('sortBy') ?? 'createdAt') as SortBy;
-    const sortOrder = (searchParams.get('sortOrder') ?? 'desc') as SortOrder;
-    const isReadParam = searchParams.get('isRead');
-    const isRead =
-      isReadParam === 'true' ? true
-      : isReadParam === 'false' ? false
-      : undefined;
-
-    return { page, search, genre, sortBy, sortOrder, isRead };
-  }, [searchParams]);
-
-  const initial = parseInitialState();
+  const initial = parseBookQueryParams(searchParams);
 
   // State
   const [search, setSearch] = useState(initial.search);
+  const [querySearch, setQuerySearch] = useState(initial.search);
   const [isRead, setIsRead] = useState<boolean | undefined>(initial.isRead);
   const [genre, setGenre] = useState<string[]>(initial.genre);
-  const [sortBy, setSortBy] = useState<SortBy>(initial.sortBy);
-  const [sortOrder, setSortOrder] = useState<SortOrder>(initial.sortOrder);
+  const [sortBy, setSortBy] = useState<BookSortBy>(initial.sortBy);
+  const [sortOrder, setSortOrder] = useState<BookSortOrder>(initial.sortOrder);
   const [page, setPage] = useState(initial.page);
-  const [pageInput, setPageInput] = useState(String(initial.page));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedBookIds, setSelectedBookIds] = useState<Set<string>>(() => new Set());
   const pageSize = 12;
 
+  const resetPage = useCallback(() => {
+    setPage(1);
+    setSelectedBookIds(new Set());
+  }, []);
+
+  const goToPage = useCallback((nextPage: number) => {
+    setPage(nextPage);
+    setSelectedBookIds(new Set());
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setQuerySearch(search.trim());
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [search]);
+
   // Sync all filters to URL
   useEffect(() => {
     const params = new URLSearchParams();
 
-    if (search) params.set('search', search);
+    if (querySearch) params.set('search', querySearch);
     if (isRead !== undefined) params.set('isRead', String(isRead));
     if (genre.length > 0) params.set('genre', genre.join(','));
     if (sortBy !== 'createdAt') params.set('sortBy', sortBy);
@@ -180,11 +177,11 @@ export function BooksClient() {
 
     const newUrl = params.toString() ? `/books?${params.toString()}` : '/books';
     router.replace(newUrl, { scroll: false });
-  }, [search, isRead, genre, sortBy, sortOrder, page, router]);
+  }, [querySearch, isRead, genre, sortBy, sortOrder, page, router]);
 
-  const { data, isLoading, error, isFetching, isPlaceholderData } = api.books.list.useQuery(
+  const { data, isLoading, error, isFetching } = api.books.list.useQuery(
     {
-      search,
+      search: querySearch,
       isRead,
       genre,
       sortBy,
@@ -201,24 +198,7 @@ export function BooksClient() {
   const books = data?.items ?? [];
   const totalPages = data?.totalPages ?? 0;
   const totalCount = data?.totalCount ?? 0;
-  const effectivePage = data?.page;
-
-  // Use the server-normalized page after the current query settles.
-  useEffect(() => {
-    if (!isPlaceholderData && effectivePage !== undefined && effectivePage !== page) {
-      setPage(effectivePage);
-    }
-  }, [effectivePage, isPlaceholderData, page]);
-
-  // Sync pageInput when page changes (e.g., from Previous/Next buttons)
-  useEffect(() => {
-    setPageInput(String(page));
-  }, [page]);
-
-  // Selection is intentionally scoped to the current page and query.
-  useEffect(() => {
-    setSelectedBookIds((current) => (current.size === 0 ? current : new Set()));
-  }, [genre, isRead, page, search, sortBy, sortOrder]);
+  const currentPage = data?.page ?? page;
 
   const selectedBooks = books.filter((book) => selectedBookIds.has(book.id));
   const allBooksSelected = books.length > 0 && selectedBooks.length === books.length;
@@ -247,6 +227,8 @@ export function BooksClient() {
   const deleteBooks = api.books.removeMany.useMutation({
     onSuccess: async ({ ids }) => {
       toast.success(`${ids.length} book${ids.length === 1 ? '' : 's'} deleted`);
+      const remainingPages = Math.max(1, Math.ceil((totalCount - ids.length) / pageSize));
+      setPage((current) => Math.min(current, remainingPages));
       cancelSelection();
       await Promise.all([utils.books.list.invalidate(), utils.books.stats.invalidate()]);
     },
@@ -267,11 +249,11 @@ export function BooksClient() {
     setSearch('');
     setIsRead(undefined);
     setGenre([]);
-    setPage(1);
+    resetPage();
   };
 
   // Sort handlers
-  const handleSortByChange = (value: SortBy) => {
+  const handleSortByChange = (value: BookSortBy) => {
     setSortBy(value);
     // Set sensible defaults: A→Z for text fields, newest-first for dates
     if (value === 'createdAt') {
@@ -279,16 +261,16 @@ export function BooksClient() {
     } else {
       setSortOrder('asc');
     }
-    setPage(1);
+    resetPage();
   };
 
-  const handleSortOrderChange = (value: SortOrder) => {
+  const handleSortOrderChange = (value: BookSortOrder) => {
     setSortOrder(value);
-    setPage(1);
+    resetPage();
   };
 
   // Context-aware sort order labels
-  const getSortOrderLabel = (order: SortOrder) => {
+  const getSortOrderLabel = (order: BookSortOrder) => {
     if (sortBy === 'createdAt') {
       return order === 'asc' ? 'Oldest First' : 'Newest First';
     }
@@ -307,14 +289,14 @@ export function BooksClient() {
    * Prefetch next page of results on hover for instant pagination.
    */
   const prefetchNextPage = () => {
-    if (page < totalPages) {
+    if (currentPage < totalPages) {
       void utils.books.list.prefetch({
-        search,
+        search: querySearch,
         isRead,
         genre,
         sortBy,
         sortOrder,
-        page: page + 1,
+        page: currentPage + 1,
         pageSize,
       });
     }
@@ -325,12 +307,12 @@ export function BooksClient() {
       <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
         <div>
           <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
-            Library Catalog
+            My Reading List
           </h1>
-          <p className='text-muted-foreground mt-2 font-mono text-sm tracking-wider uppercase'>
+          <p className='text-muted-foreground mt-2 text-sm'>
             {totalCount === 0 ?
-              'No entries'
-            : `${totalCount} catalog entr${totalCount === 1 ? 'y' : 'ies'}`}
+              'No books yet'
+            : `${totalCount} ${totalCount === 1 ? 'book' : 'books'}`}
           </p>
         </div>
 
@@ -346,7 +328,7 @@ export function BooksClient() {
           )}
 
           <Button asChild className='flex-1 rounded-sm sm:flex-none'>
-            <Link href='/books/new'>Add Book</Link>
+            <Link href='/books/new'>Add to List</Link>
           </Button>
         </div>
       </div>
@@ -359,11 +341,11 @@ export function BooksClient() {
             <div className='mb-4'>
               <Input
                 type='search'
-                placeholder='Search books...'
+                placeholder='Search your reading list'
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  setPage(1);
+                  resetPage();
                 }}
                 className='placeholder:text-muted-foreground/70 w-full rounded-sm text-sm'
                 aria-label='Search books'
@@ -391,28 +373,30 @@ export function BooksClient() {
                   value={genre}
                   onValueChange={(v) => {
                     setGenre(v);
-                    setPage(1);
+                    resetPage();
                   }}
                 />
                 <Select
                   value={
                     isRead === undefined ? 'all'
                     : isRead ?
-                      'read'
-                    : 'unread'
+                      'finished'
+                    : 'to-read'
                   }
                   onValueChange={(value) => {
-                    setIsRead(value === 'all' ? undefined : value === 'read');
-                    setPage(1);
+                    setIsRead(value === 'all' ? undefined : value === 'finished');
+                    resetPage();
                   }}
                 >
                   <SelectTrigger className='cursor-pointer rounded-sm'>
                     <SelectValue placeholder='Filter by status' />
                   </SelectTrigger>
                   <SelectContent className='rounded-sm'>
-                    <SelectItem value='all'>All Books</SelectItem>
-                    <SelectItem value='read'>Read</SelectItem>
-                    <SelectItem value='unread'>Unread</SelectItem>
+                    <SelectGroup>
+                      <SelectItem value='all'>All Books</SelectItem>
+                      <SelectItem value='finished'>Finished</SelectItem>
+                      <SelectItem value='to-read'>To Read</SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
                 <Select value={sortBy} onValueChange={handleSortByChange}>
@@ -420,9 +404,11 @@ export function BooksClient() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className='rounded-sm'>
-                    <SelectItem value='title'>Sort by Title</SelectItem>
-                    <SelectItem value='author'>Sort by Author</SelectItem>
-                    <SelectItem value='createdAt'>Sort by Date Added</SelectItem>
+                    <SelectGroup>
+                      <SelectItem value='title'>Sort by Title</SelectItem>
+                      <SelectItem value='author'>Sort by Author</SelectItem>
+                      <SelectItem value='createdAt'>Sort by Date Added</SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
                 <Select value={sortOrder} onValueChange={handleSortOrderChange}>
@@ -430,8 +416,10 @@ export function BooksClient() {
                     <SelectValue>{getSortOrderLabel(sortOrder)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent className='rounded-sm'>
-                    <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
-                    <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
+                    <SelectGroup>
+                      <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
+                      <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
@@ -441,14 +429,16 @@ export function BooksClient() {
           {/* Desktop: Always visible grid */}
           <div className='hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-6'>
             {/* Search */}
-            <div className='sm:col-span-2 lg:col-span-2'>
+            <div className='flex flex-col gap-2 sm:col-span-2 lg:col-span-2'>
+              <Label htmlFor='reading-list-search'>Search</Label>
               <Input
+                id='reading-list-search'
                 type='search'
-                placeholder='Search books by title, author, or genre...'
+                placeholder='Search by title, author, or genre'
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  setPage(1);
+                  resetPage();
                 }}
                 className='placeholder:text-muted-foreground/70 w-full rounded-sm text-sm placeholder:text-xs sm:text-base sm:placeholder:text-sm'
                 aria-label='Search books'
@@ -456,65 +446,184 @@ export function BooksClient() {
             </div>
 
             {/* Genre Filter */}
-            <GenreFilterSelect
-              value={genre}
-              onValueChange={(v) => {
-                setGenre(v);
-                setPage(1);
-              }}
-            />
+            <div className='flex flex-col gap-2'>
+              <Label>Genre</Label>
+              <GenreFilterSelect
+                value={genre}
+                onValueChange={(v) => {
+                  setGenre(v);
+                  resetPage();
+                }}
+              />
+            </div>
 
             {/* Read Status */}
-            <Select
-              value={
-                isRead === undefined ? 'all'
-                : isRead ?
-                  'read'
-                : 'unread'
-              }
-              onValueChange={(value) => {
-                setIsRead(value === 'all' ? undefined : value === 'read');
-                setPage(1);
-              }}
-            >
-              <SelectTrigger
-                className='w-full cursor-pointer rounded-sm'
-                aria-label='Filter by read status'
+            <div className='flex flex-col gap-2'>
+              <Label htmlFor='reading-status-filter'>Status</Label>
+              <Select
+                value={
+                  isRead === undefined ? 'all'
+                  : isRead ?
+                    'finished'
+                  : 'to-read'
+                }
+                onValueChange={(value) => {
+                  setIsRead(value === 'all' ? undefined : value === 'finished');
+                  resetPage();
+                }}
               >
-                <SelectValue placeholder='Filter by status' />
-              </SelectTrigger>
-              <SelectContent className='rounded-sm'>
-                <SelectItem value='all'>All Books</SelectItem>
-                <SelectItem value='read'>Read</SelectItem>
-                <SelectItem value='unread'>Unread</SelectItem>
-              </SelectContent>
-            </Select>
+                <SelectTrigger
+                  id='reading-status-filter'
+                  className='w-full cursor-pointer rounded-sm'
+                >
+                  <SelectValue placeholder='Filter by status' />
+                </SelectTrigger>
+                <SelectContent className='rounded-sm'>
+                  <SelectGroup>
+                    <SelectItem value='all'>All Books</SelectItem>
+                    <SelectItem value='finished'>Finished</SelectItem>
+                    <SelectItem value='to-read'>To Read</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Sort By */}
-            <Select value={sortBy} onValueChange={handleSortByChange}>
-              <SelectTrigger className='w-full cursor-pointer rounded-sm' aria-label='Sort by'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className='rounded-sm'>
-                <SelectItem value='title'>Sort by Title</SelectItem>
-                <SelectItem value='author'>Sort by Author</SelectItem>
-                <SelectItem value='createdAt'>Sort by Date Added</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className='flex flex-col gap-2'>
+              <Label htmlFor='reading-list-sort'>Sort by</Label>
+              <Select value={sortBy} onValueChange={handleSortByChange}>
+                <SelectTrigger id='reading-list-sort' className='w-full cursor-pointer rounded-sm'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className='rounded-sm'>
+                  <SelectGroup>
+                    <SelectItem value='title'>Title</SelectItem>
+                    <SelectItem value='author'>Author</SelectItem>
+                    <SelectItem value='createdAt'>Date Added</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Sort Order */}
-            <Select value={sortOrder} onValueChange={handleSortOrderChange}>
-              <SelectTrigger className='w-full cursor-pointer rounded-sm' aria-label='Sort order'>
-                <SelectValue>{getSortOrderLabel(sortOrder)}</SelectValue>
-              </SelectTrigger>
-              <SelectContent className='rounded-sm'>
-                <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
-                <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className='flex flex-col gap-2'>
+              <Label htmlFor='reading-list-sort-order'>Order</Label>
+              <Select value={sortOrder} onValueChange={handleSortOrderChange}>
+                <SelectTrigger
+                  id='reading-list-sort-order'
+                  className='w-full cursor-pointer rounded-sm'
+                >
+                  <SelectValue>{getSortOrderLabel(sortOrder)}</SelectValue>
+                </SelectTrigger>
+                <SelectContent className='rounded-sm'>
+                  <SelectGroup>
+                    <SelectItem value='asc'>{getSortOrderLabel('asc')}</SelectItem>
+                    <SelectItem value='desc'>{getSortOrderLabel('desc')}</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {!error && books.length > 0 && totalPages > 1 && (
+        <nav
+          className={cn(
+            'flex flex-col items-center gap-3 sm:flex-row sm:justify-end sm:gap-4',
+            isFetching && 'opacity-70'
+          )}
+          aria-label='Reading list pagination'
+        >
+          {totalPages <= 5 ?
+            <p className='text-muted-foreground text-sm font-bold sm:text-base'>
+              Page {currentPage} of {totalPages}
+            </p>
+          : <div className='flex items-center gap-2'>
+              <Label htmlFor='reading-list-page'>Page</Label>
+              <Input
+                id='reading-list-page'
+                type='number'
+                min={1}
+                max={totalPages}
+                key={currentPage}
+                defaultValue={currentPage}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    const requestedPage = Number.parseInt(event.currentTarget.value, 10);
+                    if (
+                      Number.isInteger(requestedPage) &&
+                      requestedPage >= 1 &&
+                      requestedPage <= totalPages
+                    ) {
+                      goToPage(requestedPage);
+                    } else {
+                      event.currentTarget.value = String(currentPage);
+                    }
+                  }
+                }}
+                onBlur={(event) => {
+                  event.currentTarget.value = String(currentPage);
+                }}
+                className='h-8 w-12 [appearance:textfield] rounded-sm text-center text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+              />
+              <span className='text-muted-foreground text-sm font-bold sm:text-base'>
+                of {totalPages}
+              </span>
+            </div>
+          }
+
+          <div className='flex w-full justify-center gap-2 sm:w-auto'>
+            {totalPages > 15 && (
+              <Button
+                variant='secondary'
+                size='icon'
+                onClick={() => goToPage(1)}
+                disabled={currentPage === 1}
+                aria-label='Go to first page'
+              >
+                <ChevronsLeft />
+              </Button>
+            )}
+
+            <Button
+              variant='secondary'
+              onClick={() => goToPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className='flex-1 sm:flex-none'
+              aria-label={`Go to previous page, page ${currentPage - 1}`}
+            >
+              <ChevronLeft data-icon='inline-start' />
+              Previous
+            </Button>
+
+            <Button
+              variant='secondary'
+              onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className='flex-1 sm:flex-none'
+              aria-label={`Go to next page, page ${currentPage + 1}`}
+              onMouseEnter={prefetchNextPage}
+              onFocus={prefetchNextPage}
+            >
+              Next
+              <ChevronRight data-icon='inline-end' />
+            </Button>
+
+            {totalPages > 15 && (
+              <Button
+                variant='secondary'
+                size='icon'
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+                aria-label='Go to last page'
+              >
+                <ChevronsRight />
+              </Button>
+            )}
+          </div>
+        </nav>
+      )}
 
       {isSelectionMode && !error && books.length > 0 && (
         <div
@@ -563,7 +672,7 @@ export function BooksClient() {
                   </AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. The selected books will be permanently removed
-                    from your collection.
+                    from your reading list.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
 
@@ -633,18 +742,18 @@ export function BooksClient() {
               aria-hidden='true'
             >
               <div className='space-y-3'>
-                <div className='bg-muted h-5 w-3/4 animate-pulse rounded' />
+                <Skeleton className='h-5 w-3/4' />
                 <div className='border-primary/20 border-l-2 pl-3'>
-                  <div className='bg-muted mb-1 h-3 w-16 animate-pulse rounded' />
-                  <div className='bg-muted h-4 w-2/3 animate-pulse rounded' />
+                  <Skeleton className='mb-1 h-3 w-16' />
+                  <Skeleton className='h-4 w-2/3' />
                 </div>
-                <div className='space-y-2'>
-                  <div className='bg-muted h-3 w-full animate-pulse rounded' />
-                  <div className='bg-muted h-3 w-full animate-pulse rounded' />
-                  <div className='bg-muted h-3 w-3/4 animate-pulse rounded' />
+                <div className='flex flex-col gap-2'>
+                  <Skeleton className='h-3 w-full' />
+                  <Skeleton className='h-3 w-full' />
+                  <Skeleton className='h-3 w-3/4' />
                 </div>
                 <div className='border-foreground/10 border-t pt-3'>
-                  <div className='bg-muted h-3 w-20 animate-pulse rounded' />
+                  <Skeleton className='h-3 w-20' />
                 </div>
               </div>
             </div>
@@ -659,7 +768,7 @@ export function BooksClient() {
             <p className='text-muted-foreground mb-4 text-center'>
               {hasActiveFilters ?
                 'No books found matching your filters.'
-              : "You haven't added any books yet. Start building your library!"}
+              : 'Your reading list is empty. Add the first book on your TBR.'}
             </p>
 
             {!hasActiveFilters && (
@@ -677,99 +786,6 @@ export function BooksClient() {
         </Card>
       )}
 
-      {/* Pagination - only show when we have results and multiple pages */}
-      {!error && books.length > 0 && totalPages > 1 && (
-        <div
-          className={`flex flex-col items-center gap-3 sm:flex-row sm:justify-end sm:gap-4 ${isFetching ? 'opacity-70' : ''}`}
-        >
-          {/* Page indicator / input */}
-          {totalPages <= 5 ?
-            <p className='text-muted-foreground text-sm font-bold sm:text-base'>
-              Page {page} of {totalPages}
-            </p>
-          : <div className='flex items-center gap-2'>
-              <span className='text-muted-foreground text-sm font-bold sm:text-base'>Page</span>
-              <Input
-                type='number'
-                min={1}
-                max={totalPages}
-                value={pageInput}
-                onChange={(e) => setPageInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const value = parseInt(pageInput, 10);
-                    if (!isNaN(value) && value >= 1 && value <= totalPages) {
-                      setPage(value);
-                    } else {
-                      // Reset to current page if invalid
-                      setPageInput(String(page));
-                    }
-                  }
-                }}
-                onBlur={() => {
-                  // Reset to current page on blur (don't navigation)
-                  setPageInput(String(page));
-                }}
-                className='h-9 w-14 [appearance:textfield] rounded-sm text-center text-sm sm:h-10 sm:w-16 sm:text-base [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
-                aria-label='Page number'
-              />
-              <span className='text-muted-foreground text-sm font-bold sm:text-base'>
-                of {totalPages}
-              </span>
-            </div>
-          }
-
-          {/* Navigation buttons */}
-          <div className='flex w-full justify-center gap-1.5 sm:w-auto sm:gap-2'>
-            {totalPages > 15 && (
-              <Button
-                variant='secondary'
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-                className='h-9 w-9 rounded-sm p-0 text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10 sm:text-sm'
-                aria-label='Go to first page'
-              >
-                ««
-              </Button>
-            )}
-
-            <Button
-              variant='secondary'
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className='h-9 flex-1 rounded-sm text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-24 sm:flex-none sm:text-sm'
-              aria-label={`Go to previous page, page ${page - 1}`}
-            >
-              Previous
-            </Button>
-
-            <Button
-              variant='secondary'
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className='h-9 flex-1 rounded-sm text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-24 sm:flex-none sm:text-sm'
-              aria-label={`Go to next page, page ${page + 1}`}
-              onMouseEnter={prefetchNextPage}
-              onFocus={prefetchNextPage}
-            >
-              Next
-            </Button>
-
-            {totalPages > 15 && (
-              <Button
-                variant='secondary'
-                onClick={() => setPage(totalPages)}
-                disabled={page === totalPages}
-                className='h-9 w-9 rounded-sm p-0 text-xs disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10 sm:text-sm'
-                aria-label='Go to last page'
-              >
-                »»
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Books Catalog Grid */}
       {!isLoading && !error && books.length > 0 && (
         <div
@@ -778,7 +794,7 @@ export function BooksClient() {
             isFetching && 'opacity-60'
           )}
           role='list'
-          aria-label='Library catalog entries'
+          aria-label='Reading list'
         >
           {books.map((book) => (
             <div key={book.id} role='listitem'>
@@ -808,7 +824,7 @@ export function BooksClient() {
                   href={`/books/${book.id}?from=${encodeURIComponent(currentFromUrl)}`}
                   className='group block h-full'
                   aria-label={`${book.title} by ${book.author} - ${
-                    book.isRead ? 'Read' : 'Unread'
+                    book.isRead ? 'Finished' : 'To Read'
                   }`}
                   onMouseEnter={() => prefetchBook(book.id)}
                   onFocus={() => prefetchBook(book.id)}

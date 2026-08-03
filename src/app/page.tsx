@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { auth } from '@/server/auth';
+import { api, HydrateClient } from '@/trpc/server';
 import { BookOpen, BarChart3, Library, Search, CheckCircle2, ArrowRight } from 'lucide-react';
 import { HomeDashboard } from './home-dashboard';
 
@@ -12,7 +13,12 @@ export default async function Home() {
   // Data fetching is handled client-side for instant cached navigation
   if (session?.user) {
     const userName = session.user.name || session.user.email?.split('@')[0] || 'there';
-    return <HomeDashboard userName={userName} />;
+    void api.books.stats.prefetch();
+    return (
+      <HydrateClient>
+        <HomeDashboard userName={userName} />
+      </HydrateClient>
+    );
   }
 
   // Unauthenticated users see the landing page
@@ -32,19 +38,20 @@ export default async function Home() {
         <div className='container mx-auto'>
           <div className='mx-auto max-w-4xl text-center'>
             <h1 className='mb-6 font-serif text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl'>
-              Your Personal Library, <span className='text-primary'>Beautifully Organized</span>
+              Turn Your Scattered TBR Into a{' '}
+              <span className='text-primary'>Reading List You Can Finish</span>
             </h1>
 
             <p className='text-muted-foreground mx-auto mb-10 max-w-2xl text-lg leading-relaxed sm:text-xl'>
-              Track every book you read, monitor your progress, and discover insights about your
-              reading habits. Quillify makes managing your library simple and enjoyable.
+              Keep every book you want to read in one calm place, then move it to Finished when you
+              reach the last page.
             </p>
 
             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
               <Button asChild size='lg' className='w-full px-8 py-6 text-lg sm:w-auto'>
                 <Link href='/account/register'>
                   Get Started Free
-                  <ArrowRight className='ml-2 size-5' />
+                  <ArrowRight data-icon='inline-end' />
                 </Link>
               </Button>
               <Button
@@ -65,10 +72,10 @@ export default async function Home() {
         <div className='container mx-auto'>
           <div className='mb-16 text-center'>
             <h2 className='mb-4 font-serif text-3xl font-bold tracking-tight sm:text-4xl'>
-              Everything You Need to Track Your Reading
+              A Clear Path Through Your TBR
             </h2>
             <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>
-              Simple tools to organize your books and understand your reading patterns.
+              Add what caught your attention, find it quickly, and keep your momentum visible.
             </p>
           </div>
 
@@ -78,11 +85,11 @@ export default async function Home() {
                 <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
                   <Library className='size-6' />
                 </div>
-                <CardTitle className='font-serif text-xl'>Organize Your Library</CardTitle>
+                <CardTitle className='font-serif text-xl'>Build Your Reading List</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className='text-muted-foreground'>
-                  Add books to your collection and categorize them by genre, author, or custom tags.
+                  Save the books you want to read with the details that help you find them later.
                 </p>
               </CardContent>
             </Card>
@@ -92,11 +99,11 @@ export default async function Home() {
                 <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
                   <BookOpen className='size-6' />
                 </div>
-                <CardTitle className='font-serif text-xl'>Track Your Progress</CardTitle>
+                <CardTitle className='font-serif text-xl'>Finish With One Tap</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className='text-muted-foreground'>
-                  Mark books as read or unread, track page counts, and see your completion rate.
+                  Move books between To Read and Finished without losing their catalog details.
                 </p>
               </CardContent>
             </Card>
@@ -106,11 +113,11 @@ export default async function Home() {
                 <div className='bg-primary/10 text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-lg'>
                   <BarChart3 className='size-6' />
                 </div>
-                <CardTitle className='font-serif text-xl'>Discover Insights</CardTitle>
+                <CardTitle className='font-serif text-xl'>See Your Momentum</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className='text-muted-foreground'>
-                  View statistics about your reading habits, including total pages and books read.
+                  See your finished books, remaining TBR, completion rate, and pages read.
                 </p>
               </CardContent>
             </Card>
@@ -124,7 +131,7 @@ export default async function Home() {
               </CardHeader>
               <CardContent>
                 <p className='text-muted-foreground'>
-                  Quickly find any book in your collection with powerful search and filter options.
+                  Search by title, author, or genre, then filter by To Read or Finished.
                 </p>
               </CardContent>
             </Card>
@@ -141,10 +148,10 @@ export default async function Home() {
         <div className='container mx-auto'>
           <div className='mb-16 text-center'>
             <h2 className='mb-4 font-serif text-3xl font-bold tracking-tight sm:text-4xl'>
-              Start Tracking in Three Simple Steps
+              Start Clearing Your TBR in Three Steps
             </h2>
             <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>
-              Getting started with Quillify takes just a few minutes.
+              From scattered recommendations to a list you can act on.
             </p>
           </div>
 
@@ -163,9 +170,9 @@ export default async function Home() {
               <div className='bg-primary text-primary-foreground mb-4 flex h-12 w-12 items-center justify-center rounded-full font-mono text-lg font-bold'>
                 2
               </div>
-              <h3 className='mb-2 font-serif text-xl font-semibold'>Add Your Books</h3>
+              <h3 className='mb-2 font-serif text-xl font-semibold'>Build Your TBR</h3>
               <p className='text-muted-foreground'>
-                Enter details about books you own, have read, or plan to read next.
+                Add the books you plan to read and keep their key details together.
               </p>
             </div>
 
@@ -173,9 +180,9 @@ export default async function Home() {
               <div className='bg-primary text-primary-foreground mb-4 flex h-12 w-12 items-center justify-center rounded-full font-mono text-lg font-bold'>
                 3
               </div>
-              <h3 className='mb-2 font-serif text-xl font-semibold'>Track Your Progress</h3>
+              <h3 className='mb-2 font-serif text-xl font-semibold'>Mark Them Finished</h3>
               <p className='text-muted-foreground'>
-                Update your reading status and watch your statistics grow over time.
+                Move each completed book out of your TBR and watch your progress grow.
               </p>
             </div>
           </div>
@@ -201,11 +208,11 @@ export default async function Home() {
               </div>
               <div className='flex flex-col items-center'>
                 <CheckCircle2 className='text-primary mb-2 size-6' />
-                <p className='text-muted-foreground text-sm'>No ads or tracking</p>
+                <p className='text-muted-foreground text-sm'>Fast search and filters</p>
               </div>
               <div className='flex flex-col items-center'>
                 <CheckCircle2 className='text-primary mb-2 size-6' />
-                <p className='text-muted-foreground text-sm'>Your data stays yours</p>
+                <p className='text-muted-foreground text-sm'>Simple To Read and Finished states</p>
               </div>
             </div>
           </div>
@@ -221,10 +228,10 @@ export default async function Home() {
         <div className='container mx-auto'>
           <div className='mx-auto max-w-3xl text-center'>
             <h2 className='mb-4 font-serif text-3xl font-bold sm:text-4xl'>
-              Ready to Organize Your Library?
+              Ready to Tackle Your TBR?
             </h2>
             <p className='mb-8 text-lg opacity-90'>
-              Join Quillify today and take control of your reading journey.
+              Build a focused reading list and make your next choice obvious.
             </p>
 
             <Button
@@ -235,7 +242,7 @@ export default async function Home() {
             >
               <Link href='/account/register'>
                 Create Your Free Account
-                <ArrowRight className='ml-2 size-5' />
+                <ArrowRight data-icon='inline-end' />
               </Link>
             </Button>
           </div>

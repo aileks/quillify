@@ -18,6 +18,7 @@ import { TRPCError } from '@trpc/server';
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
 import { books, users } from '@/server/db/schema';
 import type { Book } from '@/types';
+import { bookInputSchema, bookUpdateInputSchema } from '@/lib/book-validation';
 
 export const booksRouter = createTRPCRouter({
   /**
@@ -168,86 +169,65 @@ export const booksRouter = createTRPCRouter({
   }),
 
   // Create a new book for the current user
-  create: protectedProcedure
-    .input(
-      z.object({
-        title: z.string().min(1),
-        author: z.string().min(1),
-        numberOfPages: z.number().int().positive(),
-        genre: z.string().optional(),
-        publishYear: z.number().int().positive(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
+  create: protectedProcedure.input(bookInputSchema).mutation(async ({ ctx, input }) => {
+    const userId = ctx.session.user.id;
 
-      // Check if user is verified - unverified users have a 10-book limit
-      const [user] = await ctx.db.select().from(users).where(eq(users.id, userId));
+    // Check if user is verified - unverified users have a 10-book limit
+    const [user] = await ctx.db.select().from(users).where(eq(users.id, userId));
 
-      if (user && !user.emailVerifiedAt) {
-        // Count existing books for this user
-        const [bookCount] = await ctx.db
-          .select({ count: count() })
-          .from(books)
-          .where(eq(books.userId, userId));
+    if (user && !user.emailVerifiedAt) {
+      // Count existing books for this user
+      const [bookCount] = await ctx.db
+        .select({ count: count() })
+        .from(books)
+        .where(eq(books.userId, userId));
 
-        if (bookCount && bookCount.count >= 10) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'BOOK_LIMIT_REACHED',
-          });
-        }
+      if (bookCount && bookCount.count >= 10) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'BOOK_LIMIT_REACHED',
+        });
       }
+    }
 
-      const [inserted] = await ctx.db
-        .insert(books)
-        .values({
-          userId,
-          title: input.title,
-          author: input.author,
-          numberOfPages: input.numberOfPages,
-          genre: input.genre,
-          publishYear: input.publishYear,
-        })
-        .returning();
+    const [inserted] = await ctx.db
+      .insert(books)
+      .values({
+        userId,
+        title: input.title,
+        author: input.author,
+        numberOfPages: input.numberOfPages,
+        genre: input.genre,
+        publishYear: input.publishYear,
+      })
+      .returning();
 
-      return inserted as Book;
-    }),
+    return inserted as Book;
+  }),
 
   // Update select fields on a book (owned by current user)
-  update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        title: z.string().min(1).optional(),
-        author: z.string().min(1).optional(),
-        numberOfPages: z.number().int().positive().optional(),
-        genre: z.string().nullable().optional(),
-        publishYear: z.number().int().positive().optional(),
+  update: protectedProcedure.input(bookUpdateInputSchema).mutation(async ({ ctx, input }) => {
+    const [existing] = await ctx.db.select().from(books).where(eq(books.id, input.id));
+
+    if (!existing || existing.userId !== ctx.session.user.id) {
+      throw new TRPCError({ code: 'NOT_FOUND' });
+    }
+
+    const [updated] = await ctx.db
+      .update(books)
+      .set({
+        title: input.title ?? existing.title,
+        author: input.author ?? existing.author,
+        numberOfPages: input.numberOfPages ?? existing.numberOfPages,
+        // Special handling: undefined means "don't change", null means "set to null"
+        genre: input.genre === undefined ? existing.genre : input.genre,
+        publishYear: input.publishYear ?? existing.publishYear,
       })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const [existing] = await ctx.db.select().from(books).where(eq(books.id, input.id));
+      .where(eq(books.id, input.id))
+      .returning();
 
-      if (!existing || existing.userId !== ctx.session.user.id) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
-      }
-
-      const [updated] = await ctx.db
-        .update(books)
-        .set({
-          title: input.title ?? existing.title,
-          author: input.author ?? existing.author,
-          numberOfPages: input.numberOfPages ?? existing.numberOfPages,
-          // Special handling: undefined means "don't change", null means "set to null"
-          genre: input.genre === undefined ? existing.genre : input.genre,
-          publishYear: input.publishYear ?? existing.publishYear,
-        })
-        .where(eq(books.id, input.id))
-        .returning();
-
-      return updated as Book;
-    }),
+    return updated as Book;
+  }),
 
   // Toggle or set read status
   setRead: protectedProcedure

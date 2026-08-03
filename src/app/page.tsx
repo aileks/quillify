@@ -58,7 +58,7 @@ export default async function Home() {
             </h1>
 
             <p className='mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-white/85 sm:text-xl lg:mx-0'>
-              Save books to To Read. Move them to Finished when you are done.
+              Save books to a digital shelf. Mark them as finished when you are done. Nice and tidy!
             </p>
 
             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start'>

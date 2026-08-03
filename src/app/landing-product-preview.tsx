@@ -297,7 +297,7 @@ function AddAndFindWorkflow() {
             Add once. Find it when you&apos;re ready.
           </h2>
           <p className='text-sidebar-foreground/75 mt-6 text-lg leading-relaxed sm:text-xl'>
-            Capture the title, author, pages, year, and genre. Your Library keeps every maybe easy
+            Capture the title, author, pages, year, and genre. Your Library keeps every <em>maybe</em> easy
             to find.
           </p>
         </div>

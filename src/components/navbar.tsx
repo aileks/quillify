@@ -104,6 +104,9 @@ export function Navbar({ className }: NavbarProps) {
                         Settings
                       </Link>
                     </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
                       <Link href='/about' aria-current={pathname === '/about' ? 'page' : undefined}>
                         <Info />
@@ -122,32 +125,37 @@ export function Navbar({ className }: NavbarProps) {
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                 </>
-              : <DropdownMenuGroup>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href='/account/login'
-                      aria-current={pathname === '/account/login' ? 'page' : undefined}
-                    >
-                      <LogIn />
-                      Log In
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href='/account/register'
-                      aria-current={pathname === '/account/register' ? 'page' : undefined}
-                    >
-                      <UserPlus />
-                      Get Started
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href='/about' aria-current={pathname === '/about' ? 'page' : undefined}>
-                      <Info />
-                      About
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
+              : <>
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href='/account/login'
+                        aria-current={pathname === '/account/login' ? 'page' : undefined}
+                      >
+                        <LogIn />
+                        Log In
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href='/account/register'
+                        aria-current={pathname === '/account/register' ? 'page' : undefined}
+                      >
+                        <UserPlus />
+                        Get Started
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem asChild>
+                      <Link href='/about' aria-current={pathname === '/about' ? 'page' : undefined}>
+                        <Info />
+                        About
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </>
               }
             </DropdownMenuContent>
           </DropdownMenu>

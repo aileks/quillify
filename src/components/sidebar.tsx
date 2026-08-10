@@ -261,7 +261,10 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
             </Button>
           </>
         }
+      </nav>
 
+      {/* Secondary navigation */}
+      <footer className='border-sidebar-border flex flex-col gap-1 border-t p-2'>
         <Button
           variant='ghost'
           asChild
@@ -277,11 +280,8 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
             {!sidebarCollapsed && <span>About</span>}
           </Link>
         </Button>
-      </nav>
 
-      {/* Footer - Logout */}
-      {session?.user && (
-        <div className='border-sidebar-border border-t p-2'>
+        {session?.user && (
           <Button
             variant='ghost'
             onClick={() => signOut({ callbackUrl: '/' })}
@@ -294,8 +294,8 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
             <LogOut />
             {!sidebarCollapsed && <span>Log Out</span>}
           </Button>
-        </div>
-      )}
+        )}
+      </footer>
 
       {/* Resize handle - only show when not collapsed */}
       {!sidebarCollapsed && (

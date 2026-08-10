@@ -13,7 +13,9 @@ test.describe('public experience', () => {
     );
   });
 
-  test('about page explains Quillify and offers account actions', async ({ page }) => {
+  test('about page explains Quillify and keeps About in secondary navigation', async ({
+    page,
+  }, testInfo) => {
     await page.goto('/about');
 
     const main = page.getByRole('main');
@@ -32,6 +34,13 @@ test.describe('public experience', () => {
       'href',
       '/account/login'
     );
+
+    if (testInfo.project.name === 'mobile-chromium') {
+      await page.getByRole('button', { name: 'Menu' }).click();
+      await expect(page.getByRole('menu').getByRole('link', { name: 'About' })).toBeVisible();
+    } else {
+      await expect(page.locator('aside footer').getByRole('link', { name: 'About' })).toBeVisible();
+    }
   });
 
   test('login page keeps demo access visible', async ({ page }) => {

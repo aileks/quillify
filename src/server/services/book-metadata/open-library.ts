@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-import { getOpenLibraryCoverUrl, type OpenLibrarySearchResult } from '@/lib/open-library';
+import {
+  getOpenLibraryCoverUrl,
+  type OpenLibraryCatalogSearchResult,
+  type OpenLibrarySearchResult,
+} from '@/lib/open-library';
 
 const OPEN_LIBRARY_SEARCH_URL = 'https://openlibrary.org/search.json';
 const OPEN_LIBRARY_SEARCH_LIMIT = 15;
@@ -15,6 +19,7 @@ const editionSchema = z.object({
   cover_i: z.number().int().positive().optional(),
   publish_date: publicationDateSchema,
   isbn: z.array(z.string()).optional(),
+  number_of_pages: z.number().int().positive().optional(),
 });
 
 const searchDocumentSchema = z.object({
@@ -24,6 +29,8 @@ const searchDocumentSchema = z.object({
   first_publish_year: z.number().int().optional(),
   cover_i: z.number().int().positive().optional(),
   cover_edition_key: z.string().min(1).optional(),
+  isbn: z.array(z.string()).optional(),
+  number_of_pages_median: z.number().int().positive().optional(),
   editions: z
     .object({
       docs: z.array(z.unknown()),
@@ -38,6 +45,10 @@ const searchResponseSchema = z.object({
 export interface OpenLibrarySearchInput {
   title: string;
   author?: string;
+}
+
+export interface OpenLibraryCatalogSearchInput {
+  query: string;
 }
 
 type FetchImplementation = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
@@ -219,33 +230,78 @@ export function normalizeOpenLibrarySearchResponse(
     }));
 }
 
-export async function searchOpenLibrary(
-  input: OpenLibrarySearchInput,
+export function normalizeOpenLibraryCatalogSearchResponse(
+  response: unknown
+): OpenLibraryCatalogSearchResult[] {
+  const parsedResponse = searchResponseSchema.safeParse(response);
+  if (!parsedResponse.success) {
+    throw new OpenLibraryServiceError(
+      'malformed_response',
+      'Open Library returned an unexpected response',
+      { cause: parsedResponse.error }
+    );
+  }
+
+  const results: OpenLibraryCatalogSearchResult[] = [];
+
+  for (const rawDocument of parsedResponse.data.docs) {
+    const parsedDocument = searchDocumentSchema.safeParse(rawDocument);
+    if (!parsedDocument.success) {
+      continue;
+    }
+
+    const document = parsedDocument.data;
+    const parsedEdition = editionSchema.safeParse(document.editions?.docs[0]);
+    const edition = parsedEdition.success ? parsedEdition.data : null;
+    const coverId = edition?.cover_i ?? document.cover_i;
+
+    results.push({
+      openLibraryId: normalizeOpenLibraryId(
+        edition?.key ?? document.cover_edition_key ?? document.key
+      ),
+      coverId: coverId ? String(coverId) : null,
+      title: edition?.title ?? document.title,
+      authors: (document.author_name ?? []).map((author) => author.trim()).filter(Boolean),
+      firstPublicationYear: document.first_publish_year ?? null,
+      editionPublicationYear: parsePublicationYear(edition?.publish_date),
+      numberOfPages: edition?.number_of_pages ?? document.number_of_pages_median ?? null,
+      isbns: normalizeIsbns(edition?.isbn ?? document.isbn),
+    });
+  }
+
+  return results
+    .filter(
+      (result, index, allResults) =>
+        allResults.findIndex(
+          (candidate) => candidate.openLibraryId === result.openLibraryId
+        ) === index
+    )
+    .slice(0, OPEN_LIBRARY_RESULT_LIMIT);
+}
+
+function getCatalogQuery(query: string): string {
+  const trimmedQuery = query.trim();
+  const compactQuery = trimmedQuery.replace(/[\s-]/g, '').toUpperCase();
+
+  if (/^(?:\d{9}[\dX]|\d{13})$/.test(compactQuery)) {
+    return `isbn:${compactQuery}`;
+  }
+
+  return trimmedQuery;
+}
+
+async function fetchOpenLibrarySearch(
+  query: string,
+  fields: string[],
   options: {
     fetchImplementation?: FetchImplementation;
     timeoutMs?: number;
-  } = {}
-): Promise<OpenLibrarySearchResult[]> {
+  }
+): Promise<unknown> {
   const searchUrl = new URL(OPEN_LIBRARY_SEARCH_URL);
-  searchUrl.searchParams.set('q', [input.title, input.author].filter(Boolean).join(' '));
+  searchUrl.searchParams.set('q', query);
   searchUrl.searchParams.set('limit', String(OPEN_LIBRARY_SEARCH_LIMIT));
-  searchUrl.searchParams.set(
-    'fields',
-    [
-      'key',
-      'title',
-      'author_name',
-      'first_publish_year',
-      'cover_i',
-      'cover_edition_key',
-      'editions',
-      'editions.key',
-      'editions.title',
-      'editions.publish_date',
-      'editions.cover_i',
-      'editions.isbn',
-    ].join(',')
-  );
+  searchUrl.searchParams.set('fields', fields.join(','));
 
   const fetchImplementation = options.fetchImplementation ?? fetch;
   const abortController = new AbortController();
@@ -258,7 +314,7 @@ export async function searchOpenLibrary(
     const response = await fetchImplementation(searchUrl, {
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'Quillify book cover search',
+        'User-Agent': 'Quillify book metadata search',
       },
       next: {
         revalidate: 24 * 60 * 60,
@@ -273,9 +329,8 @@ export async function searchOpenLibrary(
       );
     }
 
-    let responseBody: unknown;
     try {
-      responseBody = await response.json();
+      return await response.json();
     } catch (error) {
       throw new OpenLibraryServiceError(
         'malformed_response',
@@ -283,8 +338,6 @@ export async function searchOpenLibrary(
         { cause: error }
       );
     }
-
-    return normalizeOpenLibrarySearchResponse(responseBody, input);
   } catch (error) {
     if (error instanceof OpenLibraryServiceError) {
       throw error;
@@ -302,4 +355,65 @@ export async function searchOpenLibrary(
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+export async function searchOpenLibrary(
+  input: OpenLibrarySearchInput,
+  options: {
+    fetchImplementation?: FetchImplementation;
+    timeoutMs?: number;
+  } = {}
+): Promise<OpenLibrarySearchResult[]> {
+  const response = await fetchOpenLibrarySearch(
+    [input.title, input.author].filter(Boolean).join(' '),
+    [
+      'key',
+      'title',
+      'author_name',
+      'first_publish_year',
+      'cover_i',
+      'cover_edition_key',
+      'editions',
+      'editions.key',
+      'editions.title',
+      'editions.publish_date',
+      'editions.cover_i',
+      'editions.isbn',
+    ],
+    options
+  );
+
+  return normalizeOpenLibrarySearchResponse(response, input);
+}
+
+export async function searchOpenLibraryCatalog(
+  input: OpenLibraryCatalogSearchInput,
+  options: {
+    fetchImplementation?: FetchImplementation;
+    timeoutMs?: number;
+  } = {}
+): Promise<OpenLibraryCatalogSearchResult[]> {
+  const response = await fetchOpenLibrarySearch(
+    getCatalogQuery(input.query),
+    [
+      'key',
+      'title',
+      'author_name',
+      'first_publish_year',
+      'cover_i',
+      'cover_edition_key',
+      'isbn',
+      'number_of_pages_median',
+      'editions',
+      'editions.key',
+      'editions.title',
+      'editions.publish_date',
+      'editions.cover_i',
+      'editions.isbn',
+      'editions.number_of_pages',
+    ],
+    options
+  );
+
+  return normalizeOpenLibraryCatalogSearchResponse(response);
 }

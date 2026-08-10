@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  normalizeOpenLibraryCatalogSearchResponse,
   normalizeOpenLibrarySearchResponse,
   searchOpenLibrary,
+  searchOpenLibraryCatalog,
 } from '@/server/services/book-metadata/open-library';
 
 describe('Open Library metadata service', () => {
@@ -116,6 +118,74 @@ describe('Open Library metadata service', () => {
     expect(new Set(results.map(({ coverId }) => coverId))).toHaveProperty('size', 15);
   });
 
+  it('normalizes catalog metadata and keeps results without covers', () => {
+    const results = normalizeOpenLibraryCatalogSearchResponse({
+      docs: [
+        {
+          key: '/works/OL123W',
+          title: 'Jane Eyre',
+          author_name: ['Charlotte Brontë'],
+          first_publish_year: 1847,
+          number_of_pages_median: 480,
+          editions: {
+            docs: [
+              {
+                key: '/books/OL456M',
+                title: 'Jane Eyre',
+                publish_date: ['2006'],
+                isbn: ['9780141441146', '0141441143'],
+                number_of_pages: 532,
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(results).toEqual([
+      {
+        openLibraryId: 'OL456M',
+        coverId: null,
+        title: 'Jane Eyre',
+        authors: ['Charlotte Brontë'],
+        firstPublicationYear: 1847,
+        editionPublicationYear: 2006,
+        numberOfPages: 532,
+        isbns: ['9780141441146', '0141441143'],
+      },
+    ]);
+  });
+
+  it('falls back to work metadata and removes duplicate catalog editions', () => {
+    const document = {
+      key: '/works/OL123W',
+      title: 'Jane Eyre',
+      author_name: ['Charlotte Brontë'],
+      first_publish_year: 1847,
+      cover_i: 111,
+      cover_edition_key: '/books/OL456M',
+      isbn: ['9780141441146'],
+      number_of_pages_median: 480,
+    };
+
+    const results = normalizeOpenLibraryCatalogSearchResponse({
+      docs: [document, document],
+    });
+
+    expect(results).toEqual([
+      {
+        openLibraryId: 'OL456M',
+        coverId: '111',
+        title: 'Jane Eyre',
+        authors: ['Charlotte Brontë'],
+        firstPublicationYear: 1847,
+        editionPublicationYear: null,
+        numberOfPages: 480,
+        isbns: ['9780141441146'],
+      },
+    ]);
+  });
+
   it('uses relevance matching for title and author', async () => {
     let requestUrl: URL | undefined;
     let requestInit: RequestInit | undefined;
@@ -152,6 +222,39 @@ describe('Open Library metadata service', () => {
     );
 
     expect(requestUrl?.searchParams.get('q')).toBe('Jane Eyre');
+  });
+
+  it('searches the catalog with free text', async () => {
+    let requestUrl: URL | undefined;
+
+    await searchOpenLibraryCatalog(
+      { query: '  Jane Eyre Charlotte Brontë  ' },
+      {
+        fetchImplementation: async (input) => {
+          requestUrl = new URL(input.toString());
+          return Response.json({ docs: [] });
+        },
+      }
+    );
+
+    expect(requestUrl?.searchParams.get('q')).toBe('Jane Eyre Charlotte Brontë');
+    expect(requestUrl?.searchParams.get('fields')).toContain('number_of_pages_median');
+  });
+
+  it('normalizes ISBN catalog searches', async () => {
+    let requestUrl: URL | undefined;
+
+    await searchOpenLibraryCatalog(
+      { query: '978-0-141-44114-6' },
+      {
+        fetchImplementation: async (input) => {
+          requestUrl = new URL(input.toString());
+          return Response.json({ docs: [] });
+        },
+      }
+    );
+
+    expect(requestUrl?.searchParams.get('q')).toBe('isbn:9780141441146');
   });
 
   it('reports third-party HTTP failures', async () => {

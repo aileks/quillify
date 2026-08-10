@@ -297,8 +297,8 @@ function AddAndFindWorkflow() {
             Add once. Find it when you&apos;re ready.
           </h2>
           <p className='text-sidebar-foreground/75 mt-6 text-lg leading-relaxed sm:text-xl'>
-            Capture the title, author, pages, year, and genre. Your Library keeps every <em>maybe</em> easy
-            to find.
+            Capture the title, author, pages, year, and genre. Your Library keeps every{' '}
+            <em>maybe</em> easy to find.
           </p>
         </div>
 
@@ -356,8 +356,14 @@ function FinalCta() {
 
           <div className='flex gap-6'>
             <Link
-              href='/account/login'
+              href='/about'
               className='text-sidebar-foreground/70 hover:text-sidebar-foreground text-sm transition-colors'
+            >
+              About
+            </Link>
+            <Link
+              href='/account/login'
+              className='border-sidebar-primary/50 text-sidebar-foreground/70 hover:text-sidebar-foreground border-l pl-6 text-sm transition-colors'
             >
               Log In
             </Link>

@@ -14,6 +14,7 @@ import {
   Home,
   PanelLeftClose,
   PanelLeft,
+  Info,
 } from 'lucide-react';
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
@@ -260,6 +261,22 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
             </Button>
           </>
         }
+
+        <Button
+          variant='ghost'
+          asChild
+          className={cn(
+            'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
+            pathname === '/about' && 'bg-sidebar-accent text-sidebar-accent-foreground',
+            sidebarCollapsed && 'justify-center px-2'
+          )}
+          title={sidebarCollapsed ? 'About' : undefined}
+        >
+          <Link href='/about' aria-current={pathname === '/about' ? 'page' : undefined}>
+            <Info />
+            {!sidebarCollapsed && <span>About</span>}
+          </Link>
+        </Button>
       </nav>
 
       {/* Footer - Logout */}

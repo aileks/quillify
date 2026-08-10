@@ -22,6 +22,29 @@ test('login announces book cover art', async ({ page }) => {
   ).not.toBeVisible();
 });
 
+test('authenticated navigation opens About and returns to the Library', async ({
+  page,
+}, testInfo) => {
+  await logInWithDemoAccount(page);
+
+  if (testInfo.project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Menu' }).click();
+  }
+
+  await page.getByRole('link', { name: 'About', exact: true }).click();
+  await expect(page).toHaveURL(/\/about$/);
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'A focused home for the books you want to read.',
+    })
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open Your Library' })).toHaveAttribute(
+    'href',
+    '/books'
+  );
+});
+
 test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) => {
   test.setTimeout(60_000);
 

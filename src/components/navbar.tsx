@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { BookOpen, Home, LogIn, LogOut, Menu, Settings, UserPlus } from 'lucide-react';
+import { BookOpen, Home, Info, LogIn, LogOut, Menu, Settings, UserPlus } from 'lucide-react';
 
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
@@ -104,6 +104,12 @@ export function Navbar({ className }: NavbarProps) {
                         Settings
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href='/about' aria-current={pathname === '/about' ? 'page' : undefined}>
+                        <Info />
+                        About
+                      </Link>
+                    </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
@@ -133,6 +139,12 @@ export function Navbar({ className }: NavbarProps) {
                     >
                       <UserPlus />
                       Get Started
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href='/about' aria-current={pathname === '/about' ? 'page' : undefined}>
+                      <Info />
+                      About
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>

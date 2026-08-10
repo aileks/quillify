@@ -82,6 +82,14 @@ changes do not lose history.
 **User problem:** Readers must enter metadata manually before Quillify can help identify a book.
 This makes building a new Library slow and error-prone.
 
+**Implemented foundation:** The add flow searches Open Library by title, author, or ISBN before
+manual entry. Selecting a result prefills available title, author, publication year, page count, and
+cover metadata while keeping every field editable. Manual entry remains available when catalog
+metadata is missing or incorrect.
+
+**Still planned:** Persisted ISBN and edition identity, format metadata, duplicate warnings, and
+camera barcode scanning.
+
 **Planned experience:**
 
 - Search by title, author, or ISBN before opening the manual form.

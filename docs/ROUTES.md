@@ -64,11 +64,16 @@ Every book metadata procedure is protected. Open Library requests run on the ser
 | Procedure                        | Kind  | Input                | Result                      |
 | -------------------------------- | ----- | -------------------- | --------------------------- |
 | `bookMetadata.searchOpenLibrary` | Query | `{ title, author? }` | Up to 15 normalized matches |
+| `bookMetadata.searchCatalog`     | Query | `{ query }`          | Up to 15 catalog matches    |
 
 A title is required and the author is optional. Search uses Open Library relevance matching, then
 ranks exact and near-exact title and author matches ahead of weaker results. Up to 15 distinct
 matches with covers are returned. Returned fields include an Open Library identifier, cover ID,
 title, authors, publication years, available ISBNs, and a derived cover preview URL.
+
+Catalog search accepts a title, author, or ISBN. It returns matching works or editions with
+available authors, publication years, page count, ISBNs, and an optional cover ID. Results without
+covers remain available for metadata prefill.
 
 ## `auth.*`
 

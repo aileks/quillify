@@ -2,15 +2,19 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { BookCatalogSearch } from '@/components/book-catalog-search';
 import { BookForm } from '@/components/book-form';
 import { Button } from '@/components/ui/button';
+import { catalogResultToBookFormValues } from '@/lib/book-catalog';
+import type { BookFormValues, BookInput } from '@/lib/book-validation';
+import type { OpenLibraryCatalogSearchResult } from '@/lib/open-library';
 import { api } from '@/trpc/react';
-import type { BookInput } from '@/lib/book-validation';
 
-const EMPTY_BOOK = {
+const EMPTY_BOOK: BookFormValues = {
   title: '',
   author: '',
   numberOfPages: '',
@@ -27,6 +31,8 @@ interface NewBookFormProps {
 export function NewBookForm({ saying }: NewBookFormProps) {
   const router = useRouter();
   const utils = api.useUtils();
+  const [formDefaults, setFormDefaults] = useState<BookFormValues>(EMPTY_BOOK);
+  const [isEnteringBook, setIsEnteringBook] = useState(false);
 
   const createBook = api.books.create.useMutation({
     onSuccess: (book) => {
@@ -59,6 +65,16 @@ export function NewBookForm({ saying }: NewBookFormProps) {
     createBook.mutate(values);
   };
 
+  const selectCatalogResult = (result: OpenLibraryCatalogSearchResult) => {
+    setFormDefaults(catalogResultToBookFormValues(result));
+    setIsEnteringBook(true);
+  };
+
+  const enterManually = () => {
+    setFormDefaults(EMPTY_BOOK);
+    setIsEnteringBook(true);
+  };
+
   return (
     <div className='container mx-auto flex max-w-4xl flex-col gap-6 px-4 py-6 md:px-6 md:py-10'>
       <div>
@@ -70,16 +86,34 @@ export function NewBookForm({ saying }: NewBookFormProps) {
         </Button>
       </div>
 
-      <BookForm
-        defaultValues={EMPTY_BOOK}
-        title='Add New Book'
-        saying={saying}
-        actionLabel='Add Book'
-        pendingLabel='Adding...'
-        isPending={createBook.isPending}
-        onSubmit={createReadingListBook}
-        onCancel={() => router.push('/books')}
-      />
+      <div hidden={isEnteringBook}>
+        <BookCatalogSearch
+          saying={saying}
+          onSelect={selectCatalogResult}
+          onManualEntry={enterManually}
+        />
+      </div>
+
+      {isEnteringBook && (
+        <div className='flex flex-col gap-6'>
+          <div>
+            <Button type='button' variant='outline' onClick={() => setIsEnteringBook(false)}>
+              <Search data-icon='inline-start' />
+              Search again
+            </Button>
+          </div>
+          <BookForm
+            defaultValues={formDefaults}
+            title='Add New Book'
+            saying={saying}
+            actionLabel='Add Book'
+            pendingLabel='Adding...'
+            isPending={createBook.isPending}
+            onSubmit={createReadingListBook}
+            onCancel={() => router.push('/books')}
+          />
+        </div>
+      )}
     </div>
   );
 }

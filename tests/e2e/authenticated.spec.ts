@@ -68,6 +68,8 @@ test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) =
 
   await page.goto('/books/new');
   await expect(page.getByRole('heading', { name: 'Add New Book' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Search books' })).toBeVisible();
+  await page.getByRole('button', { name: 'Enter manually' }).click();
   await expect(page.getByRole('textbox', { name: 'Title' }).first()).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Author' }).first()).toBeVisible();
   await expect(page.getByRole('spinbutton', { name: 'Pages' }).first()).toBeVisible();

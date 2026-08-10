@@ -272,9 +272,8 @@ export function normalizeOpenLibraryCatalogSearchResponse(
   return results
     .filter(
       (result, index, allResults) =>
-        allResults.findIndex(
-          (candidate) => candidate.openLibraryId === result.openLibraryId
-        ) === index
+        allResults.findIndex((candidate) => candidate.openLibraryId === result.openLibraryId) ===
+        index
     )
     .slice(0, OPEN_LIBRARY_RESULT_LIMIT);
 }

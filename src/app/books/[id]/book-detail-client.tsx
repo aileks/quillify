@@ -27,9 +27,8 @@ import type { BookCreateInput } from '@/lib/book-validation';
 import {
   OWNERSHIP_TYPE_LABELS,
   READING_FORMAT_LABELS,
+  READING_STATUSES,
   READING_STATUS_LABELS,
-  getAllowedReadingStatuses,
-  getToday,
   isTerminalReadingStatus,
   type ReadingPeriodFields,
 } from '@/lib/reading-lifecycle';
@@ -41,22 +40,11 @@ interface BookDetailClientProps {
 }
 
 function getTransitionDefaults(period: ReadingPeriod): ReadingPeriodFields {
-  const nextStatus = getAllowedReadingStatuses(period.status)[0];
-  if (!nextStatus) {
-    throw new Error('Reading period has no valid transition');
-  }
-
-  const startsNewPeriod = isTerminalReadingStatus(period.status);
   return {
-    status: nextStatus,
+    status: period.status,
     format: period.format,
-    startedOn:
-      nextStatus === 'reading' ?
-        startsNewPeriod ? getToday()
-        : period.startedOn
-      : startsNewPeriod ? null
-      : period.startedOn,
-    endedOn: null,
+    startedOn: period.startedOn,
+    endedOn: period.endedOn,
   };
 }
 
@@ -140,6 +128,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
     onSuccess: async ({ currentReadingPeriod }) => {
       toast.success(`Status changed to ${READING_STATUS_LABELS[currentReadingPeriod.status]}`);
       setIsTransitioning(false);
+      setEditingPeriod(null);
       await Promise.all([
         utils.books.getById.invalidate({ id: bookId }),
         utils.books.list.invalidate(),
@@ -188,6 +177,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
       coverSource: data.coverSource,
       coverSourceId: data.coverSourceId,
       ownershipType: data.ownershipType,
+      readingDetails: data.readingDetails,
     });
   }
 
@@ -245,7 +235,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
               coverSource: book.coverSource === 'open_library' ? 'open_library' : null,
               coverSourceId: book.coverSourceId,
               ownershipType: book.ownershipType,
-              includeReadingDetails: false,
+              includeReadingDetails: true,
               readingStatus: book.currentReadingPeriod.status,
               readingFormat: book.currentReadingPeriod.format ?? '',
               startedOn: book.currentReadingPeriod.startedOn ?? '',
@@ -256,6 +246,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
             actionLabel='Save Changes'
             pendingLabel='Saving...'
             isPending={updateBook.isPending}
+            readingDetailsMode='required'
             onSubmit={onSubmit}
             onCancel={() => setIsEditing(false)}
           />
@@ -365,9 +356,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
                 disabled={transitionStatus.isPending}
                 className='flex-1 sm:flex-none'
               >
-                {isTerminalReadingStatus(book.currentReadingPeriod.status) ?
-                  'Read Again'
-                : 'Update Status'}
+                Update Status
               </Button>
 
               <Button
@@ -462,14 +451,10 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
 
       {isTransitioning && (
         <ReadingPeriodDialog
-          title={
-            isTerminalReadingStatus(book.currentReadingPeriod.status) ?
-              `Read ${book.title} again`
-            : `Update ${book.title}`
-          }
-          description='Choose the next status and keep any dates or format you want to remember.'
+          title={`Update ${book.title}`}
+          description='Choose a status and keep any dates or format you want to remember.'
           submitLabel='Save Status'
-          statuses={getAllowedReadingStatuses(book.currentReadingPeriod.status)}
+          statuses={[...READING_STATUSES]}
           defaultValues={getTransitionDefaults(book.currentReadingPeriod)}
           isPending={transitionStatus.isPending}
           onClose={() => setIsTransitioning(false)}
@@ -483,7 +468,8 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
           description='Correct this reading period without removing it from your history.'
           submitLabel='Save Details'
           statuses={
-            isTerminalReadingStatus(editingPeriod.status) ?
+            editingPeriod.isCurrent ? [...READING_STATUSES]
+            : isTerminalReadingStatus(editingPeriod.status) ?
               ['finished', 'did_not_finish']
             : [editingPeriod.status]
           }
@@ -493,9 +479,15 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
             startedOn: editingPeriod.startedOn,
             endedOn: editingPeriod.endedOn,
           }}
-          isPending={updateReadingPeriod.isPending}
+          isPending={
+            editingPeriod.isCurrent ? transitionStatus.isPending : updateReadingPeriod.isPending
+          }
           onClose={() => setEditingPeriod(null)}
-          onSubmit={(values) => updateReadingPeriod.mutate({ id: editingPeriod.id, ...values })}
+          onSubmit={(values) =>
+            editingPeriod.isCurrent ?
+              transitionStatus.mutate({ bookId: book.id, ...values })
+            : updateReadingPeriod.mutate({ id: editingPeriod.id, ...values })
+          }
         />
       )}
     </div>

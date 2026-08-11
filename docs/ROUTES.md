@@ -48,10 +48,11 @@ Every books procedure is protected.
 `books.list` defaults to page 1 and 12 rows. The UI always requests 12. Search covers title,
 author, and genre. The server clamps pages beyond the last available page.
 
-Status changes follow the guided lifecycle. Active periods change in place. Moving from Finished
-or Did Not Finish to To Read or Reading creates a new current period and preserves the old one.
-Calendar dates are optional, cannot be in the future, and must remain ordered. Historical
-corrections can switch only between Finished and Did Not Finish outcomes.
+Every current period can move directly to any reading status. Active periods and completed-outcome
+corrections change in place. Moving from Finished or Did Not Finish to To Read, Reading, or Paused
+creates a new current period and preserves the old one. Calendar dates are optional, cannot be in
+the future, and must remain ordered. Historical corrections can switch only between Finished and
+Did Not Finish outcomes.
 
 Shared book validation limits:
 

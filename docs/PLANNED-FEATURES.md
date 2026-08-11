@@ -59,10 +59,10 @@ These features remove adoption barriers and establish the data needed by every l
 **User problem:** A binary `To Read` or `Finished` state cannot represent active, paused, abandoned, or
 repeated reading. It also loses when reading happened.
 
-**Implemented foundation:** Books now have a guided five-state lifecycle, ownership, optional format
-and calendar dates, and preserved reading periods. Finished and Did Not Finish books can start a new
-To Read or Reading period without overwriting earlier history. Readers can correct dates, format,
-and completed outcomes from the book detail page.
+**Implemented foundation:** Books now have a flexible five-state lifecycle, ownership, optional
+format and calendar dates, and preserved reading periods. Finished and Did Not Finish books start a
+new period when moved back to an active status without overwriting earlier history. Readers can edit
+current reading details with the book or correct completed history from the detail page.
 
 **Planned experience:**
 

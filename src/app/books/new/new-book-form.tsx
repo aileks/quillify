@@ -115,7 +115,7 @@ export function NewBookForm({ saying }: NewBookFormProps) {
             actionLabel='Add Book'
             pendingLabel='Adding...'
             isPending={createBook.isPending}
-            showReadingDetails
+            readingDetailsMode='optional'
             onSubmit={createReadingListBook}
             onCancel={() => router.push('/books')}
           />

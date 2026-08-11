@@ -51,6 +51,7 @@ import {
   READING_FORMAT_LABELS,
   READING_STATUSES,
   READING_STATUS_LABELS,
+  getReadingDatesAfterStatusChange,
   getToday,
   isTerminalReadingStatus,
   type ReadingStatus,
@@ -63,7 +64,7 @@ interface BookFormProps {
   actionLabel: string;
   pendingLabel: string;
   isPending: boolean;
-  showReadingDetails?: boolean;
+  readingDetailsMode?: 'hidden' | 'optional' | 'required';
   onSubmit: (values: BookCreateInput) => void;
   onCancel: () => void;
 }
@@ -75,7 +76,7 @@ export function BookForm({
   actionLabel,
   pendingLabel,
   isPending,
-  showReadingDetails = false,
+  readingDetailsMode = 'hidden',
   onSubmit,
   onCancel,
 }: BookFormProps) {
@@ -94,6 +95,9 @@ export function BookForm({
     name: 'includeReadingDetails',
   });
   const readingStatus = useWatch({ control: form.control, name: 'readingStatus' });
+  const showsReadingDetails =
+    readingDetailsMode === 'required' ||
+    (readingDetailsMode === 'optional' && includeReadingDetails);
 
   const selectCover = (coverSourceId: string | null) => {
     form.setValue('coverSource', coverSourceId ? 'open_library' : null, {
@@ -108,7 +112,17 @@ export function BookForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((values) => onSubmit(toBookInput(values)))}>
+      <form
+        onSubmit={form.handleSubmit((values) =>
+          onSubmit(
+            toBookInput({
+              ...values,
+              includeReadingDetails:
+                readingDetailsMode === 'required' || values.includeReadingDetails,
+            })
+          )
+        )}
+      >
         <Card className='rounded-sm'>
           <CardHeader>
             <CardTitle>
@@ -247,7 +261,7 @@ export function BookForm({
               )}
             />
 
-            {showReadingDetails && (
+            {readingDetailsMode === 'optional' && (
               <FormField
                 control={form.control}
                 name='includeReadingDetails'
@@ -266,7 +280,7 @@ export function BookForm({
               />
             )}
 
-            {showReadingDetails && includeReadingDetails && (
+            {showsReadingDetails && (
               <div className='border-foreground/10 flex flex-col gap-6 rounded-sm border p-4'>
                 <FormField
                   control={form.control}
@@ -277,17 +291,19 @@ export function BookForm({
                       <Select
                         value={field.value}
                         onValueChange={(value: ReadingStatus) => {
+                          const dates = getReadingDatesAfterStatusChange(
+                            field.value,
+                            value,
+                            form.getValues('startedOn') || null,
+                            form.getValues('endedOn') || null
+                          );
                           field.onChange(value);
-                          const today = getToday();
-                          if (value === 'reading' && !form.getValues('startedOn')) {
-                            form.setValue('startedOn', today, { shouldValidate: true });
-                          }
-                          if (isTerminalReadingStatus(value) && !form.getValues('endedOn')) {
-                            form.setValue('endedOn', today, { shouldValidate: true });
-                          }
-                          if (!isTerminalReadingStatus(value)) {
-                            form.setValue('endedOn', '', { shouldValidate: true });
-                          }
+                          form.setValue('startedOn', dates.startedOn ?? '', {
+                            shouldValidate: true,
+                          });
+                          form.setValue('endedOn', dates.endedOn ?? '', {
+                            shouldValidate: true,
+                          });
                         }}
                       >
                         <FormControl>

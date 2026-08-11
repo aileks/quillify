@@ -21,7 +21,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -34,6 +33,7 @@ import {
   READING_FORMATS,
   READING_FORMAT_LABELS,
   READING_STATUS_LABELS,
+  getReadingDatesAfterStatusChange,
   getToday,
   isTerminalReadingStatus,
   readingPeriodFieldsSchema,
@@ -87,17 +87,15 @@ export function ReadingPeriodDialog({
                   <Select
                     value={field.value}
                     onValueChange={(value: ReadingStatus) => {
+                      const dates = getReadingDatesAfterStatusChange(
+                        field.value,
+                        value,
+                        form.getValues('startedOn'),
+                        form.getValues('endedOn')
+                      );
                       field.onChange(value);
-                      const today = getToday();
-                      if (value === 'reading' && !form.getValues('startedOn')) {
-                        form.setValue('startedOn', today, { shouldValidate: true });
-                      }
-                      if (isTerminalReadingStatus(value) && !form.getValues('endedOn')) {
-                        form.setValue('endedOn', today, { shouldValidate: true });
-                      }
-                      if (!isTerminalReadingStatus(value)) {
-                        form.setValue('endedOn', null, { shouldValidate: true });
-                      }
+                      form.setValue('startedOn', dates.startedOn, { shouldValidate: true });
+                      form.setValue('endedOn', dates.endedOn, { shouldValidate: true });
                     }}
                   >
                     <FormControl>

@@ -24,6 +24,14 @@ describe('reading lifecycle', () => {
       readingPeriodFieldsSchema.safeParse({
         status: 'finished',
         format: 'print',
+        startedOn: '2025-02-30',
+        endedOn: null,
+      }).success
+    ).toBe(false);
+    expect(
+      readingPeriodFieldsSchema.safeParse({
+        status: 'finished',
+        format: 'print',
         startedOn: '2026-08-10',
         endedOn: '2026-08-09',
       }).success

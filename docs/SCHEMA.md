@@ -31,11 +31,32 @@ Laravel bcrypt hashes using the `$2y$` prefix remain supported by
 | `publishYear`   | integer     | not null                                        |
 | `coverSource`   | text        | nullable, currently `open_library`              |
 | `coverSourceId` | text        | nullable Open Library cover ID                  |
-| `isRead`        | boolean     | not null, defaults to false                     |
+| `ownershipType` | enum        | not null, defaults to `unknown`                 |
 | `createdAt`     | timestamptz | not null, defaults to now                       |
 | `updatedAt`     | timestamptz | not null, defaults to now                       |
 
 Book bounds are enforced by shared Zod schemas in `src/lib/book-validation.ts`.
+
+Ownership values are `unknown`, `owned`, `borrowed`, `library`, and `subscription`. Ownership is
+book-level metadata and does not change when a new reading period begins.
+
+## `reading_periods`
+
+| Column      | Type        | Constraints                                     |
+| ----------- | ----------- | ----------------------------------------------- |
+| `id`        | text        | primary key                                     |
+| `bookId`    | text        | not null, references `books.id`, cascade delete |
+| `status`    | enum        | not null, defaults to `to_read`                 |
+| `format`    | enum        | nullable                                        |
+| `startedOn` | date        | nullable                                        |
+| `endedOn`   | date        | nullable                                        |
+| `isCurrent` | boolean     | not null, defaults to true                      |
+| `createdAt` | timestamptz | not null, defaults to now                       |
+| `updatedAt` | timestamptz | not null, defaults to now                       |
+
+Status values are `to_read`, `reading`, `paused`, `finished`, and `did_not_finish`. Format values
+are `print`, `ebook`, and `audiobook`. A partial unique index allows at most one current reading
+period per book. Finished and Did Not Finish periods remain as history when a reread begins.
 
 ## `password_reset_tokens`
 
@@ -66,9 +87,10 @@ deletes every outstanding verification token for that user.
 ## Relationships
 
 - A user has many books
+- A book has many reading periods and exactly one current period under application invariants
 - A user has many password reset token attempts
 - A user has many email verification token attempts
-- Deleting a user cascades to all three related tables
+- Deleting a user cascades through books to reading periods and directly to both token tables
 
 ## Migrations
 
@@ -82,5 +104,7 @@ Migrations live in `src/server/drizzle/`.
 - Migration `0010` invalidates existing reset and verification links before renaming plaintext token
   columns to `tokenHash`.
 - Migration `0011` adds nullable cover source and cover ID columns to books.
+- Migration `0012` adds lifecycle enums, ownership, and reading periods; backfills every existing
+  book from `isRead`; then removes the binary column.
 
 The daily cron route removes expired rows from both token tables.

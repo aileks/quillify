@@ -13,7 +13,7 @@
 | `/account/settings`        | Protected | Update name, email, password, or delete the account |
 | `/books`                   | Protected | Browse, search, filter, sort, select, and paginate  |
 | `/books/new`               | Protected | Add a book                                          |
-| `/books/[id]`              | Protected | View, update, finish, or delete a book              |
+| `/books/[id]`              | Protected | View, edit, track, reread, or delete a book         |
 
 Protected `/books` routes are enforced in `src/app/books/layout.tsx`. Account settings performs its
 own server redirect.
@@ -33,19 +33,25 @@ The cron route requires `Authorization: Bearer <CRON_SECRET>`.
 
 Every books procedure is protected.
 
-| Procedure          | Kind     | Input                                         | Result                                           |
-| ------------------ | -------- | --------------------------------------------- | ------------------------------------------------ |
-| `books.stats`      | Query    | None                                          | Totals, page counts, genres, years, recent books |
-| `books.list`       | Query    | Search, status, genres, sort, page, page size | Paginated library                                |
-| `books.getById`    | Query    | `{ id }`                                      | Owned book or `NOT_FOUND`                        |
-| `books.create`     | Mutation | Book fields and optional Open Library cover   | Created book                                     |
-| `books.update`     | Mutation | `{ id }` plus optional editable fields        | Updated owned book                               |
-| `books.setRead`    | Mutation | `{ id, isRead }`                              | Updated owned book                               |
-| `books.remove`     | Mutation | `{ id }`                                      | Removed ID                                       |
-| `books.removeMany` | Mutation | `{ ids }`, 1-100 unique IDs                   | Atomically removed IDs                           |
+| Procedure                   | Kind     | Input                                             | Result                                  |
+| --------------------------- | -------- | ------------------------------------------------- | --------------------------------------- |
+| `books.stats`               | Query    | None                                              | Library, lifecycle, and reading totals  |
+| `books.list`                | Query    | Search, status, genres, sort, page, page size     | Paginated books with current periods    |
+| `books.getById`             | Query    | `{ id }`                                          | Owned book, current period, and history |
+| `books.create`              | Mutation | Book, ownership, optional initial reading details | Created book and current period         |
+| `books.update`              | Mutation | `{ id }` plus editable metadata and ownership     | Updated owned book                      |
+| `books.transitionStatus`    | Mutation | Book ID, next status, format, and optional dates  | Updated or new current period           |
+| `books.updateReadingPeriod` | Mutation | Period ID, outcome, format, and optional dates    | Corrected owned period                  |
+| `books.remove`              | Mutation | `{ id }`                                          | Removed ID                              |
+| `books.removeMany`          | Mutation | `{ ids }`, 1-100 unique IDs                       | Atomically removed IDs                  |
 
 `books.list` defaults to page 1 and 12 rows. The UI always requests 12. Search covers title,
 author, and genre. The server clamps pages beyond the last available page.
+
+Status changes follow the guided lifecycle. Active periods change in place. Moving from Finished
+or Did Not Finish to To Read or Reading creates a new current period and preserves the old one.
+Calendar dates are optional, cannot be in the future, and must remain ordered. Historical
+corrections can switch only between Finished and Did Not Finish outcomes.
 
 Shared book validation limits:
 

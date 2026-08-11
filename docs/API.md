@@ -28,6 +28,10 @@ Client code must import `AppRouter` with `import type`. A runtime import from
 Inputs are validated with Zod. The error formatter exposes flattened Zod errors to typed clients.
 Expected failures use `TRPCError`.
 
+Book creation and reading-status transitions use database transactions so every book receives a
+current reading period and rereads replace the current marker atomically. Book ownership is checked
+before lifecycle history is returned or changed.
+
 ## Transport
 
 - SuperJSON serializes dates and other non-JSON-native values

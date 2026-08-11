@@ -411,6 +411,10 @@ export const booksRouter = createTRPCRouter({
         .where(eq(readingPeriods.id, input.id))
         .returning();
 
+      if (!updated) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      }
+
       return updated;
     }),
 

@@ -32,7 +32,6 @@ import {
   getToday,
   isTerminalReadingStatus,
   type ReadingPeriodFields,
-  type ReadingStatus,
 } from '@/lib/reading-lifecycle';
 import type { ReadingPeriod } from '@/types';
 

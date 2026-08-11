@@ -43,6 +43,7 @@ export const OWNERSHIP_TYPE_LABELS: Record<OwnershipType, string> = {
 const calendarDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter a valid date')
+  .refine(isValidCalendarDate, 'Enter a valid date')
   .refine((value) => value <= getToday(), 'Date cannot be in the future');
 
 const readingPeriodFieldsObjectSchema = z.object({
@@ -116,4 +117,16 @@ function validateReadingDates(
       path: ['endedOn'],
     });
   }
+}
+
+function isValidCalendarDate(value: string): boolean {
+  const [year, month, day] = value.split('-').map(Number);
+  if (year === undefined || month === undefined || day === undefined) {
+    return false;
+  }
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+  );
 }

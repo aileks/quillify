@@ -9,8 +9,9 @@ finished reads, and track reading statistics without turning the process into a 
 
 - Personal library with search, genre and status filters, sorting, and 12-book pagination
 - Shared, validated add and edit flows
-- To Read and Finished states with optimistic updates
-- Dashboard statistics, top genres, publication range, and recent additions
+- To Read, Reading, Paused, Finished, and Did Not Finish states with reread history
+- Optional reading dates, format, ownership, and corrected historical periods
+- Dashboard statistics, reading-status totals, top genres, publication range, and recent additions
 - Email and password authentication with optional email verification
 - Rate-limited password reset and verification links
 - Responsive navigation with a keyboard-resizable desktop sidebar

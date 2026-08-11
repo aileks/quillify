@@ -2451,10 +2451,11 @@ async function seed() {
           const insertedBooks = await tx
             .insert(books)
             .values(
-              batch.map(({ isRead: _isRead, ...book }, batchIndex) => ({
+              batch.map(({ isRead, ...book }, batchIndex) => ({
                 userId: demoUser!.id,
                 ...book,
-                ownershipType: batchIndex % 4 === 0 ? ('owned' as const) : ('unknown' as const),
+                ownershipType:
+                  isRead || batchIndex % 4 === 0 ? ('owned' as const) : ('unknown' as const),
                 createdAt: randomTimestamps[i + batchIndex],
               }))
             )

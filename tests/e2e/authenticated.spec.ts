@@ -97,6 +97,10 @@ test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) =
   await expect(page.getByRole('textbox', { name: 'Author' }).first()).toBeVisible();
   await expect(page.getByRole('spinbutton', { name: 'Pages' }).first()).toBeVisible();
   await expect(page.getByRole('spinbutton', { name: 'Publication Year' }).first()).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Ownership' }).first()).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Add reading details' }).check();
+  await expect(page.getByRole('combobox', { name: 'Status' }).last()).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Format' })).toBeVisible();
 
   const genreTrigger = page.getByRole('combobox', { name: 'Genre' }).first();
   const genreBounds = await genreTrigger.boundingBox();
@@ -104,12 +108,18 @@ test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) =
 
   await page.goto(firstBookHref!);
   await expect(page.getByTestId('book-cover-image')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Reading History' })).toBeVisible();
+  await page.getByRole('button', { name: /Update Status|Read Again/ }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Status' })).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel' }).click();
   await page.getByRole('button', { name: /^Edit / }).click();
   await expect(page.getByRole('heading', { name: /^Editing / })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Title' }).first()).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Author' }).first()).toBeVisible();
   await expect(page.getByRole('spinbutton', { name: 'Pages' }).first()).toBeVisible();
   await expect(page.getByRole('spinbutton', { name: 'Publication Year' }).first()).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Ownership' }).first()).toBeVisible();
 
   if (testInfo.project.name === 'chromium') {
     await page.screenshot({ path: 'test-results/audit-edit-book.png', fullPage: true });

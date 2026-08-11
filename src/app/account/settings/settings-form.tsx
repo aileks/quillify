@@ -123,7 +123,8 @@ export function SettingsForm() {
   });
 
   const updateName = api.auth.updateName.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      await update();
       toast.success('Name updated successfully');
     },
     onError: (error) => {

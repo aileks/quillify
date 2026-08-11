@@ -20,7 +20,7 @@ export default async function Home() {
     void api.books.stats.prefetch();
     return (
       <HydrateClient>
-        <HomeDashboard userName={userName} subtitle={subtitle} />
+        <HomeDashboard initialUserName={userName} subtitle={subtitle} />
       </HydrateClient>
     );
   }

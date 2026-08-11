@@ -312,7 +312,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
           <h1 className='font-serif text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
             My Library
           </h1>
-          <p className='text-muted-foreground mt-2 text-sm'>{subtitle}</p>
+          <p className='text-muted-foreground mt-2 text-base sm:text-lg md:text-xl'>{subtitle}</p>
         </div>
 
         <div className='flex w-full gap-2 sm:w-auto'>

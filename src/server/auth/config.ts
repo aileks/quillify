@@ -142,10 +142,11 @@ export const authConfig = {
         try {
           const userRecord = await db.query.users.findFirst({
             where: eq(users.id, token.id as string),
-            columns: { email: true, emailVerifiedAt: true },
+            columns: { name: true, email: true, emailVerifiedAt: true },
           });
 
           if (userRecord) {
+            token.name = userRecord.name;
             token.email = userRecord.email;
             (token as { emailVerified?: boolean }).emailVerified = !!userRecord.emailVerifiedAt;
           }
@@ -186,6 +187,7 @@ export const authConfig = {
       user: {
         ...session.user,
         id: token.id as string,
+        name: token.name,
         email: token.email,
         emailVerified: (token as { emailVerified?: boolean }).emailVerified ?? false,
       },

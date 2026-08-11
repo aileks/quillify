@@ -1,18 +1,22 @@
 'use client';
 
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+
 import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface HomeDashboardProps {
-  userName: string;
+  initialUserName: string;
   subtitle: string;
 }
 
-export function HomeDashboard({ userName, subtitle }: HomeDashboardProps) {
+export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps) {
+  const { data: session } = useSession();
   const { data: stats, isLoading } = api.books.stats.useQuery();
+  const userName = session?.user?.name || session?.user?.email?.split('@')[0] || initialUserName;
 
   if (isLoading || !stats) {
     return (

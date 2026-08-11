@@ -51,6 +51,10 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       links: [
         loggerLink({
           enabled: (op) => {
+            if (process.env.NODE_ENV !== 'development') {
+              return false;
+            }
+
             // Skip logging NOT_FOUND errors (handled gracefully by the app)
             if (op.direction === 'down' && op.result instanceof Error) {
               const trpcError = op.result as TRPCClientError<AppRouter>;
@@ -58,10 +62,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
                 return false;
               }
             }
-            return (
-              process.env.NODE_ENV === 'development' ||
-              (op.direction === 'down' && op.result instanceof Error)
-            );
+            return true;
           },
         }),
         httpBatchStreamLink({

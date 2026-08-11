@@ -8,6 +8,12 @@ import type { AuthUser } from '@/types';
 import { users } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
 
+const silentLogger = {
+  debug() {},
+  error() {},
+  warn() {},
+};
+
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
  * object and keep type safety.
@@ -36,6 +42,7 @@ declare module 'next-auth' {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig = {
+  logger: process.env.NODE_ENV === 'production' ? silentLogger : undefined,
   providers: [
     Credentials({
       name: 'credentials',

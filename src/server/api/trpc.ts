@@ -61,6 +61,10 @@ export const createTRPCRouter = t.router;
  * Middleware for timing procedure execution.
  */
 const timingMiddleware = t.middleware(async ({ next, path }) => {
+  if (process.env.NODE_ENV !== 'development') {
+    return next();
+  }
+
   const start = Date.now();
 
   const result = await next();

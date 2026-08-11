@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+import { DEMO_COVER_IDS } from './demo-cover-ids';
 import { users, books, readingPeriods } from '../src/server/db/schema';
-import { searchOpenLibrary } from '../src/server/services/book-metadata/open-library';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
@@ -386,11 +386,11 @@ const DEMO_BOOKS = [
     isRead: false,
   },
   {
-    title: 'Plenty',
+    title: 'Plenty More',
     author: 'Yotam Ottolenghi',
-    numberOfPages: 288,
+    numberOfPages: 352,
     genre: 'Cooking/Food',
-    publishYear: 2010,
+    publishYear: 2014,
     isRead: true,
   },
 
@@ -2311,79 +2311,18 @@ const DEMO_BOOKS = [
 
 const DEMO_BOOK_LIMIT = 100;
 const DEMO_BOOKS_TO_SEED = DEMO_BOOKS.slice(0, DEMO_BOOK_LIMIT);
-const COVER_SEARCH_TITLE_OVERRIDES: Record<string, string> = {
-  'Einstein: His Life and Universe': 'Einstein',
-  'Sandman Vol. 1: Preludes & Nocturnes': 'Preludes & Nocturnes',
-};
-const COVER_ID_OVERRIDES: Record<string, string> = {
-  'The Three Musketeers': '15103947',
-};
-const COVER_LOOKUP_BATCH_SIZE = 3;
-const COVER_LOOKUP_BATCH_DELAY_MS = 1_000;
-
-async function addOpenLibraryCovers() {
-  const booksWithCovers = [];
-  let matchedCoverCount = 0;
-  let failedLookupCount = 0;
-
-  for (let index = 0; index < DEMO_BOOKS_TO_SEED.length; index += COVER_LOOKUP_BATCH_SIZE) {
-    const batch = DEMO_BOOKS_TO_SEED.slice(index, index + COVER_LOOKUP_BATCH_SIZE);
-    const matchedBooks = await Promise.all(
-      batch.map(async (book) => {
-        const coverIdOverride = COVER_ID_OVERRIDES[book.title];
-        if (coverIdOverride) {
-          matchedCoverCount += 1;
-          return {
-            ...book,
-            coverSource: 'open_library' as const,
-            coverSourceId: coverIdOverride,
-          };
-        }
-
-        try {
-          const searchTitle = COVER_SEARCH_TITLE_OVERRIDES[book.title] ?? book.title;
-          const [authorMatch] = await searchOpenLibrary({
-            title: searchTitle,
-            author: book.author,
-          });
-          const match =
-            authorMatch ??
-            (
-              await searchOpenLibrary({
-                title: searchTitle,
-              })
-            )[0];
-
-          if (!match) {
-            return book;
-          }
-
-          matchedCoverCount += 1;
-          return {
-            ...book,
-            coverSource: 'open_library' as const,
-            coverSourceId: match.coverId,
-          };
-        } catch {
-          failedLookupCount += 1;
-          return book;
-        }
-      })
-    );
-
-    booksWithCovers.push(...matchedBooks);
-
-    if (index + COVER_LOOKUP_BATCH_SIZE < DEMO_BOOKS_TO_SEED.length) {
-      await new Promise((resolve) => setTimeout(resolve, COVER_LOOKUP_BATCH_DELAY_MS));
-    }
+const DEMO_BOOKS_WITH_COVERS = DEMO_BOOKS_TO_SEED.map((book) => {
+  const coverSourceId = DEMO_COVER_IDS[book.title];
+  if (!coverSourceId) {
+    throw new Error(`Missing demo cover ID for ${book.title}`);
   }
 
-  console.log(`Matched Open Library covers for ${matchedCoverCount} books`);
-  if (failedLookupCount > 0) {
-    console.warn(`Open Library cover lookup failed for ${failedLookupCount} books`);
-  }
-  return booksWithCovers;
-}
+  return {
+    ...book,
+    coverSource: 'open_library' as const,
+    coverSourceId,
+  };
+});
 
 async function seed() {
   const forceReseed = process.argv.includes('--force');
@@ -2441,12 +2380,10 @@ async function seed() {
       const randomTimestamps = DEMO_BOOKS_TO_SEED.map(
         () => new Date(now - Math.random() * twoYearsMs)
       );
-      const demoBooksWithCovers = await addOpenLibraryCovers();
-
       // Create books in batches for better performance
       const batchSize = 50;
-      for (let i = 0; i < demoBooksWithCovers.length; i += batchSize) {
-        const batch = demoBooksWithCovers.slice(i, i + batchSize);
+      for (let i = 0; i < DEMO_BOOKS_WITH_COVERS.length; i += batchSize) {
+        const batch = DEMO_BOOKS_WITH_COVERS.slice(i, i + batchSize);
         await db.transaction(async (tx) => {
           const insertedBooks = await tx
             .insert(books)

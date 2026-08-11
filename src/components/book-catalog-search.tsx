@@ -45,9 +45,11 @@ interface BookCatalogSearchProps {
 function CatalogResult({
   result,
   onSelect,
+  loading,
 }: {
   result: OpenLibraryCatalogSearchResult;
   onSelect: () => void;
+  loading: 'eager' | 'lazy';
 }) {
   const authorNames = result.authors.join(', ') || 'Author unavailable';
   const publicationYear = result.editionPublicationYear ?? result.firstPublicationYear;
@@ -70,6 +72,7 @@ function CatalogResult({
           title={result.title}
           author={authorNames}
           sizes='80px'
+          loading={loading}
           className='w-20 shrink-0'
         />
         <span className='flex min-w-0 flex-col gap-2 py-1'>
@@ -191,11 +194,12 @@ export function BookCatalogSearch({ saying, onSelect, onManualEntry }: BookCatal
 
         {results.length > 0 && !search.isFetching && !search.error && (
           <ul className='grid gap-3 md:grid-cols-2' aria-label='Catalog results'>
-            {results.map((result) => (
+            {results.map((result, index) => (
               <CatalogResult
                 key={result.openLibraryId}
                 result={result}
                 onSelect={() => onSelect(result)}
+                loading={index < 2 ? 'eager' : 'lazy'}
               />
             ))}
           </ul>

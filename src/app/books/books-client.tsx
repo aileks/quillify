@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 
 import { api } from '@/trpc/react';
 import { BookCover } from '@/components/book-cover';
+import { ReadingStatusBadge } from '@/components/reading-status-badge';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -25,7 +26,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -128,16 +128,7 @@ function BookCatalogCard({
             <span className='text-muted-foreground font-mono text-[10px] tracking-wider uppercase'>
               Status
             </span>
-            <Badge
-              variant={
-                book.currentReadingPeriod.status === 'did_not_finish' ? 'outline'
-                : book.currentReadingPeriod.status === 'finished' ?
-                  'default'
-                : 'secondary'
-              }
-            >
-              {READING_STATUS_LABELS[book.currentReadingPeriod.status]}
-            </Badge>
+            <ReadingStatusBadge status={book.currentReadingPeriod.status} />
           </div>
         </div>
       </article>

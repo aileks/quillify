@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronDown, Search } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
+import { ReadingStatusBadge } from '@/components/reading-status-badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -144,9 +144,7 @@ function LibraryBookCard({ book, className }: { book: LandingBook; className?: s
         <span className='text-muted-foreground font-mono text-[10px] tracking-wider uppercase'>
           Status
         </span>
-        <Badge variant='outline' className='text-primary border-primary/40 rounded-sm'>
-          To Read
-        </Badge>
+        <ReadingStatusBadge status='to_read' />
       </div>
     </article>
   );

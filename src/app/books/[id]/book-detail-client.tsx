@@ -9,6 +9,7 @@ import { api } from '@/trpc/react';
 import { BookCover } from '@/components/book-cover';
 import { BookForm } from '@/components/book-form';
 import { ReadingPeriodDialog } from '@/components/reading-period-dialog';
+import { ReadingStatusBadge } from '@/components/reading-status-badge';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -330,16 +331,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
                 <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
                   Status
                 </span>
-                <Badge
-                  variant={
-                    book.currentReadingPeriod.status === 'did_not_finish' ? 'outline'
-                    : book.currentReadingPeriod.status === 'finished' ?
-                      'default'
-                    : 'secondary'
-                  }
-                >
-                  {READING_STATUS_LABELS[book.currentReadingPeriod.status]}
-                </Badge>
+                <ReadingStatusBadge status={book.currentReadingPeriod.status} />
                 <span className='text-muted-foreground text-sm'>
                   {book.currentReadingPeriod.format ?
                     READING_FORMAT_LABELS[book.currentReadingPeriod.format]
@@ -422,9 +414,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
                     <span className='font-medium'>
                       Reading {book.readingPeriods.length - index}
                     </span>
-                    <Badge variant={period.isCurrent ? 'default' : 'secondary'}>
-                      {READING_STATUS_LABELS[period.status]}
-                    </Badge>
+                    <ReadingStatusBadge status={period.status} />
                     {period.isCurrent && <Badge variant='outline'>Current</Badge>}
                   </div>
                   <p className='text-muted-foreground text-sm'>

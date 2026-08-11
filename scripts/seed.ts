@@ -2311,6 +2311,9 @@ const DEMO_BOOKS = [
 
 const DEMO_BOOK_LIMIT = 100;
 const DEMO_BOOKS_TO_SEED = DEMO_BOOKS.slice(0, DEMO_BOOK_LIMIT);
+const DAY_MS = 24 * 60 * 60 * 1_000;
+const SEED_OWNERSHIP_TYPES = ['owned', 'borrowed', 'library', 'subscription', 'unknown'] as const;
+const SEED_READING_FORMATS = ['print', 'ebook', 'audiobook'] as const;
 const DEMO_BOOKS_WITH_COVERS = DEMO_BOOKS_TO_SEED.map((book) => {
   const coverSourceId = DEMO_COVER_IDS[book.title];
   if (!coverSourceId) {
@@ -2323,6 +2326,70 @@ const DEMO_BOOKS_WITH_COVERS = DEMO_BOOKS_TO_SEED.map((book) => {
     coverSourceId,
   };
 });
+
+function getSeedReadingStatus(book: (typeof DEMO_BOOKS_TO_SEED)[number], libraryIndex: number) {
+  if (book.isRead) return 'finished' as const;
+  if (libraryIndex % 23 === 0) return 'did_not_finish' as const;
+  if (libraryIndex % 17 === 0) return 'paused' as const;
+  if (libraryIndex % 11 === 0) return 'reading' as const;
+  return 'to_read' as const;
+}
+
+function getCalendarDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function getSeedReadingPeriods(
+  bookId: string,
+  sourceBook: (typeof DEMO_BOOKS_WITH_COVERS)[number],
+  libraryIndex: number,
+  bookCreatedAt: Date
+) {
+  const status = getSeedReadingStatus(sourceBook, libraryIndex);
+  const format = SEED_READING_FORMATS[libraryIndex % SEED_READING_FORMATS.length]!;
+  const startedAt = new Date(bookCreatedAt.getTime() + 14 * DAY_MS);
+  const endedAt = new Date(bookCreatedAt.getTime() + 45 * DAY_MS);
+  const isTerminal = status === 'finished' || status === 'did_not_finish';
+  const currentPeriod = {
+    bookId,
+    status,
+    format,
+    startedOn: status === 'to_read' ? null : getCalendarDate(startedAt),
+    endedOn: isTerminal ? getCalendarDate(endedAt) : null,
+    isCurrent: true,
+    createdAt: status === 'to_read' ? bookCreatedAt : startedAt,
+    updatedAt: isTerminal ? endedAt : startedAt,
+  };
+
+  if (!sourceBook.isRead || libraryIndex % 10 !== 0) {
+    return [currentPeriod];
+  }
+
+  const previousStartedAt = new Date(bookCreatedAt.getTime() + 7 * DAY_MS);
+  const previousEndedAt = new Date(bookCreatedAt.getTime() + 28 * DAY_MS);
+  const rereadStartedAt = new Date(bookCreatedAt.getTime() + 70 * DAY_MS);
+  const rereadEndedAt = new Date(bookCreatedAt.getTime() + 95 * DAY_MS);
+
+  return [
+    {
+      bookId,
+      status: 'finished' as const,
+      format,
+      startedOn: getCalendarDate(previousStartedAt),
+      endedOn: getCalendarDate(previousEndedAt),
+      isCurrent: false,
+      createdAt: previousStartedAt,
+      updatedAt: previousEndedAt,
+    },
+    {
+      ...currentPeriod,
+      startedOn: getCalendarDate(rereadStartedAt),
+      endedOn: getCalendarDate(rereadEndedAt),
+      createdAt: rereadStartedAt,
+      updatedAt: rereadEndedAt,
+    },
+  ];
+}
 
 async function seed() {
   const forceReseed = process.argv.includes('--force');
@@ -2374,11 +2441,10 @@ async function seed() {
         console.log(`Deleting ${existingBooks.length} existing books...`);
         await db.delete(books).where(eq(books.userId, demoUser!.id));
       }
-      // Generate random timestamps spanning the last 2 years
+      // Keep catalog order and lifecycle dates deterministic for repeatable demo data.
       const now = Date.now();
-      const twoYearsMs = 2 * 365 * 24 * 60 * 60 * 1000;
-      const randomTimestamps = DEMO_BOOKS_TO_SEED.map(
-        () => new Date(now - Math.random() * twoYearsMs)
+      const bookCreatedAtDates = DEMO_BOOKS_TO_SEED.map(
+        (_, libraryIndex) => new Date(now - (180 + libraryIndex * 3) * DAY_MS)
       );
       // Create books in batches for better performance
       const batchSize = 50;
@@ -2388,35 +2454,32 @@ async function seed() {
           const insertedBooks = await tx
             .insert(books)
             .values(
-              batch.map(({ isRead, ...book }, batchIndex) => ({
+              batch.map((book, batchIndex) => ({
                 userId: demoUser!.id,
-                ...book,
+                title: book.title,
+                author: book.author,
+                numberOfPages: book.numberOfPages,
+                genre: book.genre,
+                publishYear: book.publishYear,
+                coverSource: book.coverSource,
+                coverSourceId: book.coverSourceId,
                 ownershipType:
-                  isRead || batchIndex % 4 === 0 ? ('owned' as const) : ('unknown' as const),
-                createdAt: randomTimestamps[i + batchIndex],
+                  SEED_OWNERSHIP_TYPES[(i + batchIndex) % SEED_OWNERSHIP_TYPES.length]!,
+                createdAt: bookCreatedAtDates[i + batchIndex],
               }))
             )
             .returning({ id: books.id });
 
           await tx.insert(readingPeriods).values(
-            insertedBooks.map(({ id }, batchIndex) => {
+            insertedBooks.flatMap(({ id }, batchIndex) => {
               const sourceBook = batch[batchIndex]!;
               const libraryIndex = i + batchIndex;
-              const status =
-                sourceBook.isRead ? ('finished' as const)
-                : libraryIndex % 23 === 0 ? ('did_not_finish' as const)
-                : libraryIndex % 17 === 0 ? ('paused' as const)
-                : libraryIndex % 11 === 0 ? ('reading' as const)
-                : ('to_read' as const);
-
-              return {
-                bookId: id,
-                status,
-                format:
-                  libraryIndex % 3 === 0 ? ('print' as const)
-                  : libraryIndex % 3 === 1 ? ('ebook' as const)
-                  : ('audiobook' as const),
-              };
+              return getSeedReadingPeriods(
+                id,
+                sourceBook,
+                libraryIndex,
+                bookCreatedAtDates[libraryIndex]!
+              );
             })
           );
         });
@@ -2440,9 +2503,7 @@ async function seed() {
     console.log(`\nDemo credentials:`);
     console.log(`   Email: ${DEMO_USER.email}`);
     console.log(`   Password: ${DEMO_USER.password}`);
-    console.log(
-      `   Books: ${DEMO_BOOKS_TO_SEED.length} (${DEMO_BOOKS_TO_SEED.filter((b) => b.isRead).length} read, ${DEMO_BOOKS_TO_SEED.filter((b) => !b.isRead).length} unread)`
-    );
+    console.log(`   Books: ${DEMO_BOOKS_TO_SEED.length}`);
     console.log(`\nGenre distribution:`);
     Object.entries(genreCounts)
       .sort((a, b) => b[1] - a[1])

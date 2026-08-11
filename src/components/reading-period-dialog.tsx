@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 
+import { DatePicker } from '@/components/date-picker';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -164,12 +165,14 @@ export function ReadingPeriodDialog({
                   <FormItem data-invalid={fieldState.invalid}>
                     <FormLabel>Started</FormLabel>
                     <FormControl>
-                      <Input
-                        type='date'
+                      <DatePicker
+                        value={field.value}
+                        onValueChange={field.onChange}
                         max={getToday()}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                         aria-invalid={fieldState.invalid}
-                        {...field}
-                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -185,12 +188,14 @@ export function ReadingPeriodDialog({
                     <FormItem data-invalid={fieldState.invalid}>
                       <FormLabel>{status === 'finished' ? 'Finished' : 'Stopped'}</FormLabel>
                       <FormControl>
-                        <Input
-                          type='date'
+                        <DatePicker
+                          value={field.value}
+                          onValueChange={field.onChange}
                           max={getToday()}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                           aria-invalid={fieldState.invalid}
-                          {...field}
-                          value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormMessage />

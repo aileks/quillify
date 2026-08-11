@@ -45,6 +45,38 @@ test('authenticated navigation opens About and returns to the Library', async ({
   );
 });
 
+test('reading dates use the themed calendar picker', async ({ page }) => {
+  await logInWithDemoAccount(page);
+  await page.goto('/books/new');
+  await page.getByRole('button', { name: 'Enter manually' }).click();
+  await page.getByRole('checkbox', { name: 'Add reading details' }).check();
+
+  const startedField = page.locator('[data-slot="form-item"]').filter({ hasText: 'Started' });
+  const dateTrigger = startedField.getByRole('button');
+  await expect(dateTrigger).toContainText('Pick a date');
+
+  await dateTrigger.click();
+  await expect(page.locator('[data-slot="calendar"]')).toBeVisible();
+
+  const today = await page.evaluate(() => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return {
+      dataDay: date.toLocaleDateString(),
+      display: `${month}/${day}/${year}`,
+    };
+  });
+
+  await page.locator(`[data-day="${today.dataDay}"]`).click();
+  await expect(dateTrigger).toContainText(today.display);
+
+  await dateTrigger.click();
+  await page.getByRole('button', { name: 'Clear date' }).click();
+  await expect(dateTrigger).toContainText('Pick a date');
+});
+
 test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) => {
   test.setTimeout(60_000);
 

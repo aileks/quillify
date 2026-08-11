@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 
 import { BookCoverPicker } from '@/components/book-cover-picker';
+import { DatePicker } from '@/components/date-picker';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -354,11 +355,14 @@ export function BookForm({
                       <FormItem data-invalid={fieldState.invalid}>
                         <FormLabel>Started</FormLabel>
                         <FormControl>
-                          <Input
-                            type='date'
+                          <DatePicker
+                            value={field.value}
+                            onValueChange={(value) => field.onChange(value ?? '')}
                             max={getToday()}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
                             aria-invalid={fieldState.invalid}
-                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -376,11 +380,14 @@ export function BookForm({
                             {readingStatus === 'finished' ? 'Finished' : 'Stopped'}
                           </FormLabel>
                           <FormControl>
-                            <Input
-                              type='date'
+                            <DatePicker
+                              value={field.value}
+                              onValueChange={(value) => field.onChange(value ?? '')}
                               max={getToday()}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              ref={field.ref}
                               aria-invalid={fieldState.invalid}
-                              {...field}
                             />
                           </FormControl>
                           <FormMessage />

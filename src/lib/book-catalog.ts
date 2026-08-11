@@ -25,5 +25,11 @@ export function catalogResultToBookFormValues(
     genre: '',
     coverSource: result.coverId ? 'open_library' : null,
     coverSourceId: result.coverId,
+    ownershipType: 'unknown',
+    includeReadingDetails: false,
+    readingStatus: 'to_read',
+    readingFormat: '',
+    startedOn: '',
+    endedOn: '',
   };
 }

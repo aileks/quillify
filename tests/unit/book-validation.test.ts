@@ -19,6 +19,12 @@ describe('book validation', () => {
       genre: '',
       coverSource: null,
       coverSourceId: null,
+      ownershipType: 'unknown' as const,
+      includeReadingDetails: false,
+      readingStatus: 'to_read' as const,
+      readingFormat: '' as const,
+      startedOn: '',
+      endedOn: '',
     };
 
     expect(bookFormSchema.safeParse(formValues).success).toBe(true);
@@ -30,6 +36,8 @@ describe('book validation', () => {
       genre: 'Other',
       coverSource: null,
       coverSourceId: null,
+      ownershipType: 'unknown',
+      readingDetails: undefined,
     });
   });
 

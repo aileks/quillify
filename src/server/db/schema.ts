@@ -1,7 +1,31 @@
-import { text, integer, boolean, timestamp, pgSchema } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import {
+  text,
+  integer,
+  boolean,
+  timestamp,
+  date,
+  pgSchema,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
 
 const quillify = pgSchema('quillify');
+
+export const readingStatusEnum = quillify.enum('reading_status', [
+  'to_read',
+  'reading',
+  'paused',
+  'finished',
+  'did_not_finish',
+]);
+export const readingFormatEnum = quillify.enum('reading_format', ['print', 'ebook', 'audiobook']);
+export const ownershipTypeEnum = quillify.enum('ownership_type', [
+  'unknown',
+  'owned',
+  'borrowed',
+  'library',
+  'subscription',
+]);
 
 export const users = quillify.table('users', {
   id: text('id')
@@ -29,10 +53,34 @@ export const books = quillify.table('books', {
   publishYear: integer('publishYear').notNull(),
   coverSource: text('coverSource'),
   coverSourceId: text('coverSourceId'),
-  isRead: boolean('isRead').notNull().default(false),
+  ownershipType: ownershipTypeEnum('ownershipType').notNull().default('unknown'),
   createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const readingPeriods = quillify.table(
+  'reading_periods',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    bookId: text('bookId')
+      .notNull()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    status: readingStatusEnum('status').notNull().default('to_read'),
+    format: readingFormatEnum('format'),
+    startedOn: date('startedOn', { mode: 'string' }),
+    endedOn: date('endedOn', { mode: 'string' }),
+    isCurrent: boolean('isCurrent').notNull().default(true),
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('reading_periods_current_book_unique')
+      .on(table.bookId)
+      .where(sql`${table.isCurrent} = true`),
+  ]
+);
 
 export const passwordResetTokens = quillify.table('password_reset_tokens', {
   id: text('id')
@@ -64,10 +112,18 @@ export const usersRelations = relations(users, ({ many }) => ({
   emailVerificationTokens: many(emailVerificationTokens),
 }));
 
-export const booksRelations = relations(books, ({ one }) => ({
+export const booksRelations = relations(books, ({ one, many }) => ({
   user: one(users, {
     fields: [books.userId],
     references: [users.id],
+  }),
+  readingPeriods: many(readingPeriods),
+}));
+
+export const readingPeriodsRelations = relations(readingPeriods, ({ one }) => ({
+  book: one(books, {
+    fields: [readingPeriods.bookId],
+    references: [books.id],
   }),
 }));
 

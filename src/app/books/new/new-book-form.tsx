@@ -10,7 +10,7 @@ import { BookCatalogSearch } from '@/components/book-catalog-search';
 import { BookForm } from '@/components/book-form';
 import { Button } from '@/components/ui/button';
 import { catalogResultToBookFormValues } from '@/lib/book-catalog';
-import type { BookFormValues, BookInput } from '@/lib/book-validation';
+import type { BookCreateInput, BookFormValues } from '@/lib/book-validation';
 import type { OpenLibraryCatalogSearchResult } from '@/lib/open-library';
 import { api } from '@/trpc/react';
 
@@ -22,6 +22,12 @@ const EMPTY_BOOK: BookFormValues = {
   genre: '',
   coverSource: null,
   coverSourceId: null,
+  ownershipType: 'unknown',
+  includeReadingDetails: false,
+  readingStatus: 'to_read',
+  readingFormat: '',
+  startedOn: '',
+  endedOn: '',
 };
 
 interface NewBookFormProps {
@@ -61,7 +67,7 @@ export function NewBookForm({ saying }: NewBookFormProps) {
     },
   });
 
-  const createReadingListBook = (values: BookInput) => {
+  const createReadingListBook = (values: BookCreateInput) => {
     createBook.mutate(values);
   };
 
@@ -109,6 +115,7 @@ export function NewBookForm({ saying }: NewBookFormProps) {
             actionLabel='Add Book'
             pendingLabel='Adding...'
             isPending={createBook.isPending}
+            showReadingDetails
             onSubmit={createReadingListBook}
             onCancel={() => router.push('/books')}
           />

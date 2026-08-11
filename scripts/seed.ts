@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { users, books } from '../src/server/db/schema';
+import { users, books, readingPeriods } from '../src/server/db/schema';
 import { searchOpenLibrary } from '../src/server/services/book-metadata/open-library';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
@@ -2447,13 +2447,41 @@ async function seed() {
       const batchSize = 50;
       for (let i = 0; i < demoBooksWithCovers.length; i += batchSize) {
         const batch = demoBooksWithCovers.slice(i, i + batchSize);
-        await db.insert(books).values(
-          batch.map((book, batchIndex) => ({
-            userId: demoUser!.id,
-            ...book,
-            createdAt: randomTimestamps[i + batchIndex],
-          }))
-        );
+        await db.transaction(async (tx) => {
+          const insertedBooks = await tx
+            .insert(books)
+            .values(
+              batch.map(({ isRead: _isRead, ...book }, batchIndex) => ({
+                userId: demoUser!.id,
+                ...book,
+                ownershipType: batchIndex % 4 === 0 ? ('owned' as const) : ('unknown' as const),
+                createdAt: randomTimestamps[i + batchIndex],
+              }))
+            )
+            .returning({ id: books.id });
+
+          await tx.insert(readingPeriods).values(
+            insertedBooks.map(({ id }, batchIndex) => {
+              const sourceBook = batch[batchIndex]!;
+              const libraryIndex = i + batchIndex;
+              const status =
+                sourceBook.isRead ? ('finished' as const)
+                : libraryIndex % 23 === 0 ? ('did_not_finish' as const)
+                : libraryIndex % 17 === 0 ? ('paused' as const)
+                : libraryIndex % 11 === 0 ? ('reading' as const)
+                : ('to_read' as const);
+
+              return {
+                bookId: id,
+                status,
+                format:
+                  libraryIndex % 3 === 0 ? ('print' as const)
+                  : libraryIndex % 3 === 1 ? ('ebook' as const)
+                  : ('audiobook' as const),
+              };
+            })
+          );
+        });
         console.log(
           `Inserted books ${i + 1} to ${Math.min(i + batchSize, DEMO_BOOKS_TO_SEED.length)}`
         );

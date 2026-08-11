@@ -7,6 +7,7 @@ import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { READING_STATUS_LABELS } from '@/lib/reading-lifecycle';
 
 interface HomeDashboardProps {
   initialUserName: string;
@@ -76,8 +77,8 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
 
   const {
     totalBooks,
-    readBooks,
-    unreadBooks,
+    finishedReads,
+    statusCounts,
     totalPagesRead,
     averagePages,
     oldestPublishYear,
@@ -119,12 +120,9 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-primary font-serif text-3xl font-bold'>{readBooks}</div>
+            <div className='text-primary font-serif text-3xl font-bold'>{finishedReads}</div>
             <p className='text-muted-foreground mt-1 text-sm'>
-              {readBooks === 1 ? 'book completed' : 'books completed'}
-              {totalBooks > 0 && (
-                <span className='ml-1'>({Math.round((readBooks / totalBooks) * 100)}%)</span>
-              )}
+              {finishedReads === 1 ? 'completed reading' : 'completed readings'}
             </p>
           </CardContent>
         </Card>
@@ -132,16 +130,13 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
         <Card className='rounded-sm'>
           <CardHeader>
             <CardTitle className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-              To Read
+              Reading
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='font-serif text-3xl font-bold'>{unreadBooks}</div>
+            <div className='font-serif text-3xl font-bold'>{statusCounts.reading}</div>
             <p className='text-muted-foreground mt-1 text-sm'>
-              {unreadBooks === 1 ? 'book waiting' : 'books waiting'}
-              {totalBooks > 0 && (
-                <span className='ml-1'>({Math.round((unreadBooks / totalBooks) * 100)}%)</span>
-              )}
+              {statusCounts.reading === 1 ? 'book in progress' : 'books in progress'}
             </p>
           </CardContent>
         </Card>
@@ -214,6 +209,20 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
                     </div>
                   </div>
                 )}
+
+                <div className='flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3'>
+                  <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase sm:min-w-[100px]'>
+                    Status
+                  </span>
+                  <div className='flex flex-wrap gap-x-3 gap-y-1 text-sm'>
+                    {Object.entries(statusCounts).map(([status, count]) => (
+                      <span key={status}>
+                        {READING_STATUS_LABELS[status as keyof typeof READING_STATUS_LABELS]}{' '}
+                        <span className='text-muted-foreground'>({count})</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </>
             }
           </CardContent>

@@ -14,7 +14,12 @@ describe('reading-list query state', () => {
       genre: ['Fiction', 'History'],
       sortBy: 'createdAt',
       sortOrder: 'desc',
-      isRead: undefined,
+      status: undefined,
     });
+  });
+
+  it('maps legacy read filters when status is absent', () => {
+    expect(parseBookQueryParams(new URLSearchParams('isRead=true')).status).toBe('finished');
+    expect(parseBookQueryParams(new URLSearchParams('isRead=false')).status).toBe('to_read');
   });
 });

@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { api } from '@/trpc/react';
 import { BookCover } from '@/components/book-cover';
 import { BookForm } from '@/components/book-form';
+import { ReadingPeriodDialog } from '@/components/reading-period-dialog';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -22,11 +23,50 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { BookInput } from '@/lib/book-validation';
+import type { BookCreateInput } from '@/lib/book-validation';
+import {
+  OWNERSHIP_TYPE_LABELS,
+  READING_FORMAT_LABELS,
+  READING_STATUS_LABELS,
+  getAllowedReadingStatuses,
+  getToday,
+  isTerminalReadingStatus,
+  type ReadingPeriodFields,
+  type ReadingStatus,
+} from '@/lib/reading-lifecycle';
+import type { ReadingPeriod } from '@/types';
 
 interface BookDetailClientProps {
   bookId: string;
   editSaying: string;
+}
+
+function getTransitionDefaults(period: ReadingPeriod): ReadingPeriodFields {
+  const nextStatus = getAllowedReadingStatuses(period.status)[0];
+  if (!nextStatus) {
+    throw new Error('Reading period has no valid transition');
+  }
+
+  const startsNewPeriod = isTerminalReadingStatus(period.status);
+  return {
+    status: nextStatus,
+    format: period.format,
+    startedOn:
+      nextStatus === 'reading' ?
+        startsNewPeriod ? getToday()
+        : period.startedOn
+      : startsNewPeriod ? null
+      : period.startedOn,
+    endedOn: null,
+  };
+}
+
+function formatReadingDate(value: string): string {
+  return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 /**
@@ -41,6 +81,8 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
   const utils = api.useUtils();
   const searchParams = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
+  const [editingPeriod, setEditingPeriod] = useState<ReadingPeriod | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const referrerRef = useRef<string | null>(null);
   useEffect(() => {
@@ -95,42 +137,33 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
     },
   });
 
-  /**
-   * Optimistic update mutation for toggling read status.
-   * Updates the UI immediately before the server responds, then rolls back on error.
-   */
-  const toggleRead = api.books.setRead.useMutation({
-    onMutate: async (newData) => {
-      // Cancel any outgoing refetches to avoid overwriting optimistic update
-      await utils.books.getById.cancel({ id: bookId });
-
-      // Snapshot the previous value for potential rollback
-      const previousBook = utils.books.getById.getData({ id: bookId });
-
-      // Optimistically update the cache
-      utils.books.getById.setData({ id: bookId }, (old) =>
-        old ? { ...old, isRead: newData.isRead } : old
-      );
-
-      return { previousBook };
+  const transitionStatus = api.books.transitionStatus.useMutation({
+    onSuccess: async ({ currentReadingPeriod }) => {
+      toast.success(`Status changed to ${READING_STATUS_LABELS[currentReadingPeriod.status]}`);
+      setIsTransitioning(false);
+      await Promise.all([
+        utils.books.getById.invalidate({ id: bookId }),
+        utils.books.list.invalidate(),
+        utils.books.stats.invalidate(),
+      ]);
     },
-    onSuccess: (book) => {
-      toast.success(
-        book.isRead ? `"${book.title}" marked finished` : `"${book.title}" moved back to your TBR`
-      );
+    onError: (mutationError) => {
+      toast.error(mutationError.message || 'Failed to update reading status');
     },
-    onError: (err, newData, context) => {
-      toast.error('Failed to update read status');
-      // Rollback to previous value on error
-      if (context?.previousBook) {
-        utils.books.getById.setData({ id: bookId }, context.previousBook);
-      }
+  });
+
+  const updateReadingPeriod = api.books.updateReadingPeriod.useMutation({
+    onSuccess: async () => {
+      toast.success('Reading history updated');
+      setEditingPeriod(null);
+      await Promise.all([
+        utils.books.getById.invalidate({ id: bookId }),
+        utils.books.list.invalidate(),
+        utils.books.stats.invalidate(),
+      ]);
     },
-    onSettled: () => {
-      // Always refetch to ensure server and client are in sync
-      void utils.books.getById.invalidate({ id: bookId });
-      void utils.books.list.invalidate();
-      void utils.books.stats.invalidate();
+    onError: (mutationError) => {
+      toast.error(mutationError.message || 'Failed to update reading history');
     },
   });
 
@@ -145,10 +178,17 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
     },
   });
 
-  function onSubmit(data: BookInput) {
+  function onSubmit(data: BookCreateInput) {
     updateBook.mutate({
       id: bookId,
-      ...data,
+      title: data.title,
+      author: data.author,
+      numberOfPages: data.numberOfPages,
+      genre: data.genre,
+      publishYear: data.publishYear,
+      coverSource: data.coverSource,
+      coverSourceId: data.coverSourceId,
+      ownershipType: data.ownershipType,
     });
   }
 
@@ -205,6 +245,12 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
               genre: book.genre || '',
               coverSource: book.coverSource === 'open_library' ? 'open_library' : null,
               coverSourceId: book.coverSourceId,
+              ownershipType: book.ownershipType,
+              includeReadingDetails: false,
+              readingStatus: book.currentReadingPeriod.status,
+              readingFormat: book.currentReadingPeriod.format ?? '',
+              startedOn: book.currentReadingPeriod.startedOn ?? '',
+              endedOn: book.currentReadingPeriod.endedOn ?? '',
             }}
             title={`Editing ${book.title}`}
             saying={editSaying}
@@ -278,16 +324,37 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
                   </span>
                 </div>
               )}
+
+              <div className='flex items-start gap-3'>
+                <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                  Ownership
+                </span>
+                <span className='text-base font-medium'>
+                  {OWNERSHIP_TYPE_LABELS[book.ownershipType]}
+                </span>
+              </div>
             </div>
 
             <div className='border-foreground/10 mb-6 border-t pt-4'>
-              <div className='flex items-center gap-3'>
+              <div className='flex flex-wrap items-center gap-3'>
                 <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
                   Status
                 </span>
-                <Badge variant={book.isRead ? 'default' : 'secondary'}>
-                  {book.isRead ? 'Finished' : 'To Read'}
+                <Badge
+                  variant={
+                    book.currentReadingPeriod.status === 'did_not_finish' ? 'outline'
+                    : book.currentReadingPeriod.status === 'finished' ?
+                      'default'
+                    : 'secondary'
+                  }
+                >
+                  {READING_STATUS_LABELS[book.currentReadingPeriod.status]}
                 </Badge>
+                <span className='text-muted-foreground text-sm'>
+                  {book.currentReadingPeriod.format ?
+                    READING_FORMAT_LABELS[book.currentReadingPeriod.format]
+                  : 'Format unknown'}
+                </span>
               </div>
             </div>
 
@@ -295,15 +362,13 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
             <div className='border-foreground/10 flex flex-col gap-3 border-t pt-4 sm:flex-row'>
               <Button
                 variant='outline'
-                onClick={() => toggleRead.mutate({ id: book.id, isRead: !book.isRead })}
-                disabled={toggleRead.isPending}
+                onClick={() => setIsTransitioning(true)}
+                disabled={transitionStatus.isPending}
                 className='flex-1 sm:flex-none'
               >
-                {toggleRead.isPending ?
-                  'Updating...'
-                : book.isRead ?
-                  'Move Back to TBR'
-                : 'Mark Finished'}
+                {isTerminalReadingStatus(book.currentReadingPeriod.status) ?
+                  'Read Again'
+                : 'Update Status'}
               </Button>
 
               <Button
@@ -351,6 +416,89 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
           </div>
         </article>
       }
+
+      {!isEditing && (
+        <section className='bg-card text-card-foreground border-foreground/10 rounded-sm border-2 p-6 shadow-sm'>
+          <div className='mb-5 flex flex-col gap-1'>
+            <h2 className='font-serif text-2xl font-bold'>Reading History</h2>
+            <p className='text-muted-foreground text-sm'>Each reread keeps its own details.</p>
+          </div>
+          <div className='flex flex-col gap-3'>
+            {book.readingPeriods.map((period, index) => (
+              <div
+                key={period.id}
+                className='border-foreground/10 flex flex-col gap-3 rounded-sm border p-4 sm:flex-row sm:items-center sm:justify-between'
+              >
+                <div className='flex min-w-0 flex-col gap-1'>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <span className='font-medium'>
+                      Reading {book.readingPeriods.length - index}
+                    </span>
+                    <Badge variant={period.isCurrent ? 'default' : 'secondary'}>
+                      {READING_STATUS_LABELS[period.status]}
+                    </Badge>
+                    {period.isCurrent && <Badge variant='outline'>Current</Badge>}
+                  </div>
+                  <p className='text-muted-foreground text-sm'>
+                    {period.format ? READING_FORMAT_LABELS[period.format] : 'Format unknown'}
+                    {period.startedOn ? ` · Started ${formatReadingDate(period.startedOn)}` : ''}
+                    {period.endedOn ?
+                      ` · ${period.status === 'finished' ? 'Finished' : 'Stopped'} ${formatReadingDate(period.endedOn)}`
+                    : ''}
+                  </p>
+                </div>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setEditingPeriod(period)}
+                >
+                  Edit Details
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {isTransitioning && (
+        <ReadingPeriodDialog
+          title={
+            isTerminalReadingStatus(book.currentReadingPeriod.status) ?
+              `Read ${book.title} again`
+            : `Update ${book.title}`
+          }
+          description='Choose the next status and keep any dates or format you want to remember.'
+          submitLabel='Save Status'
+          statuses={getAllowedReadingStatuses(book.currentReadingPeriod.status)}
+          defaultValues={getTransitionDefaults(book.currentReadingPeriod)}
+          isPending={transitionStatus.isPending}
+          onClose={() => setIsTransitioning(false)}
+          onSubmit={(values) => transitionStatus.mutate({ bookId: book.id, ...values })}
+        />
+      )}
+
+      {editingPeriod && (
+        <ReadingPeriodDialog
+          title='Edit reading details'
+          description='Correct this reading period without removing it from your history.'
+          submitLabel='Save Details'
+          statuses={
+            isTerminalReadingStatus(editingPeriod.status) ?
+              ['finished', 'did_not_finish']
+            : [editingPeriod.status]
+          }
+          defaultValues={{
+            status: editingPeriod.status,
+            format: editingPeriod.format,
+            startedOn: editingPeriod.startedOn,
+            endedOn: editingPeriod.endedOn,
+          }}
+          isPending={updateReadingPeriod.isPending}
+          onClose={() => setEditingPeriod(null)}
+          onSubmit={(values) => updateReadingPeriod.mutate({ id: editingPeriod.id, ...values })}
+        />
+      )}
     </div>
   );
 }

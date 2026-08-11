@@ -40,12 +40,22 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GenreFilterSelect } from '@/components/genre-filter-select';
-import { parseBookQueryParams, type BookSortBy, type BookSortOrder } from '@/lib/book-query';
+import {
+  READING_STATUS_PARAMS,
+  parseBookQueryParams,
+  type BookSortBy,
+  type BookSortOrder,
+} from '@/lib/book-query';
+import {
+  READING_STATUSES,
+  READING_STATUS_LABELS,
+  type ReadingStatus,
+} from '@/lib/reading-lifecycle';
 import { cn } from '@/lib/utils';
-import type { Book } from '@/types';
+import type { BookWithCurrentPeriod } from '@/types';
 
 interface BookCatalogCardProps {
-  book: Book;
+  book: BookWithCurrentPeriod;
   isSelected?: boolean;
   selectionMode?: boolean;
   imageLoading?: 'eager' | 'lazy';
@@ -118,8 +128,15 @@ function BookCatalogCard({
             <span className='text-muted-foreground font-mono text-[10px] tracking-wider uppercase'>
               Status
             </span>
-            <Badge variant={book.isRead ? 'default' : 'secondary'}>
-              {book.isRead ? 'Finished' : 'To Read'}
+            <Badge
+              variant={
+                book.currentReadingPeriod.status === 'did_not_finish' ? 'outline'
+                : book.currentReadingPeriod.status === 'finished' ?
+                  'default'
+                : 'secondary'
+              }
+            >
+              {READING_STATUS_LABELS[book.currentReadingPeriod.status]}
             </Badge>
           </div>
         </div>
@@ -146,7 +163,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
   // State
   const [search, setSearch] = useState(initial.search);
   const [querySearch, setQuerySearch] = useState(initial.search);
-  const [isRead, setIsRead] = useState<boolean | undefined>(initial.isRead);
+  const [status, setStatus] = useState<ReadingStatus | undefined>(initial.status);
   const [genre, setGenre] = useState<string[]>(initial.genre);
   const [sortBy, setSortBy] = useState<BookSortBy>(initial.sortBy);
   const [sortOrder, setSortOrder] = useState<BookSortOrder>(initial.sortOrder);
@@ -180,7 +197,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
     const params = new URLSearchParams();
 
     if (querySearch) params.set('search', querySearch);
-    if (isRead !== undefined) params.set('isRead', String(isRead));
+    if (status !== undefined) params.set('status', READING_STATUS_PARAMS[status]);
     if (genre.length > 0) params.set('genre', genre.join(','));
     if (sortBy !== 'createdAt') params.set('sortBy', sortBy);
     if (sortOrder !== 'desc') params.set('sortOrder', sortOrder);
@@ -188,12 +205,12 @@ export function BooksClient({ subtitle }: BooksClientProps) {
 
     const newUrl = params.toString() ? `/books?${params.toString()}` : '/books';
     router.replace(newUrl, { scroll: false });
-  }, [querySearch, isRead, genre, sortBy, sortOrder, page, router]);
+  }, [querySearch, status, genre, sortBy, sortOrder, page, router]);
 
   const { data, isLoading, error, isFetching } = api.books.list.useQuery(
     {
       search: querySearch,
-      isRead,
+      status,
       genre,
       sortBy,
       sortOrder,
@@ -249,16 +266,16 @@ export function BooksClient({ subtitle }: BooksClientProps) {
   });
 
   // Filter helpers
-  const hasActiveFilters = search || isRead !== undefined || genre.length > 0;
+  const hasActiveFilters = search || status !== undefined || genre.length > 0;
   const activeFilterCount = [
     search ? 1 : 0,
-    isRead !== undefined ? 1 : 0,
+    status !== undefined ? 1 : 0,
     genre.length > 0 ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
 
   const clearFilters = () => {
     setSearch('');
-    setIsRead(undefined);
+    setStatus(undefined);
     setGenre([]);
     resetPage();
   };
@@ -295,7 +312,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
     if (currentPage < totalPages) {
       void utils.books.list.prefetch({
         search: querySearch,
-        isRead,
+        status,
         genre,
         sortBy,
         sortOrder,
@@ -376,14 +393,9 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                   }}
                 />
                 <Select
-                  value={
-                    isRead === undefined ? 'all'
-                    : isRead ?
-                      'finished'
-                    : 'to-read'
-                  }
+                  value={status ?? 'all'}
                   onValueChange={(value) => {
-                    setIsRead(value === 'all' ? undefined : value === 'finished');
+                    setStatus(value === 'all' ? undefined : (value as ReadingStatus));
                     resetPage();
                   }}
                 >
@@ -393,8 +405,11 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                   <SelectContent className='rounded-sm'>
                     <SelectGroup>
                       <SelectItem value='all'>All Books</SelectItem>
-                      <SelectItem value='finished'>Finished</SelectItem>
-                      <SelectItem value='to-read'>To Read</SelectItem>
+                      {READING_STATUSES.map((readingStatus) => (
+                        <SelectItem key={readingStatus} value={readingStatus}>
+                          {READING_STATUS_LABELS[readingStatus]}
+                        </SelectItem>
+                      ))}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -460,14 +475,9 @@ export function BooksClient({ subtitle }: BooksClientProps) {
             <div className='flex flex-col gap-2'>
               <Label htmlFor='reading-status-filter'>Status</Label>
               <Select
-                value={
-                  isRead === undefined ? 'all'
-                  : isRead ?
-                    'finished'
-                  : 'to-read'
-                }
+                value={status ?? 'all'}
                 onValueChange={(value) => {
-                  setIsRead(value === 'all' ? undefined : value === 'finished');
+                  setStatus(value === 'all' ? undefined : (value as ReadingStatus));
                   resetPage();
                 }}
               >
@@ -480,8 +490,11 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                 <SelectContent className='rounded-sm'>
                   <SelectGroup>
                     <SelectItem value='all'>All Books</SelectItem>
-                    <SelectItem value='finished'>Finished</SelectItem>
-                    <SelectItem value='to-read'>To Read</SelectItem>
+                    {READING_STATUSES.map((readingStatus) => (
+                      <SelectItem key={readingStatus} value={readingStatus}>
+                        {READING_STATUS_LABELS[readingStatus]}
+                      </SelectItem>
+                    ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -726,7 +739,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                   prefetch={false}
                   className='group block h-full'
                   aria-label={`${book.title} by ${book.author} - ${
-                    book.isRead ? 'Finished' : 'To Read'
+                    READING_STATUS_LABELS[book.currentReadingPeriod.status]
                   }`}
                 >
                   <BookCatalogCard book={book} imageLoading={index < 4 ? 'eager' : 'lazy'} />

@@ -23,6 +23,12 @@ describe('catalog book form mapping', () => {
       genre: '',
       coverSource: 'open_library',
       coverSourceId: '222',
+      ownershipType: 'unknown',
+      includeReadingDetails: false,
+      readingStatus: 'to_read',
+      readingFormat: '',
+      startedOn: '',
+      endedOn: '',
     });
   });
 
@@ -46,6 +52,12 @@ describe('catalog book form mapping', () => {
       genre: '',
       coverSource: null,
       coverSourceId: null,
+      ownershipType: 'unknown',
+      includeReadingDetails: false,
+      readingStatus: 'to_read',
+      readingFormat: '',
+      startedOn: '',
+      endedOn: '',
     });
   });
 });

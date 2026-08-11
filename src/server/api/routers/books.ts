@@ -16,16 +16,63 @@ import {
 import { TRPCError } from '@trpc/server';
 
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
+import type { db } from '@/server/db';
 import { books, readingPeriods, users } from '@/server/db/schema';
-import type { Book, BookWithCurrentPeriod, BookWithReadingHistory } from '@/types';
+import type { Book, BookWithCurrentPeriod, BookWithReadingHistory, ReadingPeriod } from '@/types';
 import { bookCreateInputSchema, bookMetadataUpdateInputSchema } from '@/lib/book-validation';
 import {
-  canTransitionReadingStatus,
   isTerminalReadingStatus,
   readingStatusSchema,
+  startsNewReadingPeriod,
   transitionReadingStatusSchema,
   updateReadingPeriodSchema,
+  type ReadingPeriodFields,
 } from '@/lib/reading-lifecycle';
+
+type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function saveCurrentReadingPeriod(
+  tx: DatabaseTransaction,
+  currentPeriod: ReadingPeriod,
+  readingDetails: ReadingPeriodFields
+) {
+  const periodValues = {
+    status: readingDetails.status,
+    format: readingDetails.format,
+    startedOn: readingDetails.startedOn,
+    endedOn: readingDetails.endedOn,
+  };
+
+  if (startsNewReadingPeriod(currentPeriod.status, readingDetails.status)) {
+    await tx
+      .update(readingPeriods)
+      .set({ isCurrent: false, updatedAt: new Date() })
+      .where(eq(readingPeriods.id, currentPeriod.id));
+
+    const [createdPeriod] = await tx
+      .insert(readingPeriods)
+      .values({ bookId: currentPeriod.bookId, ...periodValues })
+      .returning();
+
+    if (!createdPeriod) {
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+    }
+
+    return createdPeriod;
+  }
+
+  const [updatedPeriod] = await tx
+    .update(readingPeriods)
+    .set({ ...periodValues, updatedAt: new Date() })
+    .where(eq(readingPeriods.id, currentPeriod.id))
+    .returning();
+
+  if (!updatedPeriod) {
+    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+  }
+
+  return updatedPeriod;
+}
 
 export const booksRouter = createTRPCRouter({
   /**
@@ -287,30 +334,49 @@ export const booksRouter = createTRPCRouter({
   update: protectedProcedure
     .input(bookMetadataUpdateInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const [existing] = await ctx.db.select().from(books).where(eq(books.id, input.id));
+      return ctx.db.transaction(async (tx) => {
+        const [existing] = await tx.select().from(books).where(eq(books.id, input.id));
 
-      if (!existing || existing.userId !== ctx.session.user.id) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
-      }
+        if (!existing || existing.userId !== ctx.session.user.id) {
+          throw new TRPCError({ code: 'NOT_FOUND' });
+        }
 
-      const [updated] = await ctx.db
-        .update(books)
-        .set({
-          title: input.title ?? existing.title,
-          author: input.author ?? existing.author,
-          numberOfPages: input.numberOfPages ?? existing.numberOfPages,
-          // Special handling: undefined means "don't change", null means "set to null"
-          genre: input.genre === undefined ? existing.genre : input.genre,
-          publishYear: input.publishYear ?? existing.publishYear,
-          coverSource: input.coverSource === undefined ? existing.coverSource : input.coverSource,
-          coverSourceId:
-            input.coverSourceId === undefined ? existing.coverSourceId : input.coverSourceId,
-          ownershipType: input.ownershipType ?? existing.ownershipType,
-        })
-        .where(eq(books.id, input.id))
-        .returning();
+        const [updated] = await tx
+          .update(books)
+          .set({
+            title: input.title ?? existing.title,
+            author: input.author ?? existing.author,
+            numberOfPages: input.numberOfPages ?? existing.numberOfPages,
+            // Special handling: undefined means "don't change", null means "set to null"
+            genre: input.genre === undefined ? existing.genre : input.genre,
+            publishYear: input.publishYear ?? existing.publishYear,
+            coverSource: input.coverSource === undefined ? existing.coverSource : input.coverSource,
+            coverSourceId:
+              input.coverSourceId === undefined ? existing.coverSourceId : input.coverSourceId,
+            ownershipType: input.ownershipType ?? existing.ownershipType,
+          })
+          .where(eq(books.id, input.id))
+          .returning();
 
-      return updated as Book;
+        if (!updated) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }
+
+        if (input.readingDetails) {
+          const [currentPeriod] = await tx
+            .select()
+            .from(readingPeriods)
+            .where(and(eq(readingPeriods.bookId, existing.id), eq(readingPeriods.isCurrent, true)));
+
+          if (!currentPeriod) {
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+          }
+
+          await saveCurrentReadingPeriod(tx, currentPeriod, input.readingDetails);
+        }
+
+        return updated as Book;
+      });
     }),
 
   transitionStatus: protectedProcedure
@@ -335,43 +401,7 @@ export const booksRouter = createTRPCRouter({
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }
 
-        if (!canTransitionReadingStatus(currentPeriod.status, input.status)) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'INVALID_STATUS_TRANSITION' });
-        }
-
-        let updatedPeriod;
-        if (isTerminalReadingStatus(currentPeriod.status)) {
-          await tx
-            .update(readingPeriods)
-            .set({ isCurrent: false, updatedAt: new Date() })
-            .where(eq(readingPeriods.id, currentPeriod.id));
-          [updatedPeriod] = await tx
-            .insert(readingPeriods)
-            .values({
-              bookId: book.id,
-              status: input.status,
-              format: input.format,
-              startedOn: input.startedOn,
-              endedOn: input.endedOn,
-            })
-            .returning();
-        } else {
-          [updatedPeriod] = await tx
-            .update(readingPeriods)
-            .set({
-              status: input.status,
-              format: input.format,
-              startedOn: input.startedOn,
-              endedOn: input.endedOn,
-              updatedAt: new Date(),
-            })
-            .where(eq(readingPeriods.id, currentPeriod.id))
-            .returning();
-        }
-
-        if (!updatedPeriod) {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        }
+        const updatedPeriod = await saveCurrentReadingPeriod(tx, currentPeriod, input);
 
         return { bookId: book.id, title: book.title, currentReadingPeriod: updatedPeriod };
       });

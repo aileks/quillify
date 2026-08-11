@@ -139,6 +139,7 @@ describe('books router cover persistence', () => {
           };
         }),
       })),
+      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
     };
     const caller = booksRouter.createCaller({
       db: database,
@@ -175,13 +176,13 @@ describe('books router reading lifecycle', () => {
     updatedAt: new Date(),
   };
 
-  it('updates the current period for an active transition', async () => {
+  it('allows any status while updating an active period in place', async () => {
     const currentPeriod = {
       id: 'period-1',
       bookId: 'book-1',
-      status: 'reading' as const,
+      status: 'to_read' as const,
       format: 'print' as const,
-      startedOn: '2026-08-01',
+      startedOn: null,
       endedOn: null,
       isCurrent: true,
       createdAt: new Date(),
@@ -220,12 +221,77 @@ describe('books router reading lifecycle', () => {
       bookId: 'book-1',
       status: 'paused',
       format: 'print',
-      startedOn: '2026-08-01',
+      startedOn: null,
       endedOn: null,
     });
 
-    expect(updatedValues).toMatchObject({ status: 'paused', startedOn: '2026-08-01' });
+    expect(updatedValues).toMatchObject({ status: 'paused', startedOn: null });
     expect(result.currentReadingPeriod.status).toBe('paused');
+  });
+
+  it('updates book metadata and its current period in one transaction', async () => {
+    const currentPeriod = {
+      id: 'period-1',
+      bookId: 'book-1',
+      status: 'to_read' as const,
+      format: null,
+      startedOn: null,
+      endedOn: null,
+      isCurrent: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const updatedValues: Record<string, unknown>[] = [];
+    let selectCount = 0;
+    const database = {
+      select: vi.fn(() => {
+        selectCount += 1;
+        return {
+          from: vi.fn(() => ({
+            where: vi.fn(async () => (selectCount === 1 ? [book] : [currentPeriod])),
+          })),
+        };
+      }),
+      update: vi.fn(() => ({
+        set: vi.fn((values: Record<string, unknown>) => {
+          updatedValues.push(values);
+          return {
+            where: vi.fn(() => ({
+              returning: vi.fn(async () => [
+                updatedValues.length === 1 ?
+                  { ...book, ...values }
+                : { ...currentPeriod, ...values },
+              ]),
+            })),
+          };
+        }),
+      })),
+      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
+    };
+    const caller = booksRouter.createCaller({
+      db: database,
+      session: createSession(),
+      headers: new Headers(),
+    } as unknown as BooksRouterContext);
+
+    await caller.update({
+      id: 'book-1',
+      ownershipType: 'library',
+      readingDetails: {
+        status: 'paused',
+        format: 'ebook',
+        startedOn: '2026-08-01',
+        endedOn: null,
+      },
+    });
+
+    expect(database.transaction).toHaveBeenCalledOnce();
+    expect(updatedValues[0]).toMatchObject({ ownershipType: 'library' });
+    expect(updatedValues[1]).toMatchObject({
+      status: 'paused',
+      format: 'ebook',
+      startedOn: '2026-08-01',
+    });
   });
 
   it('creates a new current period for a reread', async () => {
@@ -289,5 +355,60 @@ describe('books router reading lifecycle', () => {
       format: 'ebook',
     });
     expect(result.currentReadingPeriod.id).toBe('period-2');
+  });
+
+  it('corrects a terminal outcome without creating a new period', async () => {
+    const currentPeriod = {
+      id: 'period-1',
+      bookId: 'book-1',
+      status: 'finished' as const,
+      format: 'print' as const,
+      startedOn: '2026-07-01',
+      endedOn: '2026-07-20',
+      isCurrent: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    let selectCount = 0;
+    let updatedValues: Record<string, unknown> | undefined;
+    const database = {
+      select: vi.fn(() => {
+        selectCount += 1;
+        return {
+          from: vi.fn(() => ({
+            where: vi.fn(async () => (selectCount === 1 ? [book] : [currentPeriod])),
+          })),
+        };
+      }),
+      update: vi.fn(() => ({
+        set: vi.fn((values: Record<string, unknown>) => {
+          updatedValues = values;
+          return {
+            where: vi.fn(() => ({
+              returning: vi.fn(async () => [{ ...currentPeriod, ...values }]),
+            })),
+          };
+        }),
+      })),
+      insert: vi.fn(),
+      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
+    };
+    const caller = booksRouter.createCaller({
+      db: database,
+      session: createSession(),
+      headers: new Headers(),
+    } as unknown as BooksRouterContext);
+
+    const result = await caller.transitionStatus({
+      bookId: 'book-1',
+      status: 'did_not_finish',
+      format: 'print',
+      startedOn: '2026-07-01',
+      endedOn: '2026-07-20',
+    });
+
+    expect(updatedValues).toMatchObject({ status: 'did_not_finish' });
+    expect(database.insert).not.toHaveBeenCalled();
+    expect(result.currentReadingPeriod.status).toBe('did_not_finish');
   });
 });

@@ -95,7 +95,10 @@ export const bookUpdateInputSchema = bookFieldsSchema
 
 export const bookMetadataUpdateInputSchema = z.intersection(
   bookUpdateInputSchema,
-  z.object({ ownershipType: ownershipTypeSchema.optional() })
+  z.object({
+    ownershipType: ownershipTypeSchema.optional(),
+    readingDetails: readingPeriodFieldsSchema.optional(),
+  })
 );
 
 export const bookFormSchema = z

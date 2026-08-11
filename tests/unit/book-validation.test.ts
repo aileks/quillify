@@ -4,6 +4,7 @@ import {
   BOOK_MAX_PAGE_COUNT,
   bookFormSchema,
   bookInputSchema,
+  bookMetadataUpdateInputSchema,
   bookUpdateInputSchema,
   getMaximumPublishYear,
   toBookInput,
@@ -115,5 +116,29 @@ describe('book validation', () => {
         coverSourceId: '8235363',
       }).success
     ).toBe(false);
+  });
+
+  it('accepts current reading details with a book update', () => {
+    expect(
+      bookMetadataUpdateInputSchema.parse({
+        id: 'book-id',
+        ownershipType: 'library',
+        readingDetails: {
+          status: 'paused',
+          format: 'ebook',
+          startedOn: '2026-08-01',
+          endedOn: null,
+        },
+      })
+    ).toEqual({
+      id: 'book-id',
+      ownershipType: 'library',
+      readingDetails: {
+        status: 'paused',
+        format: 'ebook',
+        startedOn: '2026-08-01',
+        endedOn: null,
+      },
+    });
   });
 });

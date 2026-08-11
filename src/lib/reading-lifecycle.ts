@@ -73,29 +73,46 @@ export function getToday(referenceDate = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-export function getAllowedReadingStatuses(status: ReadingStatus): ReadingStatus[] {
-  switch (status) {
-    case 'to_read':
-      return ['reading', 'finished'];
-    case 'reading':
-      return ['paused', 'finished', 'did_not_finish'];
-    case 'paused':
-      return ['reading', 'finished', 'did_not_finish'];
-    case 'finished':
-    case 'did_not_finish':
-      return ['to_read', 'reading'];
-  }
-}
-
 export function isTerminalReadingStatus(status: ReadingStatus): boolean {
   return status === 'finished' || status === 'did_not_finish';
 }
 
-export function canTransitionReadingStatus(
+export function startsNewReadingPeriod(
   currentStatus: ReadingStatus,
   nextStatus: ReadingStatus
 ): boolean {
-  return getAllowedReadingStatuses(currentStatus).includes(nextStatus);
+  return isTerminalReadingStatus(currentStatus) && !isTerminalReadingStatus(nextStatus);
+}
+
+export function getReadingDatesAfterStatusChange(
+  currentStatus: ReadingStatus,
+  nextStatus: ReadingStatus,
+  startedOn: string | null,
+  endedOn: string | null,
+  referenceDate = new Date()
+): { startedOn: string | null; endedOn: string | null } {
+  if (nextStatus === 'to_read') {
+    return { startedOn: null, endedOn: null };
+  }
+
+  if (startsNewReadingPeriod(currentStatus, nextStatus)) {
+    return {
+      startedOn: nextStatus === 'reading' ? getToday(referenceDate) : null,
+      endedOn: null,
+    };
+  }
+
+  if (isTerminalReadingStatus(nextStatus)) {
+    return {
+      startedOn,
+      endedOn: endedOn ?? getToday(referenceDate),
+    };
+  }
+
+  return {
+    startedOn: nextStatus === 'reading' && !startedOn ? getToday(referenceDate) : startedOn,
+    endedOn: null,
+  };
 }
 
 function validateReadingDates(

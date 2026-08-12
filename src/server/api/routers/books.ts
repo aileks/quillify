@@ -20,6 +20,7 @@ import type { db } from '@/server/db';
 import { books, readingPeriods, users } from '@/server/db/schema';
 import type { Book, BookWithCurrentPeriod, BookWithReadingHistory, ReadingPeriod } from '@/types';
 import { bookCreateInputSchema, bookMetadataUpdateInputSchema } from '@/lib/book-validation';
+import { classifyDuplicateCandidate, type DuplicateBookIdentity } from '@/lib/book-duplicates';
 import {
   isTerminalReadingStatus,
   readingStatusSchema,
@@ -30,6 +31,46 @@ import {
 } from '@/lib/reading-lifecycle';
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+const createBookRequestSchema = z.object({
+  book: bookCreateInputSchema,
+  duplicateAction: z.enum(['review', 'create_separate_edition']),
+});
+
+async function findDuplicateBooks(
+  tx: DatabaseTransaction,
+  userId: string,
+  identity: DuplicateBookIdentity
+) {
+  const candidates = await tx
+    .select({
+      id: books.id,
+      title: books.title,
+      author: books.author,
+      publishYear: books.publishYear,
+      coverSourceId: books.coverSourceId,
+      isbn13: books.isbn13,
+      openLibraryEditionId: books.openLibraryEditionId,
+    })
+    .from(books)
+    .where(
+      and(
+        eq(books.userId, userId),
+        or(
+          eq(books.publishYear, identity.publishYear),
+          identity.isbn13 ? eq(books.isbn13, identity.isbn13) : undefined,
+          identity.openLibraryEditionId ?
+            eq(books.openLibraryEditionId, identity.openLibraryEditionId)
+          : undefined
+        )
+      )
+    );
+
+  return candidates.flatMap((candidate) => {
+    const match = classifyDuplicateCandidate(candidate, identity);
+    return match ? [match] : [];
+  });
+}
 
 async function saveCurrentReadingPeriod(
   tx: DatabaseTransaction,
@@ -270,44 +311,50 @@ export const booksRouter = createTRPCRouter({
   }),
 
   // Create a new book for the current user
-  create: protectedProcedure.input(bookCreateInputSchema).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(createBookRequestSchema).mutation(async ({ ctx, input }) => {
     const userId = ctx.session.user.id;
-
-    // Check if user is verified - unverified users have a 10-book limit
-    const [user] = await ctx.db.select().from(users).where(eq(users.id, userId));
-
-    if (user && !user.emailVerifiedAt) {
-      // Count existing books for this user
-      const [bookCount] = await ctx.db
-        .select({ count: count() })
-        .from(books)
-        .where(eq(books.userId, userId));
-
-      if (bookCount && bookCount.count >= 10) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'BOOK_LIMIT_REACHED',
-        });
-      }
-    }
+    const bookInput = input.book;
 
     return ctx.db.transaction(async (tx) => {
+      if (input.duplicateAction === 'review') {
+        const duplicateMatches = await findDuplicateBooks(tx, userId, bookInput);
+        if (duplicateMatches.length > 0) {
+          return { status: 'duplicate_warning' as const, matches: duplicateMatches };
+        }
+      }
+
+      const [user] = await tx.select().from(users).where(eq(users.id, userId));
+
+      if (user && !user.emailVerifiedAt) {
+        const [bookCount] = await tx
+          .select({ count: count() })
+          .from(books)
+          .where(eq(books.userId, userId));
+
+        if (bookCount && bookCount.count >= 10) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'BOOK_LIMIT_REACHED',
+          });
+        }
+      }
+
       const [inserted] = await tx
         .insert(books)
         .values({
           userId,
-          title: input.title,
-          author: input.author,
-          numberOfPages: input.numberOfPages,
-          genre: input.genre,
-          publishYear: input.publishYear,
-          coverSource: input.coverSource ?? null,
-          coverSourceId: input.coverSourceId ?? null,
-          isbn10: input.isbn10 ?? null,
-          isbn13: input.isbn13 ?? null,
-          openLibraryWorkId: input.openLibraryWorkId ?? null,
-          openLibraryEditionId: input.openLibraryEditionId ?? null,
-          ownershipType: input.ownershipType,
+          title: bookInput.title,
+          author: bookInput.author,
+          numberOfPages: bookInput.numberOfPages,
+          genre: bookInput.genre,
+          publishYear: bookInput.publishYear,
+          coverSource: bookInput.coverSource ?? null,
+          coverSourceId: bookInput.coverSourceId ?? null,
+          isbn10: bookInput.isbn10 ?? null,
+          isbn13: bookInput.isbn13 ?? null,
+          openLibraryWorkId: bookInput.openLibraryWorkId ?? null,
+          openLibraryEditionId: bookInput.openLibraryEditionId ?? null,
+          ownershipType: bookInput.ownershipType,
         })
         .returning();
 
@@ -315,7 +362,7 @@ export const booksRouter = createTRPCRouter({
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
       }
 
-      const readingDetails = input.readingDetails ?? {
+      const readingDetails = bookInput.readingDetails ?? {
         status: 'to_read' as const,
         format: null,
         startedOn: null,
@@ -330,7 +377,10 @@ export const booksRouter = createTRPCRouter({
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
       }
 
-      return { ...inserted, currentReadingPeriod } as BookWithCurrentPeriod;
+      return {
+        status: 'created' as const,
+        book: { ...inserted, currentReadingPeriod } as BookWithCurrentPeriod,
+      };
     });
   }),
 

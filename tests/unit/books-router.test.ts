@@ -24,6 +24,51 @@ function createSession() {
 }
 
 describe('books router cover persistence', () => {
+  it('returns likely matches without writing until a separate edition is confirmed', async () => {
+    const existingBook = {
+      id: 'book-existing',
+      title: 'Jane Eyre',
+      author: 'Charlotte Brontë',
+      publishYear: 1847,
+      coverSourceId: '8235363',
+      isbn13: '9780141441146',
+      openLibraryEditionId: 'OL22731948M',
+    };
+    const database = {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(async () => [existingBook]),
+        })),
+      })),
+      insert: vi.fn(),
+      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
+    };
+    const caller = booksRouter.createCaller({
+      db: database,
+      session: createSession(),
+      headers: new Headers(),
+    } as unknown as BooksRouterContext);
+
+    const result = await caller.create({
+      duplicateAction: 'review',
+      book: {
+        title: 'Jane Eyre',
+        author: 'Charlotte Brontë',
+        numberOfPages: 532,
+        genre: 'Classics',
+        publishYear: 1847,
+        isbn13: '9780141441146',
+        ownershipType: 'unknown',
+      },
+    });
+
+    expect(result).toEqual({
+      status: 'duplicate_warning',
+      matches: [{ ...existingBook, reason: 'same_edition' }],
+    });
+    expect(database.insert).not.toHaveBeenCalled();
+  });
+
   it('creates a book with its selected cover', async () => {
     let insertedValues: Record<string, unknown> | undefined;
     let insertedPeriodValues: Record<string, unknown> | undefined;
@@ -88,18 +133,21 @@ describe('books router cover persistence', () => {
     } as unknown as BooksRouterContext);
 
     await caller.create({
-      title: 'Jane Eyre',
-      author: 'Charlotte Brontë',
-      numberOfPages: 532,
-      genre: 'Classics',
-      publishYear: 1847,
-      coverSource: 'open_library',
-      coverSourceId: '8235363',
-      isbn10: '0141441143',
-      isbn13: '9780141441146',
-      openLibraryWorkId: 'OL123W',
-      openLibraryEditionId: 'OL456M',
-      ownershipType: 'unknown',
+      duplicateAction: 'create_separate_edition',
+      book: {
+        title: 'Jane Eyre',
+        author: 'Charlotte Brontë',
+        numberOfPages: 532,
+        genre: 'Classics',
+        publishYear: 1847,
+        coverSource: 'open_library',
+        coverSourceId: '8235363',
+        isbn10: '0141441143',
+        isbn13: '9780141441146',
+        openLibraryWorkId: 'OL123W',
+        openLibraryEditionId: 'OL456M',
+        ownershipType: 'unknown',
+      },
     });
 
     expect(insertedValues).toMatchObject({

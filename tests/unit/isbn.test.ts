@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEMO_BOOK_IDENTITIES } from '../../scripts/demo-book-identities';
 import { normalizeIsbn } from '@/lib/isbn';
 
 describe('ISBN normalization', () => {
@@ -33,5 +34,20 @@ describe('ISBN normalization', () => {
     expect(normalizeIsbn('9780141441147')).toBeNull();
     expect(normalizeIsbn('not-an-isbn')).toBeNull();
     expect(normalizeIsbn('')).toBeNull();
+  });
+});
+
+describe('demo book ISBNs', () => {
+  it('keeps every seeded ISBN pair canonical and valid', () => {
+    for (const identity of Object.values(DEMO_BOOK_IDENTITIES)) {
+      expect(normalizeIsbn(identity.isbn10)).toEqual({
+        isbn10: identity.isbn10,
+        isbn13: identity.isbn13,
+      });
+      expect(normalizeIsbn(identity.isbn13)).toEqual({
+        isbn10: identity.isbn10,
+        isbn13: identity.isbn13,
+      });
+    }
   });
 });

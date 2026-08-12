@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { DEMO_COVER_IDS } from './demo-cover-ids';
+import { DEMO_BOOK_IDENTITIES } from './demo-book-identities';
 import { users, books, readingPeriods } from '../src/server/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
@@ -2316,6 +2317,7 @@ const SEED_OWNERSHIP_TYPES = ['owned', 'borrowed', 'library', 'subscription', 'u
 const SEED_READING_FORMATS = ['print', 'ebook', 'audiobook'] as const;
 const DEMO_BOOKS_WITH_COVERS = DEMO_BOOKS_TO_SEED.map((book) => {
   const coverSourceId = DEMO_COVER_IDS[book.title];
+  const identity = DEMO_BOOK_IDENTITIES[book.title];
   if (!coverSourceId) {
     throw new Error(`Missing demo cover ID for ${book.title}`);
   }
@@ -2324,6 +2326,10 @@ const DEMO_BOOKS_WITH_COVERS = DEMO_BOOKS_TO_SEED.map((book) => {
     ...book,
     coverSource: 'open_library' as const,
     coverSourceId,
+    isbn10: identity?.isbn10 ?? null,
+    isbn13: identity?.isbn13 ?? null,
+    openLibraryWorkId: identity?.openLibraryWorkId ?? null,
+    openLibraryEditionId: identity?.openLibraryEditionId ?? null,
   };
 });
 
@@ -2463,6 +2469,10 @@ async function seed() {
                 publishYear: book.publishYear,
                 coverSource: book.coverSource,
                 coverSourceId: book.coverSourceId,
+                isbn10: book.isbn10,
+                isbn13: book.isbn13,
+                openLibraryWorkId: book.openLibraryWorkId,
+                openLibraryEditionId: book.openLibraryEditionId,
                 ownershipType:
                   SEED_OWNERSHIP_TYPES[(i + batchIndex) % SEED_OWNERSHIP_TYPES.length]!,
                 createdAt: bookCreatedAtDates[i + batchIndex],

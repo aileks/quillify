@@ -67,6 +67,9 @@
   summaries or exhaustive change logs.
 - Update release-manifest tests whenever its structure or ordering changes. Keep the package-version
   consistency check passing.
+- In development, append `?previewReleaseNotes=1` to any route to preview the current release modal
+  without reading or changing the account's seen state. This preview must remain disabled in
+  production.
 
 ## Code style
 

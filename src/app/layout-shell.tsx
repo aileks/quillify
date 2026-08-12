@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
@@ -148,7 +148,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
       >
         {children}
       </main>
-      <ReleaseNotesDialog key={userId ?? 'anonymous'} isAuthenticated={isAuthenticated} />
+      <Suspense fallback={null}>
+        <ReleaseNotesDialog key={userId ?? 'anonymous'} isAuthenticated={isAuthenticated} />
+      </Suspense>
     </>
   );
 }

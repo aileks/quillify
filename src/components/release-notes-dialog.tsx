@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { PartyPopper } from 'lucide-react';
 
@@ -12,24 +13,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { RELEASE_MANIFEST } from '@/lib/releases';
 import { api } from '@/trpc/react';
+
+const RELEASE_NOTES_PREVIEW_PARAMETER = 'previewReleaseNotes';
 
 interface ReleaseNotesDialogProps {
   isAuthenticated: boolean;
 }
 
 export function ReleaseNotesDialog({ isAuthenticated }: ReleaseNotesDialogProps) {
+  const searchParams = useSearchParams();
   const [isDismissed, setIsDismissed] = useState(false);
+  const isDevelopmentPreview =
+    process.env.NODE_ENV === 'development' &&
+    searchParams.get(RELEASE_NOTES_PREVIEW_PARAMETER) === '1';
   const unseenReleases = api.releases.unseen.useQuery(undefined, {
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !isDevelopmentPreview,
   });
   const markSeen = api.releases.markSeen.useMutation();
-  const releases = unseenReleases.data?.releases ?? [];
+  const releases = isDevelopmentPreview ? RELEASE_MANIFEST : (unseenReleases.data?.releases ?? []);
   const isOpen = !isDismissed && releases.length > 0;
 
   const dismiss = () => {
     setIsDismissed(true);
-    markSeen.mutate();
+    if (!isDevelopmentPreview) {
+      markSeen.mutate();
+    }
   };
 
   return (

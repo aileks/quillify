@@ -49,6 +49,25 @@
 - The Library uses 12 books per page at every viewport width
 - Font sizing scales above 1080px through `src/styles/globals.css`
 
+## Release notes
+
+- `src/lib/releases.ts` is the source of truth. Keep entries in newest-first semantic-version order.
+- Add one release-manifest entry per released feature branch. Bump one minor version for each feature
+  branch and keep `package.json` equal to the newest manifest version.
+- Give every meaningful user-visible feature its own short title and plain-language description.
+- Clearly identify brand-new capabilities as new. Do not phrase a new feature as an improvement to
+  something that did not previously exist.
+- Explain what changed, why it is useful, and how the reader can use it. For settings or other
+  non-obvious features, name the exact page, tab, or action where the feature can be found.
+- Mention important limits or exclusions when omitting them could create a false expectation. Keep
+  implementation details, frameworks, schema changes, and internal procedure names out of the copy.
+- Describe only behavior present in the release. Do not advertise deferred work or overstate what
+  imported, exported, restored, synchronized, or otherwise transferred data includes.
+- Keep notes easy to scan. Prefer one to three concise sentences per feature over vague one-line
+  summaries or exhaustive change logs.
+- Update release-manifest tests whenever its structure or ordering changes. Keep the package-version
+  consistency check passing.
+
 ## Code style
 
 - External imports first, then `@/` imports; use `import type` for type-only imports
@@ -69,9 +88,6 @@
 - Schema changes must preserve the `quillify` PostgreSQL namespace and cascade relationships
 
 ## Verification
-
-- Bump one minor version for each feature branch and add its user-facing changes to the release
-  manifest.
 
 - Run the narrowest test first
 - Before completion run `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and

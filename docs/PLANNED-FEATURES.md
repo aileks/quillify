@@ -239,7 +239,7 @@ help readers pursue a personal goal.
 **Relative effort:** Large, delivered incrementally after the data is trustworthy.
 
 **Success signals:** Goal creation and completion, repeat statistics visits, wrap-up downloads, and
-continued progress logging. Establish baselines before setting numeric targets.
+continued progress logging. Esta blish baselines before setting numeric targets.
 
 #### 8. Installable Mobile Web Experience
 

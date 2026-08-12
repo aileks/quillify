@@ -27,6 +27,7 @@ export const ownershipTypeEnum = quillify.enum('ownership_type', [
   'library',
   'subscription',
 ]);
+export const importSourceEnum = quillify.enum('import_source', ['goodreads']);
 
 export const users = quillify.table('users', {
   id: text('id')
@@ -94,6 +95,32 @@ export const readingPeriods = quillify.table(
   ]
 );
 
+export const bookImportSources = quillify.table(
+  'book_import_sources',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    bookId: text('bookId')
+      .notNull()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    source: importSourceEnum('source').notNull(),
+    sourceRecordId: text('sourceRecordId').notNull(),
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('book_import_sources_user_source_record_unique').on(
+      table.userId,
+      table.source,
+      table.sourceRecordId
+    ),
+    index('book_import_sources_book_index').on(table.bookId),
+  ]
+);
+
 export const passwordResetTokens = quillify.table('password_reset_tokens', {
   id: text('id')
     .primaryKey()
@@ -120,6 +147,7 @@ export const emailVerificationTokens = quillify.table('email_verification_tokens
 
 export const usersRelations = relations(users, ({ many }) => ({
   books: many(books),
+  bookImportSources: many(bookImportSources),
   passwordResetTokens: many(passwordResetTokens),
   emailVerificationTokens: many(emailVerificationTokens),
 }));
@@ -130,11 +158,23 @@ export const booksRelations = relations(books, ({ one, many }) => ({
     references: [users.id],
   }),
   readingPeriods: many(readingPeriods),
+  importSources: many(bookImportSources),
 }));
 
 export const readingPeriodsRelations = relations(readingPeriods, ({ one }) => ({
   book: one(books, {
     fields: [readingPeriods.bookId],
+    references: [books.id],
+  }),
+}));
+
+export const bookImportSourcesRelations = relations(bookImportSources, ({ one }) => ({
+  user: one(users, {
+    fields: [bookImportSources.userId],
+    references: [users.id],
+  }),
+  book: one(books, {
+    fields: [bookImportSources.bookId],
     references: [books.id],
   }),
 }));

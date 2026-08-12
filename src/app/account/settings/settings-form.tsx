@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { DataSettings } from './data-settings';
 
 const nameFormSchema = z.object({
   name: z
@@ -75,6 +76,7 @@ function getInitialTab(isVerified: boolean): string {
   const hash = window.location.hash.replace('#', '');
   if (hash === 'verification' && !isVerified) return 'verification';
   if (hash === 'account') return 'account';
+  if (hash === 'data') return 'data';
   return 'profile';
 }
 
@@ -232,6 +234,7 @@ export function SettingsForm() {
         <TabsList className='w-full justify-start'>
           <TabsTrigger value='profile'>Profile</TabsTrigger>
           <TabsTrigger value='account'>Account</TabsTrigger>
+          <TabsTrigger value='data'>Data</TabsTrigger>
           {!isVerified && <TabsTrigger value='verification'>Verification</TabsTrigger>}
         </TabsList>
 
@@ -523,6 +526,10 @@ export function SettingsForm() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value='data'>
+          <DataSettings />
         </TabsContent>
 
         {/* Verification Tab - only shown if not verified */}

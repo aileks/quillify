@@ -99,6 +99,13 @@
       "when": 1786565089208,
       "tag": "0013_petite_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786565839108,
+      "tag": "0014_yielding_rocket_racer",
+      "breakpoints": true
     }
   ]
 }

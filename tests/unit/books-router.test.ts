@@ -37,6 +37,10 @@ describe('books router cover persistence', () => {
       publishYear: 1847,
       coverSource: 'open_library',
       coverSourceId: '8235363',
+      isbn10: '0141441143',
+      isbn13: '9780141441146',
+      openLibraryWorkId: 'OL123W',
+      openLibraryEditionId: 'OL456M',
       ownershipType: 'unknown',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -91,6 +95,10 @@ describe('books router cover persistence', () => {
       publishYear: 1847,
       coverSource: 'open_library',
       coverSourceId: '8235363',
+      isbn10: '0141441143',
+      isbn13: '9780141441146',
+      openLibraryWorkId: 'OL123W',
+      openLibraryEditionId: 'OL456M',
       ownershipType: 'unknown',
     });
 
@@ -98,6 +106,10 @@ describe('books router cover persistence', () => {
       coverSource: 'open_library',
       coverSourceId: '8235363',
       ownershipType: 'unknown',
+      isbn10: '0141441143',
+      isbn13: '9780141441146',
+      openLibraryWorkId: 'OL123W',
+      openLibraryEditionId: 'OL456M',
     });
     expect(insertedPeriodValues).toMatchObject({ bookId: 'book-1', status: 'to_read' });
   });

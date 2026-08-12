@@ -7,6 +7,7 @@ import {
   ownershipTypeSchema,
   readingPeriodFieldsSchema,
 } from '@/lib/reading-lifecycle';
+import { normalizeIsbn } from '@/lib/isbn';
 
 export const BOOK_TITLE_MAX_LENGTH = 200;
 export const BOOK_AUTHOR_MAX_LENGTH = 120;
@@ -20,6 +21,26 @@ const coverSourceIdSchema = z
   .string()
   .trim()
   .regex(/^\d+$/, 'Cover ID must be numeric')
+  .nullable()
+  .optional();
+const isbn10Schema = z
+  .string()
+  .refine((value) => normalizeIsbn(value)?.isbn10 === value, 'Invalid ISBN-10')
+  .nullable()
+  .optional();
+const isbn13Schema = z
+  .string()
+  .refine((value) => normalizeIsbn(value)?.isbn13 === value, 'Invalid ISBN-13')
+  .nullable()
+  .optional();
+const openLibraryWorkIdSchema = z
+  .string()
+  .regex(/^OL\d+W$/, 'Invalid Open Library work ID')
+  .nullable()
+  .optional();
+const openLibraryEditionIdSchema = z
+  .string()
+  .regex(/^OL\d+M$/, 'Invalid Open Library edition ID')
   .nullable()
   .optional();
 
@@ -56,6 +77,10 @@ const bookFieldsSchema = z.object({
   publishYear: z.number().int().min(BOOK_MIN_PUBLISH_YEAR).max(getMaximumPublishYear()),
   coverSource: coverSourceSchema,
   coverSourceId: coverSourceIdSchema,
+  isbn10: isbn10Schema,
+  isbn13: isbn13Schema,
+  openLibraryWorkId: openLibraryWorkIdSchema,
+  openLibraryEditionId: openLibraryEditionIdSchema,
 });
 
 export const bookInputSchema = bookFieldsSchema.superRefine(validateCoverSelection);
@@ -136,6 +161,14 @@ export const bookFormSchema = z
     genre: z.string().trim().max(BOOK_GENRE_MAX_LENGTH).optional(),
     coverSource: coverSourceSchema,
     coverSourceId: coverSourceIdSchema,
+    isbn: z
+      .string()
+      .trim()
+      .max(32)
+      .refine((value) => value.length === 0 || normalizeIsbn(value) !== null, 'Enter a valid ISBN'),
+    catalogIsbns: z.array(z.string()),
+    openLibraryWorkId: openLibraryWorkIdSchema,
+    openLibraryEditionId: openLibraryEditionIdSchema,
     ownershipType: z.enum(OWNERSHIP_TYPES),
     includeReadingDetails: z.boolean(),
     readingStatus: z.enum(READING_STATUSES),
@@ -175,6 +208,16 @@ export type BookCreateInput = z.infer<typeof bookCreateInputSchema>;
 export type BookFormValues = z.infer<typeof bookFormSchema>;
 
 export function toBookInput(values: BookFormValues): BookCreateInput {
+  const normalizedIsbn = normalizeIsbn(values.isbn);
+  const selectedEditionIsbns = new Set(
+    values.catalogIsbns.flatMap((isbn) => {
+      const normalized = normalizeIsbn(isbn);
+      return normalized ? [normalized.isbn13] : [];
+    })
+  );
+  const retainsSelectedEdition =
+    normalizedIsbn !== null && selectedEditionIsbns.has(normalizedIsbn.isbn13);
+
   return bookCreateInputSchema.parse({
     title: values.title,
     author: values.author,
@@ -183,6 +226,10 @@ export function toBookInput(values: BookFormValues): BookCreateInput {
     genre: values.genre || 'Other',
     coverSource: values.coverSource ?? null,
     coverSourceId: values.coverSourceId ?? null,
+    isbn10: normalizedIsbn?.isbn10 ?? null,
+    isbn13: normalizedIsbn?.isbn13 ?? null,
+    openLibraryWorkId: values.openLibraryWorkId ?? null,
+    openLibraryEditionId: retainsSelectedEdition ? values.openLibraryEditionId : null,
     ownershipType: values.ownershipType,
     readingDetails:
       values.includeReadingDetails ?

@@ -6,7 +6,8 @@ describe('catalog book form mapping', () => {
   it('prefills available edition metadata', () => {
     expect(
       catalogResultToBookFormValues({
-        openLibraryId: 'OL456M',
+        openLibraryWorkId: 'OL123W',
+        openLibraryEditionId: 'OL456M',
         coverId: '222',
         title: 'Jane Eyre',
         authors: ['Charlotte Brontë', 'Michael Mason'],
@@ -23,6 +24,10 @@ describe('catalog book form mapping', () => {
       genre: '',
       coverSource: 'open_library',
       coverSourceId: '222',
+      isbn: '9780141441146',
+      catalogIsbns: ['9780141441146'],
+      openLibraryWorkId: 'OL123W',
+      openLibraryEditionId: 'OL456M',
       ownershipType: 'unknown',
       includeReadingDetails: false,
       readingStatus: 'to_read',
@@ -35,7 +40,8 @@ describe('catalog book form mapping', () => {
   it('leaves unavailable or invalid required metadata for the reader to complete', () => {
     expect(
       catalogResultToBookFormValues({
-        openLibraryId: 'OL123W',
+        openLibraryWorkId: 'OL123W',
+        openLibraryEditionId: null,
         coverId: null,
         title: 'An Unfinished Catalog Record',
         authors: [],
@@ -52,6 +58,10 @@ describe('catalog book form mapping', () => {
       genre: '',
       coverSource: null,
       coverSourceId: null,
+      isbn: '',
+      catalogIsbns: [],
+      openLibraryWorkId: 'OL123W',
+      openLibraryEditionId: null,
       ownershipType: 'unknown',
       includeReadingDetails: false,
       readingStatus: 'to_read',

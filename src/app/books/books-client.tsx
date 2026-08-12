@@ -715,6 +715,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                     book={book}
                     selectionMode
                     isSelected={selectedBookIds.has(book.id)}
+                    imageLoading={index < 4 ? 'eager' : 'lazy'}
                   />
                   <Checkbox
                     id={`select-book-${book.id}`}

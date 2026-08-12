@@ -303,6 +303,10 @@ export const booksRouter = createTRPCRouter({
           publishYear: input.publishYear,
           coverSource: input.coverSource ?? null,
           coverSourceId: input.coverSourceId ?? null,
+          isbn10: input.isbn10 ?? null,
+          isbn13: input.isbn13 ?? null,
+          openLibraryWorkId: input.openLibraryWorkId ?? null,
+          openLibraryEditionId: input.openLibraryEditionId ?? null,
           ownershipType: input.ownershipType,
         })
         .returning();
@@ -353,6 +357,16 @@ export const booksRouter = createTRPCRouter({
             coverSource: input.coverSource === undefined ? existing.coverSource : input.coverSource,
             coverSourceId:
               input.coverSourceId === undefined ? existing.coverSourceId : input.coverSourceId,
+            isbn10: input.isbn10 === undefined ? existing.isbn10 : input.isbn10,
+            isbn13: input.isbn13 === undefined ? existing.isbn13 : input.isbn13,
+            openLibraryWorkId:
+              input.openLibraryWorkId === undefined ?
+                existing.openLibraryWorkId
+              : input.openLibraryWorkId,
+            openLibraryEditionId:
+              input.openLibraryEditionId === undefined ?
+                existing.openLibraryEditionId
+              : input.openLibraryEditionId,
             ownershipType: input.ownershipType ?? existing.ownershipType,
           })
           .where(eq(books.id, input.id))

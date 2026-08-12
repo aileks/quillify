@@ -20,6 +20,10 @@ describe('book validation', () => {
       genre: '',
       coverSource: null,
       coverSourceId: null,
+      isbn: '9780141441146',
+      catalogIsbns: ['9780141441146'],
+      openLibraryWorkId: 'OL123W',
+      openLibraryEditionId: 'OL456M',
       ownershipType: 'unknown' as const,
       includeReadingDetails: false,
       readingStatus: 'to_read' as const,
@@ -37,9 +41,38 @@ describe('book validation', () => {
       genre: 'Other',
       coverSource: null,
       coverSourceId: null,
+      isbn10: '0141441143',
+      isbn13: '9780141441146',
+      openLibraryWorkId: 'OL123W',
+      openLibraryEditionId: 'OL456M',
       ownershipType: 'unknown',
       readingDetails: undefined,
     });
+  });
+
+  it('clears edition identity when the selected ISBN changes', () => {
+    const result = toBookInput({
+      title: 'Jane Eyre',
+      author: 'Charlotte Brontë',
+      numberOfPages: '532',
+      publishYear: '1847',
+      genre: 'Classics',
+      coverSource: null,
+      coverSourceId: null,
+      isbn: '9780307594006',
+      catalogIsbns: ['9780141441146'],
+      openLibraryWorkId: 'OL123W',
+      openLibraryEditionId: 'OL456M',
+      ownershipType: 'unknown',
+      includeReadingDetails: false,
+      readingStatus: 'to_read',
+      readingFormat: '',
+      startedOn: '',
+      endedOn: '',
+    });
+
+    expect(result.openLibraryWorkId).toBe('OL123W');
+    expect(result.openLibraryEditionId).toBeNull();
   });
 
   it('rejects invalid pages and publication years at both boundaries', () => {

@@ -190,12 +190,14 @@ export function normalizeOpenLibrarySearchResponse(
       return;
     }
 
-    const openLibraryId =
-      edition?.cover_i ? edition.key : (document.cover_edition_key ?? document.key);
+    const openLibraryEditionId = normalizeOpenLibraryId(
+      edition?.key ?? document.cover_edition_key ?? ''
+    );
     const isbns = normalizeIsbns(edition?.isbn);
 
     results.push({
-      openLibraryId: normalizeOpenLibraryId(openLibraryId),
+      openLibraryWorkId: normalizeOpenLibraryId(document.key),
+      openLibraryEditionId: openLibraryEditionId || null,
       coverId: String(coverId),
       title: edition?.title ?? document.title,
       authors: (document.author_name ?? []).map((author) => author.trim()).filter(Boolean),
@@ -219,7 +221,8 @@ export function normalizeOpenLibrarySearchResponse(
     )
     .slice(0, OPEN_LIBRARY_RESULT_LIMIT)
     .map((result) => ({
-      openLibraryId: result.openLibraryId,
+      openLibraryWorkId: result.openLibraryWorkId,
+      openLibraryEditionId: result.openLibraryEditionId,
       coverId: result.coverId,
       title: result.title,
       authors: result.authors,
@@ -256,9 +259,11 @@ export function normalizeOpenLibraryCatalogSearchResponse(
     const coverId = edition?.cover_i ?? document.cover_i;
 
     results.push({
-      openLibraryId: normalizeOpenLibraryId(
-        edition?.key ?? document.cover_edition_key ?? document.key
-      ),
+      openLibraryWorkId: normalizeOpenLibraryId(document.key),
+      openLibraryEditionId:
+        edition?.key || document.cover_edition_key ?
+          normalizeOpenLibraryId(edition?.key ?? document.cover_edition_key ?? '')
+        : null,
       coverId: coverId ? String(coverId) : null,
       title: edition?.title ?? document.title,
       authors: (document.author_name ?? []).map((author) => author.trim()).filter(Boolean),
@@ -272,8 +277,11 @@ export function normalizeOpenLibraryCatalogSearchResponse(
   return results
     .filter(
       (result, index, allResults) =>
-        allResults.findIndex((candidate) => candidate.openLibraryId === result.openLibraryId) ===
-        index
+        allResults.findIndex(
+          (candidate) =>
+            (candidate.openLibraryEditionId ?? candidate.openLibraryWorkId) ===
+            (result.openLibraryEditionId ?? result.openLibraryWorkId)
+        ) === index
     )
     .slice(0, OPEN_LIBRARY_RESULT_LIMIT);
 }

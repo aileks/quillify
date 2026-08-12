@@ -5,6 +5,7 @@ import {
   timestamp,
   date,
   pgSchema,
+  index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
@@ -39,24 +40,35 @@ export const users = quillify.table('users', {
   updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const books = quillify.table('books', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: text('userId')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  title: text('title').notNull(),
-  author: text('author').notNull(),
-  numberOfPages: integer('numberOfPages').notNull(),
-  genre: text('genre').default('Other'),
-  publishYear: integer('publishYear').notNull(),
-  coverSource: text('coverSource'),
-  coverSourceId: text('coverSourceId'),
-  ownershipType: ownershipTypeEnum('ownershipType').notNull().default('unknown'),
-  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
-});
+export const books = quillify.table(
+  'books',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    author: text('author').notNull(),
+    numberOfPages: integer('numberOfPages').notNull(),
+    genre: text('genre').default('Other'),
+    publishYear: integer('publishYear').notNull(),
+    coverSource: text('coverSource'),
+    coverSourceId: text('coverSourceId'),
+    isbn10: text('isbn10'),
+    isbn13: text('isbn13'),
+    openLibraryWorkId: text('openLibraryWorkId'),
+    openLibraryEditionId: text('openLibraryEditionId'),
+    ownershipType: ownershipTypeEnum('ownershipType').notNull().default('unknown'),
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('books_user_isbn13_index').on(table.userId, table.isbn13),
+    index('books_user_open_library_edition_index').on(table.userId, table.openLibraryEditionId),
+  ]
+);
 
 export const readingPeriods = quillify.table(
   'reading_periods',

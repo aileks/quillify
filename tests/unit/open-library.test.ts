@@ -43,7 +43,8 @@ describe('Open Library metadata service', () => {
 
     expect(results).toEqual([
       {
-        openLibraryId: 'OL456M',
+        openLibraryWorkId: 'OL123W',
+        openLibraryEditionId: 'OL456M',
         coverId: '222',
         title: 'Jane Eyre',
         authors: ['Charlotte Brontë'],
@@ -144,7 +145,8 @@ describe('Open Library metadata service', () => {
 
     expect(results).toEqual([
       {
-        openLibraryId: 'OL456M',
+        openLibraryWorkId: 'OL123W',
+        openLibraryEditionId: 'OL456M',
         coverId: null,
         title: 'Jane Eyre',
         authors: ['Charlotte Brontë'],
@@ -174,7 +176,8 @@ describe('Open Library metadata service', () => {
 
     expect(results).toEqual([
       {
-        openLibraryId: 'OL456M',
+        openLibraryWorkId: 'OL123W',
+        openLibraryEditionId: 'OL456M',
         coverId: '111',
         title: 'Jane Eyre',
         authors: ['Charlotte Brontë'],

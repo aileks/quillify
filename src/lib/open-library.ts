@@ -1,7 +1,8 @@
 const OPEN_LIBRARY_COVERS_URL = 'https://covers.openlibrary.org/b/id';
 
 export interface OpenLibrarySearchResult {
-  openLibraryId: string;
+  openLibraryWorkId: string;
+  openLibraryEditionId: string | null;
   coverId: string;
   title: string;
   authors: string[];
@@ -12,7 +13,8 @@ export interface OpenLibrarySearchResult {
 }
 
 export interface OpenLibraryCatalogSearchResult {
-  openLibraryId: string;
+  openLibraryWorkId: string;
+  openLibraryEditionId: string | null;
   coverId: string | null;
   title: string;
   authors: string[];

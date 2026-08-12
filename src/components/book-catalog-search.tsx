@@ -196,7 +196,7 @@ export function BookCatalogSearch({ saying, onSelect, onManualEntry }: BookCatal
           <ul className='grid gap-3 md:grid-cols-2' aria-label='Catalog results'>
             {results.map((result, index) => (
               <CatalogResult
-                key={result.openLibraryId}
+                key={result.openLibraryEditionId ?? result.openLibraryWorkId}
                 result={result}
                 onSelect={() => onSelect(result)}
                 loading={index < 2 ? 'eager' : 'lazy'}

@@ -22,10 +22,17 @@ interface CoverCandidateProps {
   candidate: OpenLibrarySearchResult;
   inputName: string;
   isSelected: boolean;
+  loading: 'eager' | 'lazy';
   onSelect: () => void;
 }
 
-function CoverCandidate({ candidate, inputName, isSelected, onSelect }: CoverCandidateProps) {
+function CoverCandidate({
+  candidate,
+  inputName,
+  isSelected,
+  loading,
+  onSelect,
+}: CoverCandidateProps) {
   const publicationYear = candidate.editionPublicationYear ?? candidate.firstPublicationYear;
   const authorNames = candidate.authors.join(', ') || 'Unknown author';
 
@@ -58,6 +65,7 @@ function CoverCandidate({ candidate, inputName, isSelected, onSelect }: CoverCan
         title={candidate.title}
         author={authorNames}
         sizes='(max-width: 640px) 42vw, (max-width: 1024px) 26vw, 150px'
+        loading={loading}
         className='w-full'
       />
       <span className='flex min-w-0 flex-col gap-1'>
@@ -225,12 +233,13 @@ export function BookCoverPicker({
           className='flex w-full max-w-full min-w-0 snap-x gap-3 overflow-x-auto overscroll-x-contain pr-3 pb-3'
           aria-label='Cover choices'
         >
-          {candidates.map((candidate) => (
+          {candidates.map((candidate, index) => (
             <CoverCandidate
-              key={`${candidate.openLibraryId}-${candidate.coverId}`}
+              key={`${candidate.openLibraryEditionId ?? candidate.openLibraryWorkId}-${candidate.coverId}`}
               candidate={candidate}
               inputName={inputName}
               isSelected={candidate.coverId === selectedCoverId}
+              loading={index < 2 ? 'eager' : 'lazy'}
               onSelect={() => onSelectionChange(candidate.coverId)}
             />
           ))}

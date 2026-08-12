@@ -177,6 +177,10 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
       publishYear: data.publishYear,
       coverSource: data.coverSource,
       coverSourceId: data.coverSourceId,
+      isbn10: data.isbn10,
+      isbn13: data.isbn13,
+      openLibraryWorkId: data.openLibraryWorkId,
+      openLibraryEditionId: data.openLibraryEditionId,
       ownershipType: data.ownershipType,
       readingDetails: data.readingDetails,
     });
@@ -235,6 +239,12 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
               genre: book.genre || '',
               coverSource: book.coverSource === 'open_library' ? 'open_library' : null,
               coverSourceId: book.coverSourceId,
+              isbn: book.isbn13 ?? book.isbn10 ?? '',
+              catalogIsbns: [book.isbn13, book.isbn10].filter(
+                (isbn): isbn is string => isbn !== null
+              ),
+              openLibraryWorkId: book.openLibraryWorkId,
+              openLibraryEditionId: book.openLibraryEditionId,
               ownershipType: book.ownershipType,
               includeReadingDetails: true,
               readingStatus: book.currentReadingPeriod.status,
@@ -291,6 +301,15 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
                 </span>
                 <span className='text-base font-medium'>{book.numberOfPages}</span>
               </div>
+
+              {book.isbn13 && (
+                <div className='flex items-start gap-3'>
+                  <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                    ISBN
+                  </span>
+                  <span className='text-base font-medium'>{book.isbn13}</span>
+                </div>
+              )}
 
               {book.genre && (
                 <div className='flex items-start gap-3'>

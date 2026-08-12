@@ -217,6 +217,25 @@ export function BookForm({
 
             <FormField
               control={form.control}
+              name='isbn'
+              render={({ field, fieldState }) => (
+                <FormItem data-invalid={fieldState.invalid}>
+                  <FormLabel>ISBN</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder='9780141441146'
+                      maxLength={32}
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name='genre'
               render={({ field, fieldState }) => (
                 <FormItem data-invalid={fieldState.invalid}>

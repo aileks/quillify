@@ -70,6 +70,9 @@
 
 ## Verification
 
+- Bump one minor version for each feature branch and add its user-facing changes to the release
+  manifest.
+
 - Run the narrowest test first
 - Before completion run `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and
   `pnpm build`

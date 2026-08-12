@@ -92,8 +92,11 @@ manual entry. Selecting a result prefills available title, author, publication y
 cover metadata while keeping every field editable. Manual entry remains available when catalog
 metadata is missing or incorrect.
 
-**Still planned:** Persisted ISBN and edition identity, format metadata, duplicate warnings, and
-camera barcode scanning.
+**Implemented foundation:** Catalog selections now persist canonical ISBN and explicit Open Library
+work and edition identity. Likely duplicates warn before writing and can be explicitly added as a
+separate edition.
+
+**Still planned:** Edition format metadata and camera barcode scanning.
 
 **Planned experience:**
 
@@ -119,6 +122,14 @@ duplicates, and high catalog-match acceptance.
 
 **User problem:** Readers with an existing history face too much manual work to adopt Quillify, and
 readers cannot independently back up their data.
+
+**Implemented foundation:** Goodreads CSV files can be previewed, corrected for missing pages and
+publication year, checked for duplicates, and retried safely. Account Settings also provides a
+versioned JSON backup containing the account, Library, catalog identity, reading periods, and import
+provenance.
+
+**Still planned:** StoryGraph import, JSON backup restoration, and fields introduced by later
+ratings, tags, lists, and notes features.
 
 **Planned experience:**
 

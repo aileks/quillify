@@ -5,35 +5,40 @@ The TypeScript source is `src/server/db/schema.ts`.
 
 ## `users`
 
-| Column            | Type        | Constraints               |
-| ----------------- | ----------- | ------------------------- |
-| `id`              | text        | primary key               |
-| `name`            | text        | nullable                  |
-| `email`           | text        | nullable, unique          |
-| `password`        | text        | not null, bcrypt hash     |
-| `emailVerifiedAt` | timestamptz | nullable                  |
-| `createdAt`       | timestamptz | not null, defaults to now |
-| `updatedAt`       | timestamptz | not null, defaults to now |
+| Column                   | Type        | Constraints               |
+| ------------------------ | ----------- | ------------------------- |
+| `id`                     | text        | primary key               |
+| `name`                   | text        | nullable                  |
+| `email`                  | text        | nullable, unique          |
+| `password`               | text        | not null, bcrypt hash     |
+| `emailVerifiedAt`        | timestamptz | nullable                  |
+| `lastSeenReleaseVersion` | text        | nullable                  |
+| `createdAt`              | timestamptz | not null, defaults to now |
+| `updatedAt`              | timestamptz | not null, defaults to now |
 
 Laravel bcrypt hashes using the `$2y$` prefix remain supported by
 `src/server/auth/password.ts`.
 
 ## `books`
 
-| Column          | Type        | Constraints                                     |
-| --------------- | ----------- | ----------------------------------------------- |
-| `id`            | text        | primary key                                     |
-| `userId`        | text        | not null, references `users.id`, cascade delete |
-| `title`         | text        | not null                                        |
-| `author`        | text        | not null                                        |
-| `numberOfPages` | integer     | not null                                        |
-| `genre`         | text        | nullable, defaults to `Other`                   |
-| `publishYear`   | integer     | not null                                        |
-| `coverSource`   | text        | nullable, currently `open_library`              |
-| `coverSourceId` | text        | nullable Open Library cover ID                  |
-| `ownershipType` | enum        | not null, defaults to `unknown`                 |
-| `createdAt`     | timestamptz | not null, defaults to now                       |
-| `updatedAt`     | timestamptz | not null, defaults to now                       |
+| Column                 | Type        | Constraints                                     |
+| ---------------------- | ----------- | ----------------------------------------------- |
+| `id`                   | text        | primary key                                     |
+| `userId`               | text        | not null, references `users.id`, cascade delete |
+| `title`                | text        | not null                                        |
+| `author`               | text        | not null                                        |
+| `numberOfPages`        | integer     | not null                                        |
+| `genre`                | text        | nullable, defaults to `Other`                   |
+| `publishYear`          | integer     | not null                                        |
+| `coverSource`          | text        | nullable, currently `open_library`              |
+| `coverSourceId`        | text        | nullable Open Library cover ID                  |
+| `isbn10`               | text        | nullable, canonical ISBN-10                     |
+| `isbn13`               | text        | nullable, canonical ISBN-13                     |
+| `openLibraryWorkId`    | text        | nullable Open Library work ID                   |
+| `openLibraryEditionId` | text        | nullable Open Library edition ID                |
+| `ownershipType`        | enum        | not null, defaults to `unknown`                 |
+| `createdAt`            | timestamptz | not null, defaults to now                       |
+| `updatedAt`            | timestamptz | not null, defaults to now                       |
 
 Book bounds are enforced by shared Zod schemas in `src/lib/book-validation.ts`.
 
@@ -57,6 +62,19 @@ book-level metadata and does not change when a new reading period begins.
 Status values are `to_read`, `reading`, `paused`, `finished`, and `did_not_finish`. Format values
 are `print`, `ebook`, and `audiobook`. A partial unique index allows at most one current reading
 period per book. Finished and Did Not Finish periods remain as history when a reread begins.
+
+## `book_import_sources`
+
+| Column           | Type        | Constraints                                     |
+| ---------------- | ----------- | ----------------------------------------------- |
+| `id`             | text        | primary key                                     |
+| `userId`         | text        | not null, references `users.id`, cascade delete |
+| `bookId`         | text        | not null, references `books.id`, cascade delete |
+| `source`         | enum        | not null, currently `goodreads`                 |
+| `sourceRecordId` | text        | not null                                        |
+| `createdAt`      | timestamptz | not null, defaults to now                       |
+
+The user, source, and source record ID are unique together so an import can be retried safely.
 
 ## `password_reset_tokens`
 
@@ -86,8 +104,9 @@ deletes every outstanding verification token for that user.
 
 ## Relationships
 
-- A user has many books
+- A user has many books and import source records
 - A book has many reading periods and exactly one current period under application invariants
+- A book has many import source records
 - A user has many password reset token attempts
 - A user has many email verification token attempts
 - Deleting a user cascades through books to reading periods and directly to both token tables
@@ -106,5 +125,8 @@ Migrations live in `src/server/drizzle/`.
 - Migration `0011` adds nullable cover source and cover ID columns to books.
 - Migration `0012` adds lifecycle enums, ownership, and reading periods; backfills every existing
   book from `isRead`; then removes the binary column.
+- Migration `0013` adds canonical ISBN and Open Library work and edition identity to books.
+- Migration `0014` adds Goodreads import provenance and its idempotency constraint.
+- Migration `0015` adds the account-backed release notes marker.
 
 The daily cron route removes expired rows from both token tables.

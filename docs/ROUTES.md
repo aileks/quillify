@@ -10,7 +10,7 @@
 | `/account/forgot-password` | Public    | Request a password reset link                       |
 | `/account/reset-password`  | Public    | Reset a password with the `token` query parameter   |
 | `/account/verify-email`    | Redirect  | Show verification success, expiry, or failure       |
-| `/account/settings`        | Protected | Update name, email, password, or delete the account |
+| `/account/settings`        | Protected | Manage the account, imports, and backups             |
 | `/books`                   | Protected | Browse, search, filter, sort, select, and paginate  |
 | `/books/new`               | Protected | Add a book                                          |
 | `/books/[id]`              | Protected | View, edit, track, reread, or delete a book         |
@@ -26,6 +26,7 @@ own server redirect.
 | `/api/trpc/[trpc]`         | POST   | Batched tRPC transport                           |
 | `/api/verify-email`        | GET    | Consume a verification token and redirect        |
 | `/api/cron/cleanup-tokens` | GET    | Remove expired reset and verification token rows |
+| `/api/export`              | GET    | Download the authenticated account JSON backup   |
 
 The cron route requires `Authorization: Bearer <CRON_SECRET>`.
 
@@ -38,7 +39,7 @@ Every books procedure is protected.
 | `books.stats`               | Query    | None                                              | Library, lifecycle, and reading totals  |
 | `books.list`                | Query    | Search, status, genres, sort, page, page size     | Paginated books with current periods    |
 | `books.getById`             | Query    | `{ id }`                                          | Owned book, current period, and history |
-| `books.create`              | Mutation | Book, ownership, optional initial reading details | Created book and current period         |
+| `books.create`              | Mutation | Book plus duplicate review action                  | Created book or duplicate warning       |
 | `books.update`              | Mutation | `{ id }` plus editable metadata and ownership     | Updated owned book                      |
 | `books.transitionStatus`    | Mutation | Book ID, next status, format, and optional dates  | Updated or new current period           |
 | `books.updateReadingPeriod` | Mutation | Period ID, outcome, format, and optional dates    | Corrected owned period                  |
@@ -64,6 +65,10 @@ Shared book validation limits:
 
 Unverified accounts can hold up to 10 books.
 
+`books.create` returns no writes with likely user-scoped matches when the same edition, canonical
+ISBN-13, or normalized title, author, and year already exists. A separate-edition action explicitly
+bypasses that warning.
+
 ## `bookMetadata.*`
 
 Every book metadata procedure is protected. Open Library requests run on the server.
@@ -75,12 +80,34 @@ Every book metadata procedure is protected. Open Library requests run on the ser
 
 A title is required and the author is optional. Search uses Open Library relevance matching, then
 ranks exact and near-exact title and author matches ahead of weaker results. Up to 15 distinct
-matches with covers are returned. Returned fields include an Open Library identifier, cover ID,
-title, authors, publication years, available ISBNs, and a derived cover preview URL.
+matches with covers are returned. Returned fields include explicit Open Library work and edition
+IDs, cover ID, title, authors, publication years, available ISBNs, and a derived cover preview URL.
 
 Catalog search accepts a title, author, or ISBN. It returns matching works or editions with
 available authors, publication years, page count, ISBNs, and an optional cover ID. Results without
 covers remain available for metadata prefill.
+
+## `dataTransfer.*`
+
+Both procedures are protected and user-scoped.
+
+| Procedure                             | Kind     | Purpose                                       |
+| ------------------------------------- | -------- | --------------------------------------------- |
+| `dataTransfer.previewGoodreadsImport` | Mutation | Parse and classify a Goodreads CSV            |
+| `dataTransfer.importGoodreads`        | Mutation | Atomically import selected and corrected rows |
+
+CSV uploads are limited to 5 MiB and 10,000 records. Previously imported Goodreads IDs are always
+skipped. Likely duplicates require an explicit separate-edition choice. Import writes books,
+current reading periods, and provenance in one transaction.
+
+## `releases.*`
+
+| Procedure           | Kind     | Purpose                                        |
+| ------------------- | -------- | ---------------------------------------------- |
+| `releases.unseen`   | Query    | Return manifest entries newer than the marker |
+| `releases.markSeen` | Mutation | Mark the server-selected current version seen |
+
+Both procedures are protected. The marker follows the account across devices.
 
 ## `auth.*`
 

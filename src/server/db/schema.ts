@@ -37,6 +37,7 @@ export const users = quillify.table('users', {
   email: text('email').unique(),
   password: text('password').notNull(),
   emailVerifiedAt: timestamp('emailVerifiedAt', { mode: 'date', withTimezone: true }),
+  lastSeenReleaseVersion: text('lastSeenReleaseVersion'),
   createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
 });

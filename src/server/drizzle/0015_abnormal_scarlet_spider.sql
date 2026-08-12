@@ -1,0 +1,1 @@
+ALTER TABLE "quillify"."users" ADD COLUMN "lastSeenReleaseVersion" text;

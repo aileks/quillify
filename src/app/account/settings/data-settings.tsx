@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileUp, LibraryBig } from 'lucide-react';
+import { Download, FileUp, LibraryBig } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -220,6 +220,28 @@ export function DataSettings() {
             <FileUp data-icon='inline-start' />
             {previewImport.isPending ? 'Reading CSV...' : 'Preview Import'}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Download Backup</CardTitle>
+          <CardDescription>
+            Save a versioned JSON copy of your account, Library, reading history, catalog IDs, and
+            import history.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='flex flex-col gap-3'>
+          <Button asChild className='w-fit'>
+            <a href='/api/export' download>
+              <Download data-icon='inline-start' />
+              Download JSON Backup
+            </a>
+          </Button>
+          <p className='text-muted-foreground text-sm'>
+            Backups never include your password or account tokens. Restore support is planned for a
+            later release.
+          </p>
         </CardContent>
       </Card>
 

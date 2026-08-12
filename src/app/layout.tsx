@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     default: 'Quillify',
     template: '%s | Quillify',
   },
-  description: 'Track books you want to read and books you have finished.',
+  description: 'Your Personal Library',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

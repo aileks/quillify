@@ -4,9 +4,16 @@ test.describe('public experience', () => {
   test('landing page exposes the primary reading-list journey', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.getByRole('link', { name: /get started/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /log in/i })).toBeVisible();
+    const hero = page.getByRole('region', { name: 'Hero section' });
+    await expect(hero.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(hero.getByRole('link', { name: 'Create a Free Account' })).toHaveAttribute(
+      'href',
+      '/account/register'
+    );
+    await expect(hero.getByRole('link', { name: 'Sign In' })).toHaveAttribute(
+      'href',
+      '/account/login'
+    );
     await expect(page.locator('footer').getByRole('link', { name: 'About' })).toHaveAttribute(
       'href',
       '/about'
@@ -37,7 +44,7 @@ test.describe('public experience', () => {
 
     if (testInfo.project.name === 'mobile-chromium') {
       await page.getByRole('button', { name: 'Menu' }).click();
-      await expect(page.getByRole('menu').getByRole('link', { name: 'About' })).toBeVisible();
+      await expect(page.getByRole('menuitem', { name: 'About' })).toBeVisible();
     } else {
       await expect(page.locator('aside footer').getByRole('link', { name: 'About' })).toBeVisible();
     }

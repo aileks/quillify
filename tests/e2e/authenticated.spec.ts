@@ -6,23 +6,13 @@ async function logInWithDemoAccount(page: import('@playwright/test').Page) {
   await expect(page).toHaveURL(/\/$/);
 }
 
-test('login announces book cover art', async ({ page }) => {
+test('demo account opens the dashboard', async ({ page }) => {
   await logInWithDemoAccount(page);
-  await expect(
-    page.getByText('Book cover art is here! Edit a book to find and choose its cover.')
-  ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Open your Library' })).toHaveAttribute(
-    'href',
-    '/books'
-  );
-
-  await page.reload();
-  await expect(
-    page.getByText('Book cover art is here! Edit a book to find and choose its cover.')
-  ).not.toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome back, Demo User!' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'View Library' })).toHaveAttribute('href', '/books');
 });
 
-test('authenticated navigation opens About and returns to the Library', async ({
+test('authenticated navigation opens About without an account call to action', async ({
   page,
 }, testInfo) => {
   await logInWithDemoAccount(page);
@@ -31,7 +21,11 @@ test('authenticated navigation opens About and returns to the Library', async ({
     await page.getByRole('button', { name: 'Menu' }).click();
   }
 
-  await page.getByRole('link', { name: 'About', exact: true }).click();
+  const aboutLink =
+    testInfo.project.name === 'mobile-chromium' ?
+      page.getByRole('menuitem', { name: 'About', exact: true })
+    : page.getByRole('link', { name: 'About', exact: true });
+  await aboutLink.click();
   await expect(page).toHaveURL(/\/about$/);
   await expect(
     page.getByRole('heading', {
@@ -39,10 +33,8 @@ test('authenticated navigation opens About and returns to the Library', async ({
       name: 'A focused home for the books you want to read.',
     })
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Open Your Library' })).toHaveAttribute(
-    'href',
-    '/books'
-  );
+  await expect(page.getByRole('heading', { name: 'Bring your TBR together.' })).not.toBeVisible();
+  await expect(page.getByRole('link', { name: 'Create Account' })).not.toBeVisible();
 });
 
 test('reading dates use the themed calendar picker', async ({ page }) => {
@@ -94,10 +86,10 @@ test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) =
   await expect(pagination).toBeVisible();
   await expect(library).toBeVisible();
   expect(
-    await pagination.evaluate((navigation) => {
-      const list = document.querySelector('[role="list"][aria-label="Library"]');
+    await library.evaluate((list) => {
+      const navigation = document.querySelector('nav[aria-label="Library pagination"]');
       return Boolean(
-        list && navigation.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING
+        navigation && list.compareDocumentPosition(navigation) & Node.DOCUMENT_POSITION_FOLLOWING
       );
     })
   ).toBe(true);
@@ -145,7 +137,10 @@ test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) =
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Status' })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel' }).click();
-  await page.getByRole('button', { name: /^Edit / }).click();
+  await page
+    .getByRole('article')
+    .getByRole('button', { name: /^Edit / })
+    .click();
   await expect(page.getByRole('heading', { name: /^Editing / })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Title' }).first()).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Author' }).first()).toBeVisible();

@@ -128,10 +128,7 @@ export default async function AboutPage() {
         </section>
       )}
 
-      <section
-        className='mt-auto px-4 pt-12 pb-8'
-        aria-label='Source code'
-      >
+      <section className='mt-auto px-4 pt-12 pb-8' aria-label='Source code'>
         <div className='container mx-auto flex max-w-7xl justify-center'>
           <Link
             href='https://github.com/aileks/quillify'

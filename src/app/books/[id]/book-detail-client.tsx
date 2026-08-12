@@ -287,63 +287,55 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
             </div>
 
             {/* Publication Details */}
-            <div className='mb-6 flex flex-col gap-3 text-sm'>
-              <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
-                <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-                  Publication Year
-                </span>
-                <span className='text-base font-medium'>{book.publishYear}</span>
-              </div>
+            <dl className='mb-6 grid grid-cols-[82px_minmax(0,1fr)] items-baseline gap-x-3 gap-y-3 text-sm'>
+              <dt className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+                Published:
+              </dt>
+              <dd className='text-base font-medium'>{book.publishYear}</dd>
 
-              <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
-                <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-                  Pages:
-                </span>
-                <span className='text-base font-medium'>{book.numberOfPages}</span>
-              </div>
+              <dt className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+                Pages:
+              </dt>
+              <dd className='text-base font-medium'>{book.numberOfPages}</dd>
 
               {book.isbn13 && (
-                <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
-                  <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-                    ISBN
-                  </span>
-                  <span className='text-base font-medium'>{book.isbn13}</span>
-                </div>
+                <>
+                  <dt className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+                    ISBN:
+                  </dt>
+                  <dd className='text-base font-medium'>{book.isbn13}</dd>
+                </>
               )}
 
               {book.genre && (
-                <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
-                  <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-                    Genre
-                  </span>
-                  <span className='text-base font-medium'>{book.genre}</span>
-                </div>
+                <>
+                  <dt className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+                    Genre:
+                  </dt>
+                  <dd className='text-base font-medium'>{book.genre}</dd>
+                </>
               )}
 
               {book.createdAt && (
-                <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
-                  <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+                <>
+                  <dt className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
                     Added:
-                  </span>
-                  <span className='text-base font-medium'>
+                  </dt>
+                  <dd className='text-base font-medium'>
                     {new Date(book.createdAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                     })}
-                  </span>
-                </div>
+                  </dd>
+                </>
               )}
 
-              <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
-                <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
-                  Ownership
-                </span>
-                <span className='text-base font-medium'>
-                  {OWNERSHIP_TYPE_LABELS[book.ownershipType]}
-                </span>
-              </div>
-            </div>
+              <dt className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+                Ownership:
+              </dt>
+              <dd className='text-base font-medium'>{OWNERSHIP_TYPE_LABELS[book.ownershipType]}</dd>
+            </dl>
 
             <div className='border-foreground/10 mb-6 border-t pt-4'>
               <div className='flex flex-wrap items-center gap-3'>

@@ -30,10 +30,12 @@ test('authenticated navigation opens About without an account call to action', a
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: 'A focused home for the books you want to read.',
+      name: 'A place for books before and after they are read.',
     })
   ).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Bring your TBR together.' })).not.toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Give each possibility a place.' })
+  ).not.toBeVisible();
   await expect(page.getByRole('link', { name: 'Create Account' })).not.toBeVisible();
 });
 

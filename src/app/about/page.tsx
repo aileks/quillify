@@ -1,31 +1,31 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Github } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { auth } from '@/server/auth';
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'Learn why Quillify offers a simple, focused home for your reading list.',
+  description: 'The philosophy behind Quillify, an open-source home for your reading life.',
 };
 
 const values = [
   {
     number: '01',
-    title: 'Simple',
-    description: 'Add books, update their status, and keep moving.',
+    title: 'Attention',
+    description: 'A Library should make the next choice clearer, not become another hobby.',
   },
   {
     number: '02',
-    title: 'Focused',
-    description: 'Keep To Read and Finished books easy to find.',
+    title: 'Continuity',
+    description: 'Starts, pauses, finishes, and rereads all belong to a reader’s history.',
   },
   {
     number: '03',
-    title: 'Personal',
-    description: 'Track the books and progress that matter to you.',
+    title: 'Ownership',
+    description: 'Your books, progress, and portable backups should remain yours.',
   },
 ] as const;
 
@@ -34,7 +34,7 @@ export default async function AboutPage() {
   const isAuthenticated = !!session?.user;
 
   return (
-    <div className='min-h-screen overflow-hidden'>
+    <div className='flex min-h-screen flex-col overflow-hidden'>
       <section className='border-border border-b px-4 py-16 sm:py-20 lg:py-28'>
         <div className='container mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-20'>
           <div className='max-w-4xl'>
@@ -42,11 +42,11 @@ export default async function AboutPage() {
               About Quillify
             </p>
             <h1 className='text-5xl leading-[1.05] font-bold tracking-tight sm:text-6xl lg:text-7xl'>
-              A focused home for the books you want to read.
+              A place for books before and after they are read.
             </h1>
             <p className='text-muted-foreground mt-8 max-w-2xl text-lg leading-relaxed sm:text-xl'>
-              Keep the books you want to read in one Library, then mark them Finished when you are
-              done.
+              Books begin as possibilities. Quillify is an open-source home for what you want to
+              read, what you are reading, and what stays with you in one personal Library.
             </p>
           </div>
 
@@ -72,12 +72,15 @@ export default async function AboutPage() {
         aria-labelledby='quillify-values'
       >
         <div className='container mx-auto max-w-7xl'>
-          <div className='max-w-3xl'>
+          <div>
             <p className='text-sidebar-primary font-mono text-xs font-bold tracking-[0.18em] uppercase'>
-              What guides it
+              The philosophy
             </p>
-            <h2 id='quillify-values' className='mt-3 text-4xl font-bold sm:text-5xl'>
-              Simple. Focused. Personal.
+            <h2
+              id='quillify-values'
+              className='mt-3 text-4xl font-bold sm:text-5xl lg:text-4xl lg:whitespace-nowrap xl:text-5xl'
+            >
+              A Library should serve the reading life.
             </h2>
           </div>
 
@@ -102,10 +105,10 @@ export default async function AboutPage() {
             <div className='border-primary/30 bg-card grid gap-8 rounded-sm border p-6 shadow-lg sm:p-10 lg:grid-cols-[1fr_auto] lg:items-end lg:p-12'>
               <div className='max-w-2xl'>
                 <h2 id='about-next-step' className='text-3xl font-bold sm:text-4xl'>
-                  Bring your TBR together.
+                  Give each possibility a place.
                 </h2>
                 <p className='text-muted-foreground mt-4 text-lg leading-relaxed'>
-                  Create an account and give every book on your list one clear place.
+                  Create an account and begin with the books already on your mind.
                 </p>
               </div>
 
@@ -124,6 +127,20 @@ export default async function AboutPage() {
           </div>
         </section>
       )}
+
+      <section className='mt-auto px-4 pt-16 pb-8 sm:pt-20 sm:pb-8' aria-label='Source code'>
+        <div className='container mx-auto flex max-w-7xl justify-center'>
+          <Link
+            href='https://github.com/aileks/quillify'
+            target='_blank'
+            rel='noreferrer'
+            className='text-muted-foreground hover:text-primary inline-flex items-center gap-2 text-sm underline underline-offset-4'
+          >
+            <Github className='size-4' aria-hidden='true' />
+            View source on GitHub
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

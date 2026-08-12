@@ -20,7 +20,7 @@ test.describe('public experience', () => {
     );
   });
 
-  test('about page explains Quillify and keeps About in secondary navigation', async ({
+  test('about page explains Quillify philosophy and keeps About in secondary navigation', async ({
     page,
   }, testInfo) => {
     await page.goto('/about');
@@ -29,10 +29,17 @@ test.describe('public experience', () => {
     await expect(
       main.getByRole('heading', {
         level: 1,
-        name: 'A focused home for the books you want to read.',
+        name: 'A place for books before and after they are read.',
       })
     ).toBeVisible();
-    await expect(main.getByRole('heading', { name: 'Simple. Focused. Personal.' })).toBeVisible();
+    await expect(
+      main.getByRole('heading', { name: 'A Library should serve the reading life.' })
+    ).toBeVisible();
+    await expect(main.getByText(/Quillify is an open-source home/)).toBeVisible();
+    await expect(main.getByRole('link', { name: 'View source on GitHub' })).toHaveAttribute(
+      'href',
+      'https://github.com/aileks/quillify'
+    );
     await expect(main.getByRole('link', { name: 'Create Account' })).toHaveAttribute(
       'href',
       '/account/register'

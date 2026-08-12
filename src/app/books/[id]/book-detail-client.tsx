@@ -288,23 +288,23 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
 
             {/* Publication Details */}
             <div className='mb-6 flex flex-col gap-3 text-sm'>
-              <div className='flex items-start gap-3'>
-                <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+              <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
+                <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
                   Publication Year
                 </span>
                 <span className='text-base font-medium'>{book.publishYear}</span>
               </div>
 
-              <div className='flex items-start gap-3'>
-                <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+              <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
+                <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
                   Pages:
                 </span>
                 <span className='text-base font-medium'>{book.numberOfPages}</span>
               </div>
 
               {book.isbn13 && (
-                <div className='flex items-start gap-3'>
-                  <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
+                  <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
                     ISBN
                   </span>
                   <span className='text-base font-medium'>{book.isbn13}</span>
@@ -312,8 +312,8 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
               )}
 
               {book.genre && (
-                <div className='flex items-start gap-3'>
-                  <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
+                  <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
                     Genre
                   </span>
                   <span className='text-base font-medium'>{book.genre}</span>
@@ -321,8 +321,8 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
               )}
 
               {book.createdAt && (
-                <div className='flex items-start gap-3'>
-                  <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+                <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
+                  <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
                     Added:
                   </span>
                   <span className='text-base font-medium'>
@@ -335,8 +335,8 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
                 </div>
               )}
 
-              <div className='flex items-start gap-3'>
-                <span className='text-muted-foreground min-w-[80px] font-mono text-xs tracking-wider uppercase'>
+              <div className='grid grid-cols-[82px_minmax(0,1fr)] items-start gap-3'>
+                <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
                   Ownership
                 </span>
                 <span className='text-base font-medium'>

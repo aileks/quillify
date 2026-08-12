@@ -2,6 +2,23 @@ import { defaultShouldDehydrateQuery, QueryClient } from '@tanstack/react-query'
 import SuperJSON from 'superjson';
 import type { TRPCErrorShape } from '@/types';
 
+const TRANSIENT_ERROR_CODES = new Set([
+  'INTERNAL_SERVER_ERROR',
+  'TIMEOUT',
+  'BAD_GATEWAY',
+  'SERVICE_UNAVAILABLE',
+  'GATEWAY_TIMEOUT',
+]);
+
+export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 1) return false;
+
+  const trpcError = error as TRPCErrorShape;
+  const code = trpcError.data?.code;
+
+  return code === undefined || TRANSIENT_ERROR_CODES.has(code);
+}
+
 export const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {
@@ -16,18 +33,9 @@ export const createQueryClient = () =>
         refetchOnWindowFocus: false,
         // Refetch on mount if data is stale - ensures invalidated queries are refreshed on navigation
         refetchOnMount: true,
-        // Only refetch on reconnect if data is stale
-        refetchOnReconnect: 'always',
-        retry(failureCount, error: unknown) {
-          const e = error as TRPCErrorShape;
-          const code = e?.data?.code;
-          const httpStatus = e?.data?.httpStatus;
-          // Don't retry on UNAUTHORIZED or NOT_FOUND errors (these won't succeed on retry)
-          if (code === 'UNAUTHORIZED' || httpStatus === 401) return false;
-          if (code === 'NOT_FOUND' || httpStatus === 404) return false;
-          // Retry up to 2 times (3 total attempts -> 2 retries)
-          return failureCount < 2;
-        },
+        // Refetch stale active queries after reconnecting
+        refetchOnReconnect: true,
+        retry: shouldRetryQuery,
       },
       dehydrate: {
         serializeData: SuperJSON.serialize,

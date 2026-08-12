@@ -16,7 +16,6 @@ import {
   PanelLeft,
   Info,
 } from 'lucide-react';
-import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCallback, useRef, useEffect, useState } from 'react';
@@ -32,25 +31,11 @@ export const COLLAPSED_WIDTH = 64;
 export function Sidebar({ className, onResizingChange }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const utils = api.useUtils();
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
 
   // Get sidebar state from store
   const { sidebarWidth, sidebarCollapsed, setSidebarWidth, setSidebarCollapsed } = useUIStore();
-
-  // Prefetch data on hover/focus for instant navigation
-  const prefetchBooksData = () => {
-    // Prefetch the default books list (page 1, sorted by title) - used by /books
-    void utils.books.list.prefetch({
-      page: 1,
-      pageSize: 12,
-      sortBy: 'title',
-      sortOrder: 'asc',
-    });
-    // Prefetch stats data - used by home dashboard
-    void utils.books.stats.prefetch();
-  };
 
   // Handle mouse move during resize
   const handleMouseMove = useCallback(
@@ -172,42 +157,37 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
       <nav className='flex flex-1 flex-col gap-1 p-2'>
         {session?.user ?
           <>
-            <div onMouseEnter={prefetchBooksData} onFocus={prefetchBooksData}>
-              <Button
-                variant='ghost'
-                asChild
-                className={cn(
-                  'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                  pathname === '/' && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                  sidebarCollapsed && 'justify-center px-2'
-                )}
-                title={sidebarCollapsed ? 'Home' : undefined}
-              >
-                <Link href='/'>
-                  <Home />
-                  {!sidebarCollapsed && <span>Home</span>}
-                </Link>
-              </Button>
-            </div>
+            <Button
+              variant='ghost'
+              asChild
+              className={cn(
+                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
+                pathname === '/' && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                sidebarCollapsed && 'justify-center px-2'
+              )}
+              title={sidebarCollapsed ? 'Home' : undefined}
+            >
+              <Link href='/'>
+                <Home />
+                {!sidebarCollapsed && <span>Home</span>}
+              </Link>
+            </Button>
 
-            <div onMouseEnter={prefetchBooksData} onFocus={prefetchBooksData}>
-              <Button
-                variant='ghost'
-                asChild
-                className={cn(
-                  'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                  pathname.startsWith('/books') &&
-                    'bg-sidebar-accent text-sidebar-accent-foreground',
-                  sidebarCollapsed && 'justify-center px-2'
-                )}
-                title={sidebarCollapsed ? 'Library' : undefined}
-              >
-                <Link href='/books'>
-                  <BookOpen />
-                  {!sidebarCollapsed && <span>Library</span>}
-                </Link>
-              </Button>
-            </div>
+            <Button
+              variant='ghost'
+              asChild
+              className={cn(
+                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
+                pathname.startsWith('/books') && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                sidebarCollapsed && 'justify-center px-2'
+              )}
+              title={sidebarCollapsed ? 'Library' : undefined}
+            >
+              <Link href='/books'>
+                <BookOpen />
+                {!sidebarCollapsed && <span>Library</span>}
+              </Link>
+            </Button>
 
             <Button
               variant='ghost'

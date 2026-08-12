@@ -23,6 +23,8 @@ interface SearchParamsReader {
   get(name: string): string | null;
 }
 
+export type BookQuerySearchParams = Record<string, string | string[] | undefined>;
+
 const SORT_FIELDS = new Set<BookSortBy>(['title', 'author', 'createdAt']);
 const SORT_ORDERS = new Set<BookSortOrder>(['asc', 'desc']);
 
@@ -51,4 +53,13 @@ export function parseBookQueryParams(searchParams: SearchParamsReader) {
     : undefined;
 
   return { page, search, genre, sortBy, sortOrder, status };
+}
+
+export function parseBookQueryRecord(searchParams: BookQuerySearchParams) {
+  return parseBookQueryParams({
+    get(name) {
+      const value = searchParams[name];
+      return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
+    },
+  });
 }

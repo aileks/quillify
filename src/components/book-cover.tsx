@@ -60,6 +60,7 @@ export function BookCover({
           src={`${getOpenLibraryCoverUrl(coverSourceId!, size)}?default=false`}
           alt={`Cover of ${title} by ${author}`}
           fill
+          unoptimized
           sizes={sizes}
           loading={loading}
           className='object-contain'

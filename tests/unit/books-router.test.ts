@@ -23,6 +23,12 @@ function createSession() {
   };
 }
 
+function queryResult(rows: readonly unknown[]) {
+  return Object.assign(Promise.resolve(rows), {
+    orderBy: vi.fn(async () => rows),
+  });
+}
+
 describe('books router cover persistence', () => {
   it('returns likely matches without writing until a separate edition is confirmed', async () => {
     const existingBook = {
@@ -37,7 +43,7 @@ describe('books router cover persistence', () => {
     const database = {
       select: vi.fn(() => ({
         from: vi.fn(() => ({
-          where: vi.fn(async () => [existingBook]),
+          where: vi.fn(() => queryResult([existingBook])),
         })),
       })),
       insert: vi.fn(),
@@ -105,7 +111,7 @@ describe('books router cover persistence', () => {
     const database = {
       select: vi.fn(() => ({
         from: vi.fn(() => ({
-          where: vi.fn(async () => [{ id: 'user-1', emailVerifiedAt: new Date() }]),
+          where: vi.fn(() => queryResult([{ id: 'user-1', emailVerifiedAt: new Date() }])),
         })),
       })),
       insert: vi.fn(() => {
@@ -164,6 +170,7 @@ describe('books router cover persistence', () => {
 
   it('updates a book with an explicitly selected cover', async () => {
     let updatedValues: Record<string, unknown> | undefined;
+    let selectCount = 0;
     const existingBook = {
       id: 'book-1',
       userId: 'user-1',
@@ -178,12 +185,26 @@ describe('books router cover persistence', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    const currentPeriod = {
+      id: 'period-1',
+      bookId: 'book-1',
+      status: 'to_read' as const,
+      format: null,
+      startedOn: null,
+      endedOn: null,
+      isCurrent: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
     const database = {
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(async () => [existingBook]),
-        })),
-      })),
+      select: vi.fn(() => {
+        selectCount += 1;
+        return {
+          from: vi.fn(() => ({
+            where: vi.fn(() => queryResult(selectCount < 3 ? [existingBook] : [currentPeriod])),
+          })),
+        };
+      }),
       update: vi.fn(() => ({
         set: vi.fn((values: Record<string, unknown>) => {
           updatedValues = values;
@@ -248,6 +269,7 @@ describe('books router reading lifecycle', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    let savedPeriod = currentPeriod;
     let selectCount = 0;
     let updatedValues: Record<string, unknown> | undefined;
     const database = {
@@ -255,7 +277,9 @@ describe('books router reading lifecycle', () => {
         selectCount += 1;
         return {
           from: vi.fn(() => ({
-            where: vi.fn(async () => (selectCount === 1 ? [book] : [currentPeriod])),
+            where: vi.fn(() =>
+              queryResult(selectCount === 1 || selectCount === 3 ? [book] : [savedPeriod])
+            ),
           })),
         };
       }),
@@ -264,7 +288,10 @@ describe('books router reading lifecycle', () => {
           updatedValues = values;
           return {
             where: vi.fn(() => ({
-              returning: vi.fn(async () => [{ ...currentPeriod, ...values }]),
+              returning: vi.fn(async () => {
+                savedPeriod = { ...currentPeriod, ...values };
+                return [savedPeriod];
+              }),
             })),
           };
         }),
@@ -301,6 +328,8 @@ describe('books router reading lifecycle', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    let savedBook = book;
+    let savedPeriod = currentPeriod;
     const updatedValues: Record<string, unknown>[] = [];
     let selectCount = 0;
     const database = {
@@ -308,7 +337,9 @@ describe('books router reading lifecycle', () => {
         selectCount += 1;
         return {
           from: vi.fn(() => ({
-            where: vi.fn(async () => (selectCount === 1 ? [book] : [currentPeriod])),
+            where: vi.fn(() =>
+              queryResult(selectCount === 1 || selectCount === 3 ? [savedBook] : [savedPeriod])
+            ),
           })),
         };
       }),
@@ -317,11 +348,15 @@ describe('books router reading lifecycle', () => {
           updatedValues.push(values);
           return {
             where: vi.fn(() => ({
-              returning: vi.fn(async () => [
-                updatedValues.length === 1 ?
-                  { ...book, ...values }
-                : { ...currentPeriod, ...values },
-              ]),
+              returning: vi.fn(async () => {
+                if (updatedValues.length === 1) {
+                  savedBook = { ...book, ...values };
+                  return [savedBook];
+                }
+
+                savedPeriod = { ...currentPeriod, ...values };
+                return [savedPeriod];
+              }),
             })),
           };
         }),
@@ -380,7 +415,13 @@ describe('books router reading lifecycle', () => {
         selectCount += 1;
         return {
           from: vi.fn(() => ({
-            where: vi.fn(async () => (selectCount === 1 ? [book] : [currentPeriod])),
+            where: vi.fn(() =>
+              queryResult(
+                selectCount === 1 || selectCount === 3 ? [book]
+                : selectCount === 4 ? [{ ...currentPeriod, isCurrent: false }, newPeriod]
+                : [currentPeriod]
+              )
+            ),
           })),
         };
       }),
@@ -429,6 +470,7 @@ describe('books router reading lifecycle', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    let savedPeriod = currentPeriod;
     let selectCount = 0;
     let updatedValues: Record<string, unknown> | undefined;
     const database = {
@@ -436,7 +478,9 @@ describe('books router reading lifecycle', () => {
         selectCount += 1;
         return {
           from: vi.fn(() => ({
-            where: vi.fn(async () => (selectCount === 1 ? [book] : [currentPeriod])),
+            where: vi.fn(() =>
+              queryResult(selectCount === 1 || selectCount === 3 ? [book] : [savedPeriod])
+            ),
           })),
         };
       }),
@@ -445,7 +489,10 @@ describe('books router reading lifecycle', () => {
           updatedValues = values;
           return {
             where: vi.fn(() => ({
-              returning: vi.fn(async () => [{ ...currentPeriod, ...values }]),
+              returning: vi.fn(async () => {
+                savedPeriod = { ...currentPeriod, ...values };
+                return [savedPeriod];
+              }),
             })),
           };
         }),

@@ -2,20 +2,22 @@ import type { Metadata } from 'next';
 import '@/styles/globals.css';
 import { Merriweather, Work_Sans, Courier_Prime } from 'next/font/google';
 import { TRPCReactProvider } from '@/trpc/react';
+import { api, HydrateClient } from '@/trpc/server';
 import { SessionProvider } from '@/components/auth';
 import { LayoutShell } from '@/app/layout-shell';
 import { Toaster } from '@/components/ui/sonner';
+import { auth } from '@/server/auth';
 
 const merriweather = Merriweather({
   variable: '--font-serif',
   subsets: ['latin'],
-  weight: ['300', '400', '700', '900'],
+  weight: 'variable',
 });
 
 const workSans = Work_Sans({
   variable: '--font-sans',
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: 'variable',
 });
 
 const courierPrime = Courier_Prime({
@@ -40,19 +42,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
+  if (session?.user) {
+    void api.releases.unseen.prefetch();
+  }
+
   return (
     <html lang='en'>
       <body
         className={`${merriweather.variable} ${workSans.variable} ${courierPrime.variable} bg-background text-foreground font-sans antialiased`}
       >
-        <SessionProvider>
+        <SessionProvider session={session}>
           <TRPCReactProvider>
-            <LayoutShell>{children}</LayoutShell>
+            <HydrateClient>
+              <LayoutShell>{children}</LayoutShell>
+            </HydrateClient>
           </TRPCReactProvider>
           <Toaster />
         </SessionProvider>

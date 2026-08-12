@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import {
   ChevronDownIcon,
   ChevronLeft,
@@ -142,7 +142,6 @@ interface BooksClientProps {
 
 export function BooksClient({ subtitle }: BooksClientProps) {
   const utils = api.useUtils();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
@@ -195,8 +194,12 @@ export function BooksClient({ subtitle }: BooksClientProps) {
     if (page > 1) params.set('page', String(page));
 
     const newUrl = params.toString() ? `/books?${params.toString()}` : '/books';
-    router.replace(newUrl, { scroll: false });
-  }, [querySearch, status, genre, sortBy, sortOrder, page, router]);
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+    if (newUrl !== currentUrl) {
+      window.history.replaceState(null, '', newUrl);
+    }
+  }, [querySearch, status, genre, sortBy, sortOrder, page]);
 
   const { data, isLoading, error, isFetching } = api.books.list.useQuery(
     {

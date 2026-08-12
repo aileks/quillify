@@ -9,7 +9,7 @@ export interface ReleaseManifestEntry {
 
 export const RELEASE_MANIFEST = [
   {
-    version: '2.1.0',
+    version: '2.1.1',
     title: 'A more portable Library',
     notes: [
       {

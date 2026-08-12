@@ -13,8 +13,7 @@ export default async function Home() {
   const session = await auth();
   const subtitle = pickRandomSaying('home');
 
-  // If user is logged in, show dashboard
-  // Data fetching is handled client-side for instant cached navigation
+  // If user is logged in, show the dashboard with its initial data hydrated.
   if (session?.user) {
     const userName = session.user.name || session.user.email?.split('@')[0] || 'there';
     void api.books.stats.prefetch();

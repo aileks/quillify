@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { BookOpen, Home, Info, LogIn, LogOut, Menu, Settings, UserPlus } from 'lucide-react';
 
-import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -26,19 +25,6 @@ interface NavbarProps {
 export function Navbar({ className }: NavbarProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const utils = api.useUtils();
-
-  // Prefetch books data on hover/focus for instant navigation
-  const prefetchBooksData = () => {
-    // Prefetch the default books list (page 1, sorted by title) - used by /books
-    void utils.books.list.prefetch({
-      page: 1,
-      pageSize: 12,
-      sortBy: 'title',
-      sortOrder: 'asc',
-    });
-    void utils.books.stats.prefetch();
-  };
 
   return (
     <nav
@@ -72,21 +58,13 @@ export function Navbar({ className }: NavbarProps) {
                     {session.user.name || session.user.email || 'Account'}
                   </DropdownMenuLabel>
                   <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      asChild
-                      onMouseEnter={prefetchBooksData}
-                      onFocus={prefetchBooksData}
-                    >
+                    <DropdownMenuItem asChild>
                       <Link href='/' aria-current={pathname === '/' ? 'page' : undefined}>
                         <Home />
                         Home
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      asChild
-                      onMouseEnter={prefetchBooksData}
-                      onFocus={prefetchBooksData}
-                    >
+                    <DropdownMenuItem asChild>
                       <Link
                         href='/books'
                         aria-current={pathname.startsWith('/books') ? 'page' : undefined}

@@ -18,7 +18,7 @@ import { TRPCError } from '@trpc/server';
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
 import type { db } from '@/server/db';
 import { books, readingPeriods, users } from '@/server/db/schema';
-import type { Book, BookWithCurrentPeriod, BookWithReadingHistory, ReadingPeriod } from '@/types';
+import type { BookWithCurrentPeriod, BookWithReadingHistory, ReadingPeriod } from '@/types';
 import { bookCreateInputSchema, bookMetadataUpdateInputSchema } from '@/lib/book-validation';
 import { classifyDuplicateCandidate, type DuplicateBookIdentity } from '@/lib/book-duplicates';
 import {
@@ -31,11 +31,44 @@ import {
 } from '@/lib/reading-lifecycle';
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type BookQueryDatabase = Pick<typeof db, 'select'>;
 
 const createBookRequestSchema = z.object({
   book: bookCreateInputSchema,
   duplicateAction: z.enum(['review', 'create_separate_edition']),
 });
+
+async function getOwnedBookWithReadingHistory(
+  database: BookQueryDatabase,
+  userId: string,
+  bookId: string
+) {
+  const [book] = await database
+    .select()
+    .from(books)
+    .where(and(eq(books.id, bookId), eq(books.userId, userId)));
+
+  if (!book) {
+    throw new TRPCError({ code: 'NOT_FOUND' });
+  }
+
+  const periods = await database
+    .select()
+    .from(readingPeriods)
+    .where(eq(readingPeriods.bookId, book.id))
+    .orderBy(desc(readingPeriods.createdAt), desc(readingPeriods.id));
+  const currentReadingPeriod = periods.find(({ isCurrent }) => isCurrent);
+
+  if (!currentReadingPeriod) {
+    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+  }
+
+  return {
+    ...book,
+    currentReadingPeriod,
+    readingPeriods: periods,
+  } satisfies BookWithReadingHistory;
+}
 
 async function findDuplicateBooks(
   tx: DatabaseTransaction,
@@ -282,33 +315,11 @@ export const booksRouter = createTRPCRouter({
     }),
 
   // Get a single book by ID (owned by current user)
-  getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-    const [book] = await ctx.db
-      .select()
-      .from(books)
-      .where(and(eq(books.id, input.id), eq(books.userId, ctx.session.user.id)));
-
-    if (!book) {
-      throw new TRPCError({ code: 'NOT_FOUND' });
-    }
-
-    const periods = await ctx.db
-      .select()
-      .from(readingPeriods)
-      .where(eq(readingPeriods.bookId, book.id))
-      .orderBy(desc(readingPeriods.createdAt), desc(readingPeriods.id));
-    const currentReadingPeriod = periods.find(({ isCurrent }) => isCurrent);
-
-    if (!currentReadingPeriod) {
-      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-    }
-
-    return {
-      ...book,
-      currentReadingPeriod,
-      readingPeriods: periods,
-    } as BookWithReadingHistory;
-  }),
+  getById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(({ ctx, input }) =>
+      getOwnedBookWithReadingHistory(ctx.db, ctx.session.user.id, input.id)
+    ),
 
   // Create a new book for the current user
   create: protectedProcedure.input(createBookRequestSchema).mutation(async ({ ctx, input }) => {
@@ -439,7 +450,7 @@ export const booksRouter = createTRPCRouter({
           await saveCurrentReadingPeriod(tx, currentPeriod, input.readingDetails);
         }
 
-        return updated as Book;
+        return getOwnedBookWithReadingHistory(tx, ctx.session.user.id, updated.id);
       });
     }),
 
@@ -465,9 +476,9 @@ export const booksRouter = createTRPCRouter({
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }
 
-        const updatedPeriod = await saveCurrentReadingPeriod(tx, currentPeriod, input);
+        await saveCurrentReadingPeriod(tx, currentPeriod, input);
 
-        return { bookId: book.id, title: book.title, currentReadingPeriod: updatedPeriod };
+        return getOwnedBookWithReadingHistory(tx, ctx.session.user.id, book.id);
       });
     }),
 
@@ -509,7 +520,7 @@ export const booksRouter = createTRPCRouter({
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
       }
 
-      return updated;
+      return getOwnedBookWithReadingHistory(ctx.db, ctx.session.user.id, existing.period.bookId);
     }),
 
   // Delete a book

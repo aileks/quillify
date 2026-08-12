@@ -7,11 +7,7 @@ interface BookDetailPageProps {
 }
 
 /**
- * Book detail page - relies on client-side data fetching and caching.
- *
- * When navigating from the library/dashboard, data is already prefetched
- * in the client cache, making navigation instant. For direct URL access,
- * the client component fetches on mount.
+ * Book detail page - prefetches the owned book and hydrates it into the client cache.
  *
  * 404 handling is done client-side in BookDetailClient.
  */

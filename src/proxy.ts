@@ -34,6 +34,11 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  // Run this proxy for all /api routes
-  matcher: ['/api/:path*'],
+  // Skip normal API traffic and run only for browser document navigations.
+  matcher: [
+    {
+      source: '/api/((?!verify-email(?:/|$)).*)',
+      has: [{ type: 'header', key: 'sec-fetch-mode', value: 'navigate' }],
+    },
+  ],
 };

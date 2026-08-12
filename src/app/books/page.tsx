@@ -1,24 +1,25 @@
 import { BooksClient } from './books-client';
 import { api, HydrateClient } from '@/trpc/server';
+import { parseBookQueryRecord, type BookQuerySearchParams } from '@/lib/book-query';
 import { pickRandomSaying } from '@/lib/product-sayings';
 
 // Force dynamic rendering since this page requires authentication
 export const dynamic = 'force-dynamic';
 
 /**
- * Library catalog page - relies on client-side data fetching and caching.
- *
- * Data is fetched client-side via React Query, which caches results for
- * instant subsequent navigations within the staleTime window.
+ * Library catalog page - prefetches the current URL state and hydrates it into React Query.
  */
-export default function BooksPage() {
+interface BooksPageProps {
+  searchParams: Promise<BookQuerySearchParams>;
+}
+
+export default async function BooksPage({ searchParams }: BooksPageProps) {
   const subtitle = pickRandomSaying('library');
+  const query = parseBookQueryRecord(await searchParams);
 
   void api.books.list.prefetch({
-    page: 1,
+    ...query,
     pageSize: 12,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
   });
 
   return (

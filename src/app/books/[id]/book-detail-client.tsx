@@ -59,10 +59,7 @@ function formatReadingDate(value: string): string {
 
 /**
  * Client component for displaying and editing book details.
- * Supports optimistic updates for read status and real-time data synchronization.
- *
- * Data is fetched client-side, leveraging React Query's cache for instant
- * navigation when prefetched from the library/dashboard views.
+ * Uses the hydrated React Query cache and replaces detail data with mutation responses.
  */
 export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) {
   const router = useRouter();
@@ -89,23 +86,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
     }
   }, [searchParams]);
 
-  // Fetch book data - will be instant if prefetched on hover from library
-  // Use retry: false for NOT_FOUND to avoid unnecessary retries
-  const {
-    data: book,
-    isLoading,
-    error,
-  } = api.books.getById.useQuery(
-    { id: bookId },
-    {
-      retry: (failureCount, error) => {
-        // Don't retry on NOT_FOUND errors
-        if (error?.data?.code === 'NOT_FOUND') return false;
-        // Default retry behavior for other errors (3 retries)
-        return failureCount < 3;
-      },
-    }
-  );
+  const { data: book, isLoading, error } = api.books.getById.useQuery({ id: bookId });
 
   // Handle 404 - book not found (after loading completes)
   if (!isLoading && error?.data?.code === 'NOT_FOUND') {
@@ -113,9 +94,9 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
   }
 
   const updateBook = api.books.update.useMutation({
-    onSuccess: (book) => {
-      toast.success(`"${book.title}" updated successfully`);
-      void utils.books.getById.invalidate({ id: bookId });
+    onSuccess: (updatedBook) => {
+      toast.success(`"${updatedBook.title}" updated successfully`);
+      utils.books.getById.setData({ id: bookId }, updatedBook);
       void utils.books.list.invalidate();
       void utils.books.stats.invalidate();
       setIsEditing(false);
@@ -126,15 +107,15 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
   });
 
   const transitionStatus = api.books.transitionStatus.useMutation({
-    onSuccess: async ({ currentReadingPeriod }) => {
-      toast.success(`Status changed to ${READING_STATUS_LABELS[currentReadingPeriod.status]}`);
+    onSuccess: (updatedBook) => {
+      toast.success(
+        `Status changed to ${READING_STATUS_LABELS[updatedBook.currentReadingPeriod.status]}`
+      );
+      utils.books.getById.setData({ id: bookId }, updatedBook);
       setIsTransitioning(false);
       setEditingPeriod(null);
-      await Promise.all([
-        utils.books.getById.invalidate({ id: bookId }),
-        utils.books.list.invalidate(),
-        utils.books.stats.invalidate(),
-      ]);
+      void utils.books.list.invalidate();
+      void utils.books.stats.invalidate();
     },
     onError: (mutationError) => {
       toast.error(mutationError.message || 'Failed to update reading status');
@@ -142,14 +123,12 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
   });
 
   const updateReadingPeriod = api.books.updateReadingPeriod.useMutation({
-    onSuccess: async () => {
+    onSuccess: (updatedBook) => {
       toast.success('Reading history updated');
+      utils.books.getById.setData({ id: bookId }, updatedBook);
       setEditingPeriod(null);
-      await Promise.all([
-        utils.books.getById.invalidate({ id: bookId }),
-        utils.books.list.invalidate(),
-        utils.books.stats.invalidate(),
-      ]);
+      void utils.books.list.invalidate();
+      void utils.books.stats.invalidate();
     },
     onError: (mutationError) => {
       toast.error(mutationError.message || 'Failed to update reading history');

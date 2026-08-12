@@ -4,6 +4,11 @@ async function logInWithDemoAccount(page: import('@playwright/test').Page) {
   await page.goto('/account/login');
   await page.getByRole('button', { name: 'Demo Login' }).click();
   await expect(page).toHaveURL(/\/$/);
+
+  const releaseNotesButton = page.getByRole('button', { name: 'Got It' });
+  if (await releaseNotesButton.isVisible()) {
+    await releaseNotesButton.click();
+  }
 }
 
 test('demo account opens the dashboard', async ({ page }) => {
@@ -37,6 +42,60 @@ test('authenticated navigation opens About without an account call to action', a
     page.getByRole('heading', { name: 'Give each possibility a place.' })
   ).not.toBeVisible();
   await expect(page.getByRole('link', { name: 'Create Account' })).not.toBeVisible();
+});
+
+test('authenticated navigation avoids duplicate and background requests', async ({
+  context,
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'Request accounting only needs one browser');
+
+  await logInWithDemoAccount(page);
+  await expect(page.getByRole('heading', { name: 'Welcome back, Demo User!' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+
+  const requests: Array<{ headers: Record<string, string>; url: string }> = [];
+  page.on('request', (request) => {
+    requests.push({ headers: request.headers(), url: request.url() });
+  });
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Welcome back, Demo User!' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  expect(requests.filter(({ url }) => url.includes('/api/'))).toEqual([]);
+
+  requests.length = 0;
+  await page.goto('/books');
+  await expect(page.getByRole('heading', { name: 'My Library' })).toBeVisible();
+  await expect(page.getByTestId('book-cover-image').first()).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  expect(requests.filter(({ url }) => url.includes('/api/'))).toEqual([]);
+  expect(requests.some(({ url }) => url.startsWith('https://covers.openlibrary.org/'))).toBe(true);
+  expect(
+    requests.some(
+      ({ url }) => url.includes('/_next/image') && url.includes('covers.openlibrary.org')
+    )
+  ).toBe(false);
+
+  requests.length = 0;
+  const backgroundPage = await context.newPage();
+  await backgroundPage.goto('about:blank');
+  await page.bringToFront();
+  await page.waitForTimeout(300);
+  expect(requests.some(({ url }) => url.includes('/api/auth/session'))).toBe(false);
+
+  requests.length = 0;
+  await page.getByRole('link', { name: 'Home', exact: true }).hover();
+  await page.waitForTimeout(300);
+  expect(requests.some(({ url }) => url.includes('/api/trpc'))).toBe(false);
+
+  requests.length = 0;
+  await page.getByRole('textbox', { name: 'Search books' }).fill('no-match-request-check');
+  await expect(page).toHaveURL(/search=no-match-request-check/);
+  await expect
+    .poll(() => requests.filter(({ url }) => url.includes('/api/trpc/books.list')).length)
+    .toBe(1);
+  expect(requests.some(({ headers }) => headers.rsc === '1')).toBe(false);
 });
 
 test('reading dates use the themed calendar picker', async ({ page }) => {

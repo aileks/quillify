@@ -36,10 +36,12 @@ export function ReleaseNotesDialog({ isAuthenticated }: ReleaseNotesDialogProps)
     <Dialog open={isOpen} onOpenChange={(open) => !open && dismiss()}>
       <DialogContent>
         <DialogHeader>
-          <div className='bg-primary/10 text-primary flex size-10 items-center justify-center rounded-sm'>
-            <PartyPopper className='size-5' aria-hidden='true' />
+          <div className='flex items-center gap-3 pr-8'>
+            <div className='bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-sm'>
+              <PartyPopper className='size-5' aria-hidden='true' />
+            </div>
+            <DialogTitle>What&apos;s new in Quillify</DialogTitle>
           </div>
-          <DialogTitle>What&apos;s new in Quillify</DialogTitle>
           <DialogDescription>New ways to build, protect, and move your Library.</DialogDescription>
         </DialogHeader>
 

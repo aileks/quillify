@@ -17,7 +17,7 @@ export default async function BooksPage({ searchParams }: BooksPageProps) {
   const subtitle = pickRandomSaying('library');
   const query = parseBookQueryRecord(await searchParams);
 
-  void api.books.list.prefetch({
+  await api.books.list.prefetch({
     ...query,
     pageSize: 12,
   });

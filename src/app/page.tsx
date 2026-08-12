@@ -16,7 +16,7 @@ export default async function Home() {
   // If user is logged in, show the dashboard with its initial data hydrated.
   if (session?.user) {
     const userName = session.user.name || session.user.email?.split('@')[0] || 'there';
-    void api.books.stats.prefetch();
+    await api.books.stats.prefetch();
     return (
       <HydrateClient>
         <HomeDashboard initialUserName={userName} subtitle={subtitle} />

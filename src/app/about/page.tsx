@@ -61,6 +61,7 @@ export default async function AboutPage() {
               width={160}
               height={160}
               sizes='160px'
+              loading='eager'
               className='relative size-40 object-contain'
             />
           </div>

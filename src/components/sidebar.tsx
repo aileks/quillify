@@ -128,6 +128,7 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
                 alt=''
                 width={32}
                 height={32}
+                loading='eager'
                 className='size-8 shrink-0'
               />
               <span className='truncate'>Quillify</span>

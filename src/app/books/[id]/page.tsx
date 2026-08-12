@@ -13,7 +13,7 @@ interface BookDetailPageProps {
  */
 export default async function BookDetailPage({ params }: BookDetailPageProps) {
   const { id } = await params;
-  void api.books.getById.prefetch({ id });
+  await api.books.getById.prefetch({ id });
 
   return (
     <HydrateClient>

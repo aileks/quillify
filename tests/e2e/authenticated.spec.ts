@@ -90,7 +90,7 @@ test('authenticated navigation avoids duplicate and background requests', async 
   expect(requests.some(({ url }) => url.includes('/api/trpc'))).toBe(false);
 
   requests.length = 0;
-  await page.getByRole('textbox', { name: 'Search books' }).fill('no-match-request-check');
+  await page.getByRole('searchbox', { name: 'Search books' }).fill('no-match-request-check');
   await expect(page).toHaveURL(/search=no-match-request-check/);
   await expect
     .poll(() => requests.filter(({ url }) => url.includes('/api/trpc/books.list')).length)
@@ -132,6 +132,22 @@ test('reading dates use the themed calendar picker', async ({ page }) => {
 
 test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) => {
   test.setTimeout(60_000);
+
+  const browserRegressions: string[] = [];
+  page.on('console', (message) => {
+    const text = message.text();
+    if (
+      text.includes('Hydration failed') ||
+      (text.includes('/quill-logo.png') && text.includes('Largest Contentful Paint'))
+    ) {
+      browserRegressions.push(text);
+    }
+  });
+  page.on('pageerror', (error) => {
+    if (error.message.includes('Hydration failed')) {
+      browserRegressions.push(error.message);
+    }
+  });
 
   await logInWithDemoAccount(page);
   await page.goto('/books');
@@ -212,4 +228,6 @@ test('library, add, and edit layouts stay aligned', async ({ page }, testInfo) =
   if (testInfo.project.name === 'chromium') {
     await page.screenshot({ path: 'test-results/audit-edit-book.png', fullPage: true });
   }
+
+  expect(browserRegressions).toEqual([]);
 });

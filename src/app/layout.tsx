@@ -50,7 +50,7 @@ export default async function RootLayout({
   const session = await auth();
 
   if (session?.user) {
-    void api.releases.unseen.prefetch();
+    await api.releases.unseen.prefetch();
   }
 
   return (

@@ -66,7 +66,8 @@ export function ReleaseNotesDialog({ isAuthenticated }: ReleaseNotesDialogProps)
               <ul className='text-muted-foreground mt-2 flex list-disc flex-col gap-2 pl-5 text-sm'>
                 {release.notes.map((note) => (
                   <li key={note.title}>
-                    <span className='text-foreground font-medium'>{note.title}</span>{' '}
+                    <span className='text-foreground font-medium'>{note.title}</span>
+                    <span aria-hidden='true'> · </span>
                     {note.description}
                   </li>
                 ))}

@@ -165,7 +165,7 @@ export const booksRouter = createTRPCRouter({
   stats: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const [aggregates, finishedAggregates, statusRows, topGenres, recentlyAdded] =
+    const [aggregates, finishedAggregates, statusRows, topGenres, topTags, recentlyAdded] =
       await Promise.all([
         ctx.db
           .select({
@@ -202,6 +202,15 @@ export const booksRouter = createTRPCRouter({
           .orderBy(desc(count()))
           .limit(5),
         ctx.db
+          .select({ name: tags.name, count: count(bookTags.id) })
+          .from(tags)
+          .innerJoin(bookTags, eq(bookTags.tagId, tags.id))
+          .innerJoin(books, eq(bookTags.bookId, books.id))
+          .where(eq(books.userId, userId))
+          .groupBy(tags.name)
+          .orderBy(desc(count(bookTags.id)), asc(tags.name))
+          .limit(5),
+        ctx.db
           .select({
             id: books.id,
             title: books.title,
@@ -235,6 +244,7 @@ export const booksRouter = createTRPCRouter({
       oldestPublishYear: aggregates[0]?.oldestYear ?? null,
       newestPublishYear: aggregates[0]?.newestYear ?? null,
       topGenres: topGenres.map((g) => ({ genre: g.genre ?? 'Other', count: g.count })),
+      topTags: topTags.map((t) => ({ tag: t.name, count: t.count })),
       recentlyAdded,
     };
   }),

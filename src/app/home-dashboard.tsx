@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 
 import { api } from '@/trpc/react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -85,6 +86,7 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
     oldestPublishYear,
     newestPublishYear,
     topGenres,
+    topTags,
     recentlyAdded,
   } = stats;
 
@@ -206,6 +208,22 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
                             ({g.count} {g.count === 1 ? 'book' : 'books'})
                           </span>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {topTags.length > 0 && (
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3'>
+                    <span className='text-muted-foreground font-mono text-xs tracking-wider uppercase sm:min-w-[100px]'>
+                      Top Tags
+                    </span>
+                    <div className='flex flex-wrap gap-1.5'>
+                      {topTags.map(({ tag, count }) => (
+                        <Badge key={tag} variant='outline' className='rounded-sm font-normal'>
+                          {tag}
+                          <span className='text-muted-foreground ml-1'>({count})</span>
+                        </Badge>
                       ))}
                     </div>
                   </div>

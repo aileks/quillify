@@ -14,6 +14,13 @@ export default function GlobalError({
     console.error(error);
   }, [error]);
 
+  // global-error renders outside the App Router context, so useRouter is not
+  // available here; a hard navigation is the correct way to leave this page.
+  const goHome = () => {
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.href = '/books';
+  };
+
   return (
     <html lang='en'>
       <body className='bg-background text-foreground antialiased'>
@@ -48,7 +55,7 @@ export default function GlobalError({
               </button>
 
               <button
-                onClick={() => (window.location.href = '/books')}
+                onClick={goHome}
                 className='border-foreground/10 bg-background hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md border px-6 py-2 text-sm font-medium shadow-xs transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
               >
                 Go Home

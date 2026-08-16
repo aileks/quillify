@@ -14,6 +14,8 @@
 | `/books`                   | Protected | Browse, search, filter, sort, select, and paginate  |
 | `/books/new`               | Protected | Add a book                                          |
 | `/books/[id]`              | Protected | View, edit, track, reread, or delete a book         |
+| `/lists`                   | Protected | Browse, create, rename, and delete lists            |
+| `/lists/[id]`              | Protected | View an ordered list, reorder, and manage entries   |
 
 Protected `/books` routes are enforced in `src/app/books/layout.tsx`. Account settings performs its
 own server redirect.
@@ -37,23 +39,25 @@ Every books procedure is protected.
 | Procedure                   | Kind     | Input                                             | Result                                  |
 | --------------------------- | -------- | ------------------------------------------------- | --------------------------------------- |
 | `books.stats`               | Query    | None                                              | Library, lifecycle, and reading totals  |
-| `books.list`                | Query    | Search, status, genres, sort, page, page size     | Paginated books with current periods    |
-| `books.getById`             | Query    | `{ id }`                                          | Owned book, current period, and history |
-| `books.create`              | Mutation | Book plus duplicate review action                  | Created book or duplicate warning       |
-| `books.update`              | Mutation | `{ id }` plus editable metadata and ownership     | Updated owned book                      |
+| `books.list`                | Query    | Search, status, genres, tags, sort, page, size    | Paginated books with current periods    |
+| `books.getById`             | Query    | `{ id }`                                          | Owned book, periods, history, and tags  |
+| `books.create`              | Mutation | Book, tags, and duplicate review action           | Created book or duplicate warning       |
+| `books.update`              | Mutation | `{ id }` plus metadata, tags, and ownership       | Updated owned book                      |
 | `books.transitionStatus`    | Mutation | Book ID, next status, format, and optional dates  | Updated or new current period           |
 | `books.updateReadingPeriod` | Mutation | Period ID, outcome, format, and optional dates    | Corrected owned period                  |
 | `books.remove`              | Mutation | `{ id }`                                          | Removed ID                              |
 | `books.removeMany`          | Mutation | `{ ids }`, 1-100 unique IDs                       | Atomically removed IDs                  |
 
 `books.list` defaults to page 1 and 12 rows. The UI always requests 12. Search covers title,
-author, and genre. The server clamps pages beyond the last available page.
+author, genre, and tag names. Tag filters match any of the selected tags. The server clamps pages
+beyond the last available page.
 
 Every current period can move directly to any reading status. Active periods and completed-outcome
 corrections change in place. Moving from Finished or Did Not Finish to To Read, Reading, or Paused
 creates a new current period and preserves the old one. Calendar dates are optional, cannot be in
 the future, and must remain ordered. Historical corrections can switch only between Finished and
-Did Not Finish outcomes.
+Did Not Finish outcomes. A book that moves to any status other than To Read leaves the Up Next
+queue.
 
 Shared book validation limits:
 
@@ -68,6 +72,55 @@ Unverified accounts can hold up to 10 books.
 `books.create` returns no writes with likely user-scoped matches when the same edition, canonical
 ISBN-13, or normalized title, author, and year already exists. A separate-edition action explicitly
 bypasses that warning.
+
+## `tags.*`
+
+Every tags procedure is protected and user-scoped.
+
+| Procedure             | Kind     | Input                             | Result                            |
+| --------------------- | -------- | --------------------------------- | --------------------------------- |
+| `tags.list`           | Query    | None                              | Tags with per-tag book counts     |
+| `tags.rename`         | Mutation | `{ id, name }`                    | Renamed tag                       |
+| `tags.remove`         | Mutation | `{ id }`                          | Removed ID, detachments cascade   |
+| `tags.addToBooks`     | Mutation | `{ bookIds, names }`              | Tags attached to owned books      |
+| `tags.removeFromBooks`| Mutation | `{ bookIds, names }`              | Tags detached from owned books    |
+
+Tag names are trimmed, at most 40 characters, unique per user case-insensitively, and a book
+carries at most 50. Unknown tags in `addToBooks` are created. Book IDs are capped at 100 unique
+values per call. A rename that collides with an existing tag returns `CONFLICT` with `NAME_TAKEN`.
+
+## `lists.*`
+
+Every lists procedure is protected and user-scoped.
+
+| Procedure           | Kind     | Input                              | Result                              |
+| ------------------- | -------- | ---------------------------------- | ----------------------------------- |
+| `lists.summary`     | Query    | None                               | Lists with per-list book counts     |
+| `lists.create`      | Mutation | `{ name }`                         | Created list                        |
+| `lists.rename`      | Mutation | `{ id, name }`                     | Renamed list                        |
+| `lists.remove`      | Mutation | `{ id }`                           | Removed ID, entries cascade         |
+| `lists.getById`     | Query    | `{ id }`                           | Ordered list with current periods   |
+| `lists.addBooks`    | Mutation | `{ id, bookIds }`                  | Books appended in order             |
+| `lists.removeBooks` | Mutation | `{ id, bookIds }`                  | Books removed, positions rewritten  |
+| `lists.moveEntry`   | Mutation | `{ id, entryId, direction }`       | Entry swapped up or down            |
+
+List names are trimmed, at most 60 characters, unique per user case-insensitively, and collisions
+return `CONFLICT` with `NAME_TAKEN`. A book appears at most once per list. Moving past either end
+is a no-op.
+
+## `upNext.*`
+
+Every Up Next procedure is protected and user-scoped.
+
+| Procedure       | Kind     | Input                         | Result                          |
+| --------------- | -------- | ----------------------------- | ------------------------------- |
+| `upNext.get`    | Query    | None                          | Ordered queue with periods      |
+| `upNext.add`    | Mutation | `{ bookId }`                  | Book appended                   |
+| `upNext.remove` | Mutation | `{ bookId }`                  | Book removed, order rewritten   |
+| `upNext.move`   | Mutation | `{ bookId, direction }`       | Book swapped up or down         |
+
+The queue holds at most five books. `add` rejects a full queue with `BAD_REQUEST` `UP_NEXT_FULL`
+and a book whose current status is not To Read with `BAD_REQUEST` `NOT_TO_READ`.
 
 ## `bookMetadata.*`
 
@@ -98,7 +151,8 @@ Both procedures are protected and user-scoped.
 
 CSV uploads are limited to 5 MiB and 10,000 records. Previously imported Goodreads IDs are always
 skipped. Likely duplicates require an explicit separate-edition choice. Import writes books,
-current reading periods, and provenance in one transaction.
+current reading periods, tags from user shelves, and provenance in one transaction. Exclusive
+shelves map to reading states; every other shelf becomes a tag.
 
 ## `releases.*`
 

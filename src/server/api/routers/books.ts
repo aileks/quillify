@@ -9,6 +9,7 @@ import {
   count,
   asc,
   desc,
+  exists,
   min,
   max,
   sql,
@@ -17,10 +18,15 @@ import { TRPCError } from '@trpc/server';
 
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
 import type { db } from '@/server/db';
-import { books, readingPeriods, users } from '@/server/db/schema';
+import { bookTags, books, readingPeriods, tags, users } from '@/server/db/schema';
 import type { BookWithCurrentPeriod, BookWithReadingHistory, ReadingPeriod } from '@/types';
 import { bookCreateInputSchema, bookMetadataUpdateInputSchema } from '@/lib/book-validation';
 import { classifyDuplicateCandidate, type DuplicateBookIdentity } from '@/lib/book-duplicates';
+import {
+  evictFromUpNextIfDeparting,
+  getBookTagNames,
+  setBookTags,
+} from '@/server/services/organization';
 import {
   isTerminalReadingStatus,
   readingStatusSchema,
@@ -63,10 +69,13 @@ async function getOwnedBookWithReadingHistory(
     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
   }
 
+  const tagNames = await getBookTagNames(database, userId, book.id);
+
   return {
     ...book,
     currentReadingPeriod,
     readingPeriods: periods,
+    tags: tagNames,
   } satisfies BookWithReadingHistory;
 }
 
@@ -191,7 +200,7 @@ export const booksRouter = createTRPCRouter({
           .where(and(eq(books.userId, userId), isNotNull(books.genre)))
           .groupBy(books.genre)
           .orderBy(desc(count()))
-          .limit(3),
+          .limit(5),
         ctx.db
           .select({
             id: books.id,
@@ -202,7 +211,7 @@ export const booksRouter = createTRPCRouter({
           .from(books)
           .where(eq(books.userId, userId))
           .orderBy(desc(books.createdAt))
-          .limit(3),
+          .limit(5),
       ]);
 
     const statusCounts = {
@@ -236,6 +245,7 @@ export const booksRouter = createTRPCRouter({
         status: readingStatusSchema.optional(),
         search: z.string().optional(),
         genre: z.array(z.string()).optional(),
+        tags: z.array(z.string()).optional(),
         sortBy: z.enum(['title', 'author', 'createdAt']).default('title'),
         sortOrder: z.enum(['asc', 'desc']).default('asc'),
         page: z.number().int().positive().default(1),
@@ -243,7 +253,7 @@ export const booksRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const { status, search, genre, sortBy, sortOrder, page, pageSize } = input;
+      const { status, search, genre, tags: tagFilter, sortBy, sortOrder, page, pageSize } = input;
 
       // Build dynamic WHERE conditions array
       const conditions = [eq(books.userId, ctx.session.user.id)];
@@ -253,18 +263,40 @@ export const booksRouter = createTRPCRouter({
       }
 
       if (search && search.trim()) {
-        // Search across title, author, and genre fields using case-insensitive LIKE
+        // Search across title, author, genre, and tag names using case-insensitive LIKE
         conditions.push(
           or(
             ilike(books.title, `%${search}%`),
             ilike(books.author, `%${search}%`),
-            ilike(books.genre, `%${search}%`)
+            ilike(books.genre, `%${search}%`),
+            exists(
+              ctx.db
+                .select({ one: sql`1` })
+                .from(bookTags)
+                .innerJoin(tags, eq(bookTags.tagId, tags.id))
+                .where(and(eq(bookTags.bookId, books.id), ilike(tags.name, `%${search}%`)))
+            )
           )!
         );
       }
 
       if (genre && genre.length > 0) {
         conditions.push(inArray(books.genre, genre));
+      }
+
+      if (tagFilter && tagFilter.length > 0) {
+        const loweredTags = tagFilter.map((name) => name.toLowerCase());
+        conditions.push(
+          exists(
+            ctx.db
+              .select({ one: sql`1` })
+              .from(bookTags)
+              .innerJoin(tags, eq(bookTags.tagId, tags.id))
+              .where(
+                and(eq(bookTags.bookId, books.id), inArray(sql`lower(${tags.name})`, loweredTags))
+              )
+          )
+        );
       }
 
       // Combine all conditions with AND logic
@@ -388,6 +420,10 @@ export const booksRouter = createTRPCRouter({
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
       }
 
+      if (bookInput.tags) {
+        await setBookTags(tx, userId, inserted.id, bookInput.tags);
+      }
+
       return {
         status: 'created' as const,
         book: { ...inserted, currentReadingPeriod } as BookWithCurrentPeriod,
@@ -448,6 +484,11 @@ export const booksRouter = createTRPCRouter({
           }
 
           await saveCurrentReadingPeriod(tx, currentPeriod, input.readingDetails);
+          await evictFromUpNextIfDeparting(tx, existing.id, input.readingDetails.status);
+        }
+
+        if (input.tags !== undefined) {
+          await setBookTags(tx, ctx.session.user.id, existing.id, input.tags);
         }
 
         return getOwnedBookWithReadingHistory(tx, ctx.session.user.id, updated.id);
@@ -477,6 +518,7 @@ export const booksRouter = createTRPCRouter({
         }
 
         await saveCurrentReadingPeriod(tx, currentPeriod, input);
+        await evictFromUpNextIfDeparting(tx, book.id, input.status);
 
         return getOwnedBookWithReadingHistory(tx, ctx.session.user.id, book.id);
       });

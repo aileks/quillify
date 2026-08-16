@@ -29,6 +29,27 @@ function queryResult(rows: readonly unknown[]) {
   });
 }
 
+type LazyRows = unknown[] | (() => unknown[]);
+
+interface SelectChain {
+  where: () => ReturnType<typeof queryResult>;
+  innerJoin: () => SelectChain;
+}
+
+function sequenceSelect(results: readonly LazyRows[]) {
+  let index = 0;
+  return vi.fn(() => {
+    const result = results[index] ?? [];
+    index += 1;
+    const rows = typeof result === 'function' ? result() : result;
+    const chain: SelectChain = {
+      where: () => queryResult(rows),
+      innerJoin: () => chain,
+    };
+    return { from: () => chain };
+  });
+}
+
 describe('books router cover persistence', () => {
   it('returns likely matches without writing until a separate edition is confirmed', async () => {
     const existingBook = {
@@ -170,7 +191,6 @@ describe('books router cover persistence', () => {
 
   it('updates a book with an explicitly selected cover', async () => {
     let updatedValues: Record<string, unknown> | undefined;
-    let selectCount = 0;
     const existingBook = {
       id: 'book-1',
       userId: 'user-1',
@@ -197,14 +217,12 @@ describe('books router cover persistence', () => {
       updatedAt: new Date(),
     };
     const database = {
-      select: vi.fn(() => {
-        selectCount += 1;
-        return {
-          from: vi.fn(() => ({
-            where: vi.fn(() => queryResult(selectCount < 3 ? [existingBook] : [currentPeriod])),
-          })),
-        };
-      }),
+      select: sequenceSelect([
+        () => [existingBook],
+        () => [existingBook],
+        () => [currentPeriod],
+        () => [],
+      ]),
       update: vi.fn(() => ({
         set: vi.fn((values: Record<string, unknown>) => {
           updatedValues = values;
@@ -270,19 +288,16 @@ describe('books router reading lifecycle', () => {
       updatedAt: new Date(),
     };
     let savedPeriod = currentPeriod;
-    let selectCount = 0;
     let updatedValues: Record<string, unknown> | undefined;
     const database = {
-      select: vi.fn(() => {
-        selectCount += 1;
-        return {
-          from: vi.fn(() => ({
-            where: vi.fn(() =>
-              queryResult(selectCount === 1 || selectCount === 3 ? [book] : [savedPeriod])
-            ),
-          })),
-        };
-      }),
+      select: sequenceSelect([
+        () => [book],
+        () => [savedPeriod],
+        () => [],
+        () => [book],
+        () => [savedPeriod],
+        () => [],
+      ]),
       update: vi.fn(() => ({
         set: vi.fn((values: Record<string, unknown>) => {
           updatedValues = values;
@@ -331,18 +346,15 @@ describe('books router reading lifecycle', () => {
     let savedBook = book;
     let savedPeriod = currentPeriod;
     const updatedValues: Record<string, unknown>[] = [];
-    let selectCount = 0;
     const database = {
-      select: vi.fn(() => {
-        selectCount += 1;
-        return {
-          from: vi.fn(() => ({
-            where: vi.fn(() =>
-              queryResult(selectCount === 1 || selectCount === 3 ? [savedBook] : [savedPeriod])
-            ),
-          })),
-        };
-      }),
+      select: sequenceSelect([
+        () => [savedBook],
+        () => [savedPeriod],
+        () => [],
+        () => [savedBook],
+        () => [savedPeriod],
+        () => [],
+      ]),
       update: vi.fn(() => ({
         set: vi.fn((values: Record<string, unknown>) => {
           updatedValues.push(values);
@@ -408,23 +420,16 @@ describe('books router reading lifecycle', () => {
       startedOn: '2026-08-11',
       endedOn: null,
     };
-    let selectCount = 0;
     let insertedValues: Record<string, unknown> | undefined;
     const database = {
-      select: vi.fn(() => {
-        selectCount += 1;
-        return {
-          from: vi.fn(() => ({
-            where: vi.fn(() =>
-              queryResult(
-                selectCount === 1 || selectCount === 3 ? [book]
-                : selectCount === 4 ? [{ ...currentPeriod, isCurrent: false }, newPeriod]
-                : [currentPeriod]
-              )
-            ),
-          })),
-        };
-      }),
+      select: sequenceSelect([
+        () => [book],
+        () => [currentPeriod],
+        () => [],
+        () => [book],
+        () => [{ ...currentPeriod, isCurrent: false }, newPeriod],
+        () => [],
+      ]),
       update: vi.fn(() => ({
         set: vi.fn(() => ({ where: vi.fn(async () => []) })),
       })),
@@ -471,19 +476,16 @@ describe('books router reading lifecycle', () => {
       updatedAt: new Date(),
     };
     let savedPeriod = currentPeriod;
-    let selectCount = 0;
     let updatedValues: Record<string, unknown> | undefined;
     const database = {
-      select: vi.fn(() => {
-        selectCount += 1;
-        return {
-          from: vi.fn(() => ({
-            where: vi.fn(() =>
-              queryResult(selectCount === 1 || selectCount === 3 ? [book] : [savedPeriod])
-            ),
-          })),
-        };
-      }),
+      select: sequenceSelect([
+        () => [book],
+        () => [savedPeriod],
+        () => [],
+        () => [book],
+        () => [savedPeriod],
+        () => [],
+      ]),
       update: vi.fn(() => ({
         set: vi.fn((values: Record<string, unknown>) => {
           updatedValues = values;
@@ -517,5 +519,52 @@ describe('books router reading lifecycle', () => {
     expect(updatedValues).toMatchObject({ status: 'did_not_finish' });
     expect(database.insert).not.toHaveBeenCalled();
     expect(result.currentReadingPeriod.status).toBe('did_not_finish');
+  });
+
+  it('removes a departing book from Up Next', async () => {
+    const currentPeriod = {
+      id: 'period-1',
+      bookId: 'book-1',
+      status: 'to_read' as const,
+      format: null,
+      startedOn: null,
+      endedOn: null,
+      isCurrent: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const database = {
+      select: sequenceSelect([
+        () => [book],
+        () => [currentPeriod],
+        () => [{ userId: 'user-1' }],
+        () => [],
+        () => [book],
+        () => [currentPeriod],
+        () => [],
+      ]),
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({ returning: vi.fn(async () => [currentPeriod]) })),
+        })),
+      })),
+      delete: vi.fn(() => ({ where: vi.fn(async () => []) })),
+      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
+    };
+    const caller = booksRouter.createCaller({
+      db: database,
+      session: createSession(),
+      headers: new Headers(),
+    } as unknown as BooksRouterContext);
+
+    await caller.transitionStatus({
+      bookId: 'book-1',
+      status: 'reading',
+      format: null,
+      startedOn: null,
+      endedOn: null,
+    });
+
+    expect(database.delete).toHaveBeenCalledOnce();
   });
 });

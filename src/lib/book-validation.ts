@@ -8,6 +8,7 @@ import {
   readingPeriodFieldsSchema,
 } from '@/lib/reading-lifecycle';
 import { normalizeIsbn } from '@/lib/isbn';
+import { BOOK_TAGS_MAX_COUNT, tagNameSchema, tagNamesSchema } from '@/lib/organization';
 
 export const BOOK_TITLE_MAX_LENGTH = 200;
 export const BOOK_AUTHOR_MAX_LENGTH = 120;
@@ -90,6 +91,7 @@ export const bookCreateInputSchema = z.intersection(
   z.object({
     ownershipType: ownershipTypeSchema.default('unknown'),
     readingDetails: readingPeriodFieldsSchema.optional(),
+    tags: tagNamesSchema.optional(),
   })
 );
 
@@ -123,6 +125,7 @@ export const bookMetadataUpdateInputSchema = z.intersection(
   z.object({
     ownershipType: ownershipTypeSchema.optional(),
     readingDetails: readingPeriodFieldsSchema.optional(),
+    tags: tagNamesSchema.optional(),
   })
 );
 
@@ -170,6 +173,7 @@ export const bookFormSchema = z
     openLibraryWorkId: openLibraryWorkIdSchema,
     openLibraryEditionId: openLibraryEditionIdSchema,
     ownershipType: z.enum(OWNERSHIP_TYPES),
+    tags: z.array(tagNameSchema).max(BOOK_TAGS_MAX_COUNT),
     includeReadingDetails: z.boolean(),
     readingStatus: z.enum(READING_STATUSES),
     readingFormat: z.union([z.enum(READING_FORMATS), z.literal('')]),
@@ -231,6 +235,7 @@ export function toBookInput(values: BookFormValues): BookCreateInput {
     openLibraryWorkId: values.openLibraryWorkId ?? null,
     openLibraryEditionId: retainsSelectedEdition ? values.openLibraryEditionId : null,
     ownershipType: values.ownershipType,
+    tags: values.tags,
     readingDetails:
       values.includeReadingDetails ?
         {

@@ -47,4 +47,5 @@ export type BookWithCurrentPeriod = Book & {
 
 export type BookWithReadingHistory = BookWithCurrentPeriod & {
   readingPeriods: ReadingPeriod[];
+  tags: string[];
 };

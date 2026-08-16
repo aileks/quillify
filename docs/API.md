@@ -32,6 +32,9 @@ Book creation and reading-status transitions use database transactions so every 
 current reading period and rereads replace the current marker atomically. Book ownership is checked
 before lifecycle history is returned or changed.
 
+Tag, list, and Up Next writes run in transactions owned by `src/server/services/organization.ts`.
+Position columns are rewritten on removal so ordering stays contiguous.
+
 ## Transport
 
 - SuperJSON serializes dates and other non-JSON-native values
@@ -83,6 +86,10 @@ Required settings:
 - `src/server/api/routers/auth.ts` - account procedures
 - `src/server/api/routers/books.ts` - library procedures
 - `src/server/api/routers/book-metadata.ts` - authenticated metadata search
+- `src/server/api/routers/tags.ts` - tag procedures
+- `src/server/api/routers/lists.ts` - list procedures
+- `src/server/api/routers/up-next.ts` - Up Next queue procedures
+- `src/server/services/organization.ts` - tag, list, and Up Next persistence
 - `src/server/services/book-metadata/open-library.ts` - Open Library client and normalization
 - `src/trpc/server.ts` - RSC caller and hydration
 - `src/trpc/react.tsx` - browser provider and hooks

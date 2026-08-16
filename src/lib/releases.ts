@@ -9,6 +9,36 @@ export interface ReleaseManifestEntry {
 
 export const RELEASE_MANIFEST = [
   {
+    version: '2.2.0',
+    title: 'An organized Library',
+    notes: [
+      {
+        title: 'Tags, a new way to label your books.',
+        description:
+          'Add your own tags when adding or editing a book, then filter the Library by tags next to genres. Search has been updated to include tags. Rename or delete a tag from the tag filter, and add or remove tags on many books at once from the Library selection mode.',
+      },
+      {
+        title: 'Lists, a new way to curate books.',
+        description:
+          'Open the new Lists page in the sidebar to create named lists in your chosen order. Reorder books with the arrows on a list page, or add and remove several books at once from the Library selection mode.',
+      },
+      {
+        title: 'Up Next: a new queue for choosing what to read.',
+        description:
+          'Add a To Read book to Up Next from its details page and see the queue on your home dashboard, where you can start reading without leaving home. The queue holds five books, and a book leaves it automatically once you start or abandon it.',
+      },
+      {
+        title: 'Goodreads shelves import as tags.',
+        description:
+          'When you import a Goodreads CSV from the Data tab in Account Settings, your shelves beyond read, currently reading, and to read become tags on each book. The import preview shows the tags each row will receive.',
+      },
+      {
+        title: 'Backups include your organization.',
+        description: 'Update data backups to include all the new features.',
+      },
+    ],
+  },
+  {
     version: '2.1.1',
     title: 'A more portable Library',
     notes: [

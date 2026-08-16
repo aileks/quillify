@@ -125,11 +125,11 @@ readers cannot independently back up their data.
 
 **Implemented foundation:** Goodreads CSV files can be previewed, corrected for missing pages and
 publication year, checked for duplicates, and retried safely. Account Settings also provides a
-versioned JSON backup containing the account, Library, catalog identity, reading periods, and import
-provenance.
+versioned JSON backup containing the account, Library, catalog identity, reading periods, tags,
+lists, Up Next queue, and import provenance.
 
-**Still planned:** StoryGraph import, JSON backup restoration, and fields introduced by later
-ratings, tags, lists, and notes features.
+**Still planned:** StoryGraph import and JSON backup restoration, plus fields introduced by later
+ratings and notes features.
 
 **Planned experience:**
 
@@ -155,6 +155,13 @@ export success rate, and time from registration to a useful Library.
 
 **User problem:** Genre alone cannot capture themes, ownership, book-club picks, recommendations,
 priority, or other personal organization.
+
+**Implemented foundation:** Readers can attach reusable private tags when adding or editing a
+book, filter and search the Library by tag, and rename or delete tags from the tag filter. Named
+ordered lists have their own Lists section, support reordering and a book picker, and accept bulk
+changes from the Library selection mode alongside tags. A dedicated Up Next queue holds five To
+Read books, appears on the dashboard with a start-reading shortcut, and releases books
+automatically once they leave To Read. Goodreads shelves import as tags.
 
 **Planned experience:**
 

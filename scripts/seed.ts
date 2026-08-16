@@ -3,8 +3,18 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { DEMO_COVER_IDS } from './demo-cover-ids';
 import { DEMO_BOOK_IDENTITIES } from './demo-book-identities';
-import { users, books, readingPeriods } from '../src/server/db/schema';
-import { eq } from 'drizzle-orm';
+import {
+  bookTags,
+  books,
+  listEntries,
+  lists,
+  readingPeriods,
+  tags,
+  upNextEntries,
+  users,
+} from '../src/server/db/schema';
+import { UP_NEXT_LIMIT } from '../src/lib/organization';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
 const pool = new Pool({
@@ -2345,6 +2355,124 @@ function getCalendarDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+interface SeedOrganizationBook {
+  id: string;
+  title: string;
+  numberOfPages: number;
+  status: string;
+  libraryIndex: number;
+}
+
+const DEMO_TAGS = [
+  { name: 'book-club', picks: (book: SeedOrganizationBook) => book.libraryIndex % 9 === 0 },
+  { name: 'quick-reads', picks: (book: SeedOrganizationBook) => book.numberOfPages < 250 },
+  { name: 'doorstoppers', picks: (book: SeedOrganizationBook) => book.numberOfPages >= 600 },
+  {
+    name: 'comfort-rereads',
+    picks: (book: SeedOrganizationBook) =>
+      book.status === 'finished' && book.libraryIndex % 7 === 0,
+  },
+];
+
+const DEMO_LISTS = [
+  {
+    name: 'Book club picks',
+    picks: (booksForSeeding: SeedOrganizationBook[]) =>
+      booksForSeeding.filter((book) => book.libraryIndex % 9 === 0).slice(0, 10),
+  },
+  {
+    name: 'Long reads',
+    picks: (booksForSeeding: SeedOrganizationBook[]) =>
+      booksForSeeding.filter((book) => book.numberOfPages >= 700),
+  },
+];
+
+async function seedOrganization(demoUserId: string) {
+  // Books were seeded with descending createdAt, so this restores demo-library order.
+  const libraryBooks = await db
+    .select({
+      id: books.id,
+      title: books.title,
+      numberOfPages: books.numberOfPages,
+      status: readingPeriods.status,
+      createdAt: books.createdAt,
+    })
+    .from(books)
+    .innerJoin(
+      readingPeriods,
+      and(eq(readingPeriods.bookId, books.id), eq(readingPeriods.isCurrent, true))
+    )
+    .where(eq(books.userId, demoUserId))
+    .orderBy(desc(books.createdAt), asc(books.title));
+
+  const organizationBooks: SeedOrganizationBook[] = libraryBooks.map((book, libraryIndex) => ({
+    id: book.id,
+    title: book.title,
+    numberOfPages: book.numberOfPages,
+    status: book.status,
+    libraryIndex,
+  }));
+
+  for (const { name, picks } of DEMO_TAGS) {
+    const [tag] = await db
+      .insert(tags)
+      .values({ userId: demoUserId, name })
+      .onConflictDoNothing()
+      .returning({ id: tags.id });
+    if (!tag) continue;
+
+    const tagged = organizationBooks.filter((book) => picks(book));
+    if (tagged.length === 0) continue;
+
+    await db
+      .insert(bookTags)
+      .values(tagged.map((book) => ({ bookId: book.id, tagId: tag.id })))
+      .onConflictDoNothing();
+  }
+
+  for (const { name, picks } of DEMO_LISTS) {
+    const [list] = await db
+      .insert(lists)
+      .values({ userId: demoUserId, name })
+      .onConflictDoNothing()
+      .returning({ id: lists.id });
+    if (!list) continue;
+
+    const entries = picks(organizationBooks);
+    if (entries.length === 0) continue;
+
+    await db.insert(listEntries).values(
+      entries.map((book, position) => ({
+        listId: list.id,
+        bookId: book.id,
+        position: position + 1,
+      }))
+    );
+  }
+
+  const upNext = organizationBooks
+    .filter((book) => book.status === 'to_read')
+    .slice(0, UP_NEXT_LIMIT);
+  if (upNext.length > 0) {
+    await db.insert(upNextEntries).values(
+      upNext.map((book, position) => ({
+        userId: demoUserId,
+        bookId: book.id,
+        position: position + 1,
+      }))
+    );
+  }
+
+  return {
+    tagCount: DEMO_TAGS.length,
+    listCounts: DEMO_LISTS.map(({ name, picks }) => ({
+      name,
+      count: picks(organizationBooks).length,
+    })),
+    upNextCount: upNext.length,
+  };
+}
+
 function getSeedReadingPeriods(
   bookId: string,
   sourceBook: (typeof DEMO_BOOKS_WITH_COVERS)[number],
@@ -2446,6 +2574,10 @@ async function seed() {
       if (existingBooks.length > 0 && forceReseed) {
         console.log(`Deleting ${existingBooks.length} existing books...`);
         await db.delete(books).where(eq(books.userId, demoUser!.id));
+        // Books cascade their tag, list, and Up Next links; the user-owned
+        // records themselves need an explicit cleanup so re-seeding starts fresh.
+        await db.delete(tags).where(eq(tags.userId, demoUser!.id));
+        await db.delete(lists).where(eq(lists.userId, demoUser!.id));
       }
       // Keep catalog order and lifecycle dates deterministic for repeatable demo data.
       const now = Date.now();
@@ -2498,6 +2630,20 @@ async function seed() {
         );
       }
       console.log(`Created ${DEMO_BOOKS_TO_SEED.length} books`);
+    }
+
+    // Seed tags, lists, and Up Next for the demo library
+    const [existingTags] = await db.select().from(tags).where(eq(tags.userId, demoUser!.id));
+    if (existingTags && !forceReseed) {
+      console.log('Demo user already has tags. Skipping organization seeding.');
+    } else {
+      const organization = await seedOrganization(demoUser!.id);
+      console.log(
+        `\nCreated ${organization.tagCount} tags, ${organization.listCounts.length} lists, and an Up Next queue of ${organization.upNextCount} books`
+      );
+      organization.listCounts.forEach(({ name, count }) => {
+        console.log(`   List "${name}": ${count} books`);
+      });
     }
 
     // Count genres

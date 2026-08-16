@@ -47,6 +47,18 @@ export const PRODUCT_SAYINGS = {
     'Set the record right, then keep reading.',
     'A little shelfkeeping goes a long way.',
   ],
+  lists: [
+    'Curate a list and let it choose the moment.',
+    'A good list turns maybes into plans.',
+    'Group them by mood, by season, by whim.',
+    'The right list finds the right book sooner.',
+    'Every list is a small promise to yourself.',
+    'Some books belong together for reasons of their own.',
+    'A short list reads like an invitation.',
+    'Line them up and let the order speak.',
+    'Lists keep the shelf from whispering all at once.',
+    'Arrange the next reads like a set list.',
+  ],
 } as const;
 
 export type SayingCategory = keyof typeof PRODUCT_SAYINGS;

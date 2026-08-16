@@ -7,6 +7,7 @@ import { api } from '@/trpc/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UpNextPanel } from '@/components/up-next-panel';
 import { READING_STATUS_LABELS } from '@/lib/reading-lifecycle';
 
 interface HomeDashboardProps {
@@ -60,7 +61,7 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
               <Skeleton className='h-5 w-32' />
             </CardHeader>
             <CardContent className='space-y-3'>
-              {Array.from({ length: 3 }).map((_, i) => (
+              {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className='h-12 w-full' />
               ))}
             </CardContent>
@@ -156,8 +157,8 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
         </Card>
       </div>
 
-      {/* Insights Section - 2 Column Layout */}
-      <div className='grid gap-4 md:grid-cols-2'>
+      {/* Insights Section - Up Next beside reading insights */}
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {/* Library Insights Card */}
         <Card className='rounded-sm'>
           <CardHeader>
@@ -254,6 +255,10 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
             }
           </CardContent>
         </Card>
+        {/* Up Next queue - full width on two-column view, far right on wide screens */}
+        <div className='md:col-span-2 lg:col-span-1'>
+          <UpNextPanel />
+        </div>
       </div>
 
       {/* Call to Action */}

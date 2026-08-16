@@ -12,6 +12,7 @@ import {
   LogOut,
   User,
   Home,
+  ListIcon,
   PanelLeftClose,
   PanelLeft,
   Info,
@@ -187,6 +188,22 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
               <Link href='/books'>
                 <BookOpen />
                 {!sidebarCollapsed && <span>Library</span>}
+              </Link>
+            </Button>
+
+            <Button
+              variant='ghost'
+              asChild
+              className={cn(
+                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
+                pathname.startsWith('/lists') && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                sidebarCollapsed && 'justify-center px-2'
+              )}
+              title={sidebarCollapsed ? 'Lists' : undefined}
+            >
+              <Link href='/lists'>
+                <ListIcon />
+                {!sidebarCollapsed && <span>Lists</span>}
               </Link>
             </Button>
 

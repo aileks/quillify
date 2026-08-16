@@ -20,6 +20,7 @@ const importRow = {
   readingFormat: 'print' as const,
   endedOn: '2025-01-12',
   ownershipType: 'owned' as const,
+  tags: [],
   importAsSeparateEdition: false,
 };
 

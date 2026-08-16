@@ -7,6 +7,7 @@ import {
   mapGoodreadsBinding,
   mapGoodreadsShelf,
   normalizeGoodreadsDate,
+  parseGoodreadsBookshelves,
   parseGoodreadsCsv,
 } from '@/server/services/goodreads-import';
 
@@ -44,6 +45,13 @@ describe('Goodreads CSV parsing', () => {
         previewStatus: 'ready',
       }),
     ]);
+  });
+
+  it('collects user shelves from the Bookshelves column as tags', () => {
+    const csv = `${headers},Bookshelves\n7,Book,Author,,,Paperback,200,2020,,,read,1,"to-read, favorites, owned"`;
+
+    const [row] = parseGoodreadsCsv(csv);
+    expect(row?.tags).toEqual(['favorites', 'owned']);
   });
 
   it('marks missing Quillify fields for correction and rejects unsupported shelves', () => {
@@ -88,5 +96,15 @@ describe('Goodreads field mapping', () => {
     expect(mapGoodreadsBinding('Audio CD')).toBe('audiobook');
     expect(normalizeGoodreadsDate('2025/02/28')).toBe('2025-02-28');
     expect(normalizeGoodreadsDate('2025/02/30')).toBeNull();
+  });
+
+  it('turns user shelves into tags and keeps exclusive shelves out', () => {
+    expect(parseGoodreadsBookshelves('to-read, favorites, book-club')).toEqual([
+      'favorites',
+      'book-club',
+    ]);
+    expect(parseGoodreadsBookshelves(' read , currently-reading , to-read ')).toEqual([]);
+    expect(parseGoodreadsBookshelves('favorites, favorites,')).toEqual(['favorites']);
+    expect(parseGoodreadsBookshelves('')).toEqual([]);
   });
 });

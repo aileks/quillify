@@ -11,6 +11,7 @@ import {
   getMaximumPublishYear,
 } from '@/lib/book-validation';
 import { normalizeIsbn } from '@/lib/isbn';
+import { BOOK_TAGS_MAX_COUNT, TAG_NAME_MAX_LENGTH } from '@/lib/organization';
 import { READING_FORMATS } from '@/lib/reading-lifecycle';
 
 export const GOODREADS_MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -43,6 +44,7 @@ export const goodreadsImportRowSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .nullable(),
   ownershipType: z.enum(['owned', 'unknown']),
+  tags: z.array(z.string().trim().min(1).max(TAG_NAME_MAX_LENGTH)).max(BOOK_TAGS_MAX_COUNT),
   importAsSeparateEdition: z.boolean().default(false),
 });
 
@@ -63,6 +65,7 @@ export interface GoodreadsPreviewRow {
   readingFormat: (typeof READING_FORMATS)[number] | null;
   endedOn: string | null;
   ownershipType: 'owned' | 'unknown';
+  tags: string[];
   issues: string[];
   previewStatus: GoodreadsPreviewStatus;
 }
@@ -91,6 +94,23 @@ export function mapGoodreadsShelf(value: string): GoodreadsPreviewRow['readingSt
   if (shelf === 'currently-reading') return 'reading';
   if (shelf === 'to-read') return 'to_read';
   return null;
+}
+
+const EXCLUSIVE_SHELVES = new Set(['read', 'currently-reading', 'to-read']);
+
+/**
+ * The exclusive shelves map to reading states instead and never become tags.
+ */
+export function parseGoodreadsBookshelves(value: string): string[] {
+  const shelves = value
+    .split(',')
+    .map((shelf) => shelf.trim().toLowerCase())
+    .filter(
+      (shelf) =>
+        shelf.length > 0 && shelf.length <= TAG_NAME_MAX_LENGTH && !EXCLUSIVE_SHELVES.has(shelf)
+    );
+
+  return [...new Set(shelves)].slice(0, BOOK_TAGS_MAX_COUNT);
 }
 
 export function mapGoodreadsBinding(value: string): GoodreadsPreviewRow['readingFormat'] {
@@ -172,6 +192,7 @@ function parseRecord(
     readingFormat: mapGoodreadsBinding(record['Binding'] ?? ''),
     endedOn,
     ownershipType: Number(record['Owned Copies'] ?? 0) > 0 ? 'owned' : 'unknown',
+    tags: parseGoodreadsBookshelves(record['Bookshelves'] ?? ''),
     issues,
     previewStatus:
       hasInvalidIssue ? 'invalid'

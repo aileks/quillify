@@ -5,7 +5,8 @@ import { z } from 'zod';
 import { classifyDuplicateCandidate } from '@/lib/book-duplicates';
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
 import { db } from '@/server/db';
-import { bookImportSources, books, readingPeriods, users } from '@/server/db/schema';
+import { bookImportSources, bookTags, books, readingPeriods, users } from '@/server/db/schema';
+import { resolveTags } from '@/server/services/organization';
 import {
   GOODREADS_MAX_RECORDS,
   goodreadsImportRowSchema,
@@ -192,6 +193,21 @@ export const dataTransferRouter = createTRPCRouter({
               sourceRecordId: row.sourceRecordId,
             }))
           );
+        }
+
+        const allTagNames = [...new Set(rowsToCreate.flatMap((row) => row.tags))];
+        if (allTagNames.length > 0) {
+          const resolvedTags = await resolveTags(tx, userId, allTagNames);
+          const tagIdByName = new Map(resolvedTags.map((tag) => [tag.name.toLowerCase(), tag.id]));
+          const bookTagRows = records.flatMap(({ row, bookId }) =>
+            row.tags.flatMap((name) => {
+              const tagId = tagIdByName.get(name.toLowerCase());
+              return tagId ? [{ bookId, tagId }] : [];
+            })
+          );
+          if (bookTagRows.length > 0) {
+            await tx.insert(bookTags).values(bookTagRows).onConflictDoNothing();
+          }
         }
 
         return {

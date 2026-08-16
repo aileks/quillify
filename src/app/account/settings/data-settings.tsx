@@ -170,6 +170,7 @@ export function DataSettings() {
         readingFormat: row.readingFormat,
         endedOn: row.endedOn,
         ownershipType: row.ownershipType,
+        tags: row.tags,
         importAsSeparateEdition: row.previewStatus === 'likely_duplicate',
       }));
 
@@ -208,8 +209,8 @@ export function DataSettings() {
             />
           </div>
           <p className='text-muted-foreground text-sm'>
-            Ratings, reviews, private notes, custom shelves, and additional reread history are not
-            imported in this release.
+            Your Goodreads shelves become tags on each book. Ratings, reviews, private notes, and
+            additional reread history are not imported in this release.
           </p>
           <Button
             type='button'
@@ -227,8 +228,8 @@ export function DataSettings() {
         <CardHeader>
           <CardTitle>Download Backup</CardTitle>
           <CardDescription>
-            Save a versioned JSON copy of your account, Library, reading history, catalog IDs, and
-            import history.
+            Save a versioned JSON copy of your account, Library, tags, lists, Up Next queue, reading
+            history, catalog IDs, and import history.
           </CardDescription>
         </CardHeader>
         <CardContent className='flex flex-col gap-3'>
@@ -286,6 +287,11 @@ export function DataSettings() {
                       <TableCell className='max-w-72 whitespace-normal'>
                         <p className='font-medium'>{row.title || `Row ${row.rowNumber}`}</p>
                         <p className='text-muted-foreground text-xs'>{row.author}</p>
+                        {row.tags.length > 0 && (
+                          <p className='text-muted-foreground mt-1 text-xs'>
+                            Tags: {row.tags.join(', ')}
+                          </p>
+                        )}
                         {row.issues.length > 0 && (
                           <p className='text-muted-foreground mt-1 text-xs'>
                             {row.issues.join(', ')}

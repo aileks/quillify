@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { api } from '@/trpc/react';
 import { BookCover } from '@/components/book-cover';
 import { ReadingStatusBadge } from '@/components/reading-status-badge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -161,6 +162,15 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
                   <p className='text-muted-foreground mt-1 line-clamp-1 text-sm'>
                     by {item.book.author}
                   </p>
+                  {item.book.tags.length > 0 && (
+                    <div className='mt-2 flex flex-wrap gap-1.5'>
+                      {item.book.tags.map((tag) => (
+                        <Badge key={tag} variant='outline' className='rounded-sm font-normal'>
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                   <div className='mt-2'>
                     <ReadingStatusBadge status={item.book.currentReadingPeriod.status} />
                   </div>

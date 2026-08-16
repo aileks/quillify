@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc';
-import { books, listEntries, lists, readingPeriods } from '@/server/db/schema';
+import { bookTags, books, listEntries, lists, readingPeriods, tags } from '@/server/db/schema';
 import type { BookWithCurrentPeriod } from '@/types';
 import { BULK_BOOK_IDS_MAX, listNameSchema, moveDirectionSchema } from '@/lib/organization';
 import {
@@ -121,12 +121,37 @@ export const listsRouter = createTRPCRouter({
         .where(eq(listEntries.listId, list.id))
         .orderBy(asc(listEntries.position), asc(listEntries.createdAt));
 
+      const tagRows =
+        rows.length > 0 ?
+          await ctx.db
+            .select({ bookId: bookTags.bookId, name: tags.name })
+            .from(bookTags)
+            .innerJoin(tags, eq(bookTags.tagId, tags.id))
+            .where(
+              inArray(
+                bookTags.bookId,
+                rows.map(({ book }) => book.id)
+              )
+            )
+            .orderBy(asc(sql`lower(${tags.name})`))
+        : [];
+      const tagNamesByBookId = new Map<string, string[]>();
+      for (const { bookId, name } of tagRows) {
+        const bookTagNames = tagNamesByBookId.get(bookId) ?? [];
+        bookTagNames.push(name);
+        tagNamesByBookId.set(bookId, bookTagNames);
+      }
+
       return {
         id: list.id,
         name: list.name,
         items: rows.map(({ book, currentReadingPeriod, ...entry }) => ({
           ...entry,
-          book: { ...book, currentReadingPeriod } as BookWithCurrentPeriod,
+          book: {
+            ...book,
+            currentReadingPeriod,
+            tags: tagNamesByBookId.get(book.id) ?? [],
+          } as BookWithCurrentPeriod & { tags: string[] },
         })),
       };
     }),

@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { RELEASE_MANIFEST, getReleaseNotesPreview } from '@/lib/releases';
+import { getReleaseNotesPreview } from '@/lib/releases';
 import { api } from '@/trpc/react';
 
 const RELEASE_NOTES_PREVIEW_PARAMETER = 'previewReleaseNotes';

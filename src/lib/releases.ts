@@ -13,9 +13,12 @@ export const RELEASE_MANIFEST = [
     title: 'Tags in more places',
     notes: [
       {
+        title: "Add some space to release notes",
+        description: "These notes should now be easier to read!"
+      },
+      {
         title: "List pages show each book's tags.",
-        description:
-          'Open any list from the Lists page to see the tags on every book beneath the author, so a curated list keeps its context at a glance.',
+        description: 'Tags now appear on books when viewing a list.',
       },
       {
         title: 'Reading Insights surfaces your most-used tags.',

@@ -67,7 +67,7 @@ export function ReleaseNotesDialog({ isAuthenticated }: ReleaseNotesDialogProps)
                 {release.notes.map((note) => (
                   <li key={note.title}>
                     <span className='text-foreground font-medium'>{note.title}</span>
-                    <span aria-hidden='true'> · </span>
+                    <br />
                     {note.description}
                   </li>
                 ))}

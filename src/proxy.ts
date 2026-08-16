@@ -7,8 +7,8 @@ import { NextResponse } from 'next/server';
 export function proxy(req: NextRequest) {
   const { method, headers } = req;
 
-  // Allow email verification route to pass through (browser link clicks)
-  if (req.nextUrl.pathname === '/api/verify-email') {
+  // Allow routes reached through browser link clicks to pass through
+  if (req.nextUrl.pathname === '/api/verify-email' || req.nextUrl.pathname === '/api/export') {
     return NextResponse.next();
   }
 
@@ -37,7 +37,7 @@ export const config = {
   // Skip normal API traffic and run only for browser document navigations.
   matcher: [
     {
-      source: '/api/((?!verify-email(?:/|$)).*)',
+      source: '/api/((?!(?:verify-email|export)(?:/|$)).*)',
       has: [{ type: 'header', key: 'sec-fetch-mode', value: 'navigate' }],
     },
   ],

@@ -57,6 +57,16 @@ test.describe('public experience', () => {
     }
   });
 
+  test('account-required routes redirect signed-out visitors to the landing page', async ({
+    page,
+  }) => {
+    for (const path of ['/books', '/books/new', '/lists']) {
+      await page.goto(path);
+      await expect(page).toHaveURL('/');
+      await expect(page.getByRole('region', { name: 'Hero section' })).toBeVisible();
+    }
+  });
+
   test('login page keeps demo access visible', async ({ page }) => {
     await page.goto('/account/login');
 

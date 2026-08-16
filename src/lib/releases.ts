@@ -13,8 +13,8 @@ export const RELEASE_MANIFEST = [
     title: 'Tags in more places',
     notes: [
       {
-        title: "Add some space to release notes",
-        description: "These notes should now be easier to read!"
+        title: 'Add some space to release notes',
+        description: 'These notes should now be easier to read!',
       },
       {
         title: "List pages show each book's tags.",

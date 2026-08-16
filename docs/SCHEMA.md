@@ -76,6 +76,68 @@ period per book. Finished and Did Not Finish periods remain as history when a re
 
 The user, source, and source record ID are unique together so an import can be retried safely.
 
+## `tags`
+
+| Column      | Type        | Constraints                                     |
+| ----------- | ----------- | ----------------------------------------------- |
+| `id`        | text        | primary key                                     |
+| `userId`    | text        | not null, references `users.id`, cascade delete |
+| `name`      | text        | not null                                        |
+| `createdAt` | timestamptz | not null, defaults to now                       |
+| `updatedAt` | timestamptz | not null, defaults to now                       |
+
+Tag names are unique per user, matched case-insensitively. Tags with no attached books remain until
+deleted.
+
+## `book_tags`
+
+| Column      | Type        | Constraints                                     |
+| ----------- | ----------- | ----------------------------------------------- |
+| `id`        | text        | primary key                                     |
+| `bookId`    | text        | not null, references `books.id`, cascade delete |
+| `tagId`     | text        | not null, references `tags.id`, cascade delete  |
+| `createdAt` | timestamptz | not null, defaults to now                       |
+
+A book and a tag are unique together.
+
+## `lists`
+
+| Column      | Type        | Constraints                                     |
+| ----------- | ----------- | ----------------------------------------------- |
+| `id`        | text        | primary key                                     |
+| `userId`    | text        | not null, references `users.id`, cascade delete |
+| `name`      | text        | not null                                        |
+| `createdAt` | timestamptz | not null, defaults to now                       |
+| `updatedAt` | timestamptz | not null, defaults to now                       |
+
+List names are unique per user, matched case-insensitively.
+
+## `list_entries`
+
+| Column      | Type        | Constraints                                      |
+| ----------- | ----------- | ------------------------------------------------ |
+| `id`        | text        | primary key                                      |
+| `listId`    | text        | not null, references `lists.id`, cascade delete  |
+| `bookId`    | text        | not null, references `books.id`, cascade delete  |
+| `position`  | integer     | not null                                         |
+| `createdAt` | timestamptz | not null, defaults to now                        |
+
+A list and a book are unique together. Positions are contiguous from 1 and rewritten when entries
+move or leave the list.
+
+## `up_next_entries`
+
+| Column      | Type        | Constraints                                     |
+| ----------- | ----------- | ----------------------------------------------- |
+| `id`        | text        | primary key                                     |
+| `userId`    | text        | not null, references `users.id`, cascade delete |
+| `bookId`    | text        | not null, references `books.id`, cascade delete |
+| `position`  | integer     | not null                                        |
+| `createdAt` | timestamptz | not null, defaults to now                       |
+
+A user and a book are unique together. The queue holds at most five books, enforced in application
+logic. A book leaves the queue when it moves to any status other than To Read.
+
 ## `password_reset_tokens`
 
 | Column      | Type        | Constraints                                     |
@@ -104,12 +166,15 @@ deletes every outstanding verification token for that user.
 
 ## Relationships
 
-- A user has many books and import source records
+- A user has many books, tags, lists, and import source records
 - A book has many reading periods and exactly one current period under application invariants
-- A book has many import source records
+- A book has many import source records, tags through `book_tags`, and list memberships through
+  `list_entries`
+- A user has many Up Next entries and each references one of their books
 - A user has many password reset token attempts
 - A user has many email verification token attempts
-- Deleting a user cascades through books to reading periods and directly to both token tables
+- Deleting a user cascades through books to reading periods, tags, lists, Up Next entries, and
+  directly to both token tables
 
 ## Migrations
 
@@ -128,5 +193,6 @@ Migrations live in `src/server/drizzle/`.
 - Migration `0013` adds canonical ISBN and Open Library work and edition identity to books.
 - Migration `0014` adds Goodreads import provenance and its idempotency constraint.
 - Migration `0015` adds the account-backed release notes marker.
+- Migration `0016` adds tags, book tags, lists, list entries, and Up Next entries.
 
 The daily cron route removes expired rows from both token tables.

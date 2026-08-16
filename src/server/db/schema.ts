@@ -122,6 +122,100 @@ export const bookImportSources = quillify.table(
   ]
 );
 
+export const tags = quillify.table(
+  'tags',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex('tags_user_name_unique').on(table.userId, sql`lower(${table.name})`)]
+);
+
+export const bookTags = quillify.table(
+  'book_tags',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    bookId: text('bookId')
+      .notNull()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    tagId: text('tagId')
+      .notNull()
+      .references(() => tags.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('book_tags_book_tag_unique').on(table.bookId, table.tagId),
+    index('book_tags_tag_index').on(table.tagId),
+  ]
+);
+
+export const lists = quillify.table(
+  'lists',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex('lists_user_name_unique').on(table.userId, sql`lower(${table.name})`)]
+);
+
+export const listEntries = quillify.table(
+  'list_entries',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    listId: text('listId')
+      .notNull()
+      .references(() => lists.id, { onDelete: 'cascade' }),
+    bookId: text('bookId')
+      .notNull()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('list_entries_list_book_unique').on(table.listId, table.bookId),
+    index('list_entries_list_position_index').on(table.listId, table.position),
+  ]
+);
+
+export const upNextEntries = quillify.table(
+  'up_next_entries',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    bookId: text('bookId')
+      .notNull()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('up_next_entries_user_book_unique').on(table.userId, table.bookId),
+    index('up_next_entries_user_position_index').on(table.userId, table.position),
+  ]
+);
+
 export const passwordResetTokens = quillify.table('password_reset_tokens', {
   id: text('id')
     .primaryKey()
@@ -151,6 +245,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   bookImportSources: many(bookImportSources),
   passwordResetTokens: many(passwordResetTokens),
   emailVerificationTokens: many(emailVerificationTokens),
+  tags: many(tags),
+  lists: many(lists),
+  upNextEntries: many(upNextEntries),
 }));
 
 export const booksRelations = relations(books, ({ one, many }) => ({
@@ -160,6 +257,8 @@ export const booksRelations = relations(books, ({ one, many }) => ({
   }),
   readingPeriods: many(readingPeriods),
   importSources: many(bookImportSources),
+  bookTags: many(bookTags),
+  listEntries: many(listEntries),
 }));
 
 export const readingPeriodsRelations = relations(readingPeriods, ({ one }) => ({
@@ -176,6 +275,55 @@ export const bookImportSourcesRelations = relations(bookImportSources, ({ one })
   }),
   book: one(books, {
     fields: [bookImportSources.bookId],
+    references: [books.id],
+  }),
+}));
+
+export const tagsRelations = relations(tags, ({ one, many }) => ({
+  user: one(users, {
+    fields: [tags.userId],
+    references: [users.id],
+  }),
+  bookTags: many(bookTags),
+}));
+
+export const bookTagsRelations = relations(bookTags, ({ one }) => ({
+  book: one(books, {
+    fields: [bookTags.bookId],
+    references: [books.id],
+  }),
+  tag: one(tags, {
+    fields: [bookTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
+export const listsRelations = relations(lists, ({ one, many }) => ({
+  user: one(users, {
+    fields: [lists.userId],
+    references: [users.id],
+  }),
+  entries: many(listEntries),
+}));
+
+export const listEntriesRelations = relations(listEntries, ({ one }) => ({
+  list: one(lists, {
+    fields: [listEntries.listId],
+    references: [lists.id],
+  }),
+  book: one(books, {
+    fields: [listEntries.bookId],
+    references: [books.id],
+  }),
+}));
+
+export const upNextEntriesRelations = relations(upNextEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [upNextEntries.userId],
+    references: [users.id],
+  }),
+  book: one(books, {
+    fields: [upNextEntries.bookId],
     references: [books.id],
   }),
 }));

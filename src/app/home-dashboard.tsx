@@ -31,7 +31,7 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
         </div>
 
         {/* Statistics Cards Skeleton */}
-        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+        <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className='rounded-sm'>
               <CardHeader>
@@ -101,7 +101,7 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
       </div>
 
       {/* Statistics Cards */}
-      <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+      <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
         <Card className='rounded-sm'>
           <CardHeader>
             <CardTitle className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>

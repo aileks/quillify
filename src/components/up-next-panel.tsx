@@ -61,10 +61,12 @@ export function UpNextPanel() {
             read next.
           </p>
         : <ol className='space-y-3'>
+            {/* The link keeps a readable minimum width so the action buttons wrap
+                below it whenever the panel is too narrow, regardless of viewport */}
             {items.map((item, index) => (
               <li
                 key={item.book.id}
-                className='border-foreground/10 flex items-center gap-3 rounded-sm border p-2'
+                className='border-foreground/10 flex flex-wrap items-center gap-3 rounded-sm border p-2'
               >
                 <span className='text-muted-foreground w-4 text-center text-sm font-medium'>
                   {index + 1}
@@ -82,7 +84,7 @@ export function UpNextPanel() {
                 <Link
                   href={`/books/${item.book.id}`}
                   prefetch={false}
-                  className='hover:bg-muted/50 min-w-0 flex-1 rounded-sm p-1 transition-colors'
+                  className='hover:bg-muted/50 min-w-[120px] flex-1 rounded-sm p-1 transition-colors'
                 >
                   <div className='truncate font-serif text-sm leading-tight font-medium'>
                     {item.book.title}
@@ -91,7 +93,7 @@ export function UpNextPanel() {
                     by {item.book.author}
                   </div>
                 </Link>
-                <div className='flex shrink-0 items-center gap-1'>
+                <div className='ml-auto flex shrink-0 items-center gap-1'>
                   <Button
                     variant='ghost'
                     size='icon'
@@ -138,7 +140,7 @@ export function UpNextPanel() {
                     }
                   >
                     <BookOpenIcon className='size-4' />
-                    <span className='lg:hidden xl:inline'>Start</span>
+                    <span>Start</span>
                   </Button>
                 </div>
               </li>

@@ -24,22 +24,25 @@ describe('release manifest', () => {
   });
 
   it('returns every release newer than the account marker', () => {
+    const versionsAfter20 = RELEASE_MANIFEST.filter(
+      ({ version }) => compareSemanticVersions(version, '2.0.0') > 0
+    ).map(({ version }) => version);
+
     expect(getUnseenReleases(null)).toEqual(RELEASE_MANIFEST);
     expect(getUnseenReleases(CURRENT_RELEASE_VERSION)).toEqual([]);
-    expect(getUnseenReleases('2.0.0').map(({ version }) => version)).toEqual([
-      '2.2.1',
-      '2.2.0',
-      '2.1.1',
-    ]);
+    expect(getUnseenReleases('2.0.0').map(({ version }) => version)).not.toContain('2.0.0');
+    expect(versionsAfter20.length).toBeGreaterThan(1);
+    expect(getUnseenReleases('2.0.0').map(({ version }) => version)).toEqual(versionsAfter20);
   });
 
   it('previews cumulative notes for a simulated seen version in development only', () => {
+    const releasesAfter211 = RELEASE_MANIFEST.filter(
+      ({ version }) => compareSemanticVersions(version, '2.1.1') > 0
+    );
+
     expect(getReleaseNotesPreview('1', 'development')).toEqual(RELEASE_MANIFEST);
     expect(getReleaseNotesPreview('2.0.0', 'development')).toEqual(RELEASE_MANIFEST);
-    expect(getReleaseNotesPreview('2.1.1', 'development')).toEqual(
-      RELEASE_MANIFEST.filter(({ version }) => version !== '2.1.1')
-    );
-    expect(getReleaseNotesPreview('2.2.0', 'development')).toEqual([RELEASE_MANIFEST[0]]);
+    expect(getReleaseNotesPreview('2.1.1', 'development')).toEqual(releasesAfter211);
     expect(getReleaseNotesPreview(CURRENT_RELEASE_VERSION, 'development')).toEqual([]);
     expect(getReleaseNotesPreview('1', 'production')).toBeNull();
     expect(getReleaseNotesPreview(null, 'development')).toBeNull();

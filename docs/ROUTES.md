@@ -38,7 +38,7 @@ Every books procedure is protected.
 
 | Procedure                   | Kind     | Input                                             | Result                                  |
 | --------------------------- | -------- | ------------------------------------------------- | --------------------------------------- |
-| `books.stats`               | Query    | None                                              | Library, lifecycle, and reading totals  |
+| `books.stats`               | Query    | None                                              | Library, lifecycle, totals, and top tags |
 | `books.list`                | Query    | Search, status, genres, tags, sort, page, size    | Paginated books with current periods    |
 | `books.getById`             | Query    | `{ id }`                                          | Owned book, periods, history, and tags  |
 | `books.create`              | Mutation | Book, tags, and duplicate review action           | Created book or duplicate warning       |
@@ -99,7 +99,7 @@ Every lists procedure is protected and user-scoped.
 | `lists.create`      | Mutation | `{ name }`                         | Created list                        |
 | `lists.rename`      | Mutation | `{ id, name }`                     | Renamed list                        |
 | `lists.remove`      | Mutation | `{ id }`                           | Removed ID, entries cascade         |
-| `lists.getById`     | Query    | `{ id }`                           | Ordered list with current periods   |
+| `lists.getById`     | Query    | `{ id }`                           | Ordered list with periods and tags   |
 | `lists.addBooks`    | Mutation | `{ id, bookIds }`                  | Books appended in order             |
 | `lists.removeBooks` | Mutation | `{ id, bookIds }`                  | Books removed, positions rewritten  |
 | `lists.moveEntry`   | Mutation | `{ id, entryId, direction }`       | Entry swapped up or down            |

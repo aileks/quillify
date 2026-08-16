@@ -161,7 +161,8 @@ book, filter and search the Library by tag, and rename or delete tags from the t
 ordered lists have their own Lists section, support reordering and a book picker, and accept bulk
 changes from the Library selection mode alongside tags. A dedicated Up Next queue holds five To
 Read books, appears on the dashboard with a start-reading shortcut, and releases books
-automatically once they leave To Read. Goodreads shelves import as tags.
+automatically once they leave To Read. Goodreads shelves import as tags. Tags appear on list
+pages and among the home dashboard's Reading Insights.
 
 **Planned experience:**
 

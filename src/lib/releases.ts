@@ -9,6 +9,22 @@ export interface ReleaseManifestEntry {
 
 export const RELEASE_MANIFEST = [
   {
+    version: '2.2.2',
+    title: 'Tags in more places',
+    notes: [
+      {
+        title: "List pages show each book's tags.",
+        description:
+          'Open any list from the Lists page to see the tags on every book beneath the author, so a curated list keeps its context at a glance.',
+      },
+      {
+        title: 'Reading Insights surfaces your most-used tags.',
+        description:
+          'The home dashboard now shows your top tags beside top genres, so you can see the themes running through your Library.',
+      },
+    ],
+  },
+  {
     version: '2.2.1',
     title: 'Fixes and polish',
     notes: [

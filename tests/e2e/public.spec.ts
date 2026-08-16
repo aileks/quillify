@@ -51,7 +51,7 @@ test.describe('public experience', () => {
 
     if (testInfo.project.name === 'mobile-chromium') {
       await page.getByRole('button', { name: 'Menu' }).click();
-      await expect(page.getByRole('menuitem', { name: 'About' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'About', exact: true })).toBeVisible();
     } else {
       await expect(page.locator('aside footer').getByRole('link', { name: 'About' })).toBeVisible();
     }

@@ -18,6 +18,7 @@ import {
   Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NavLink } from '@/components/nav-link';
 import { cn } from '@/lib/utils';
 import { useCallback, useRef, useEffect, useState } from 'react';
 import { useUIStore, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH } from '@/stores';
@@ -159,125 +160,63 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
       <nav className='flex flex-1 flex-col gap-1 p-2'>
         {session?.user ?
           <>
-            <Button
-              variant='ghost'
-              asChild
-              className={cn(
-                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                pathname === '/' && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                sidebarCollapsed && 'justify-center px-2'
-              )}
-              title={sidebarCollapsed ? 'Home' : undefined}
-            >
-              <Link href='/'>
-                <Home />
-                {!sidebarCollapsed && <span>Home</span>}
-              </Link>
-            </Button>
-
-            <Button
-              variant='ghost'
-              asChild
-              className={cn(
-                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                pathname.startsWith('/books') && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                sidebarCollapsed && 'justify-center px-2'
-              )}
-              title={sidebarCollapsed ? 'Library' : undefined}
-            >
-              <Link href='/books'>
-                <BookOpen />
-                {!sidebarCollapsed && <span>Library</span>}
-              </Link>
-            </Button>
-
-            <Button
-              variant='ghost'
-              asChild
-              className={cn(
-                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                pathname.startsWith('/lists') && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                sidebarCollapsed && 'justify-center px-2'
-              )}
-              title={sidebarCollapsed ? 'Lists' : undefined}
-            >
-              <Link href='/lists'>
-                <ListIcon />
-                {!sidebarCollapsed && <span>Lists</span>}
-              </Link>
-            </Button>
-
-            <Button
-              variant='ghost'
-              asChild
-              className={cn(
-                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                pathname === '/account/settings' &&
-                  'bg-sidebar-accent text-sidebar-accent-foreground',
-                sidebarCollapsed && 'justify-center px-2'
-              )}
-              title={sidebarCollapsed ? 'Settings' : undefined}
-            >
-              <Link href='/account/settings'>
-                <Settings />
-                {!sidebarCollapsed && <span>Settings</span>}
-              </Link>
-            </Button>
+            <NavLink
+              href='/'
+              icon={Home}
+              label='Home'
+              active={pathname === '/'}
+              iconOnly={sidebarCollapsed}
+            />
+            <NavLink
+              href='/books'
+              icon={BookOpen}
+              label='Library'
+              active={pathname.startsWith('/books')}
+              iconOnly={sidebarCollapsed}
+            />
+            <NavLink
+              href='/lists'
+              icon={ListIcon}
+              label='Lists'
+              active={pathname.startsWith('/lists')}
+              iconOnly={sidebarCollapsed}
+            />
+            <NavLink
+              href='/account/settings'
+              icon={Settings}
+              label='Settings'
+              active={pathname === '/account/settings'}
+              iconOnly={sidebarCollapsed}
+            />
           </>
         : <>
-            <Button
-              variant='ghost'
-              asChild
-              className={cn(
-                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                pathname === '/account/login' && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                sidebarCollapsed && 'justify-center px-2'
-              )}
-              title={sidebarCollapsed ? 'Log In' : undefined}
-            >
-              <Link href='/account/login'>
-                <LogIn />
-                {!sidebarCollapsed && <span>Log In</span>}
-              </Link>
-            </Button>
-
-            <Button
-              variant='ghost'
-              asChild
-              className={cn(
-                'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-                pathname === '/account/register' &&
-                  'bg-sidebar-accent text-sidebar-accent-foreground',
-                sidebarCollapsed && 'justify-center px-2'
-              )}
-              title={sidebarCollapsed ? 'Get Started' : undefined}
-            >
-              <Link href='/account/register'>
-                <UserPlus />
-                {!sidebarCollapsed && <span>Get Started</span>}
-              </Link>
-            </Button>
+            <NavLink
+              href='/account/login'
+              icon={LogIn}
+              label='Log In'
+              active={pathname === '/account/login'}
+              iconOnly={sidebarCollapsed}
+            />
+            <NavLink
+              href='/account/register'
+              icon={UserPlus}
+              label='Get Started'
+              active={pathname === '/account/register'}
+              iconOnly={sidebarCollapsed}
+            />
           </>
         }
       </nav>
 
       {/* Secondary navigation */}
       <footer className='border-sidebar-border flex flex-col gap-1 border-t p-2'>
-        <Button
-          variant='ghost'
-          asChild
-          className={cn(
-            'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start gap-3 text-left',
-            pathname === '/about' && 'bg-sidebar-accent text-sidebar-accent-foreground',
-            sidebarCollapsed && 'justify-center px-2'
-          )}
-          title={sidebarCollapsed ? 'About' : undefined}
-        >
-          <Link href='/about' aria-current={pathname === '/about' ? 'page' : undefined}>
-            <Info />
-            {!sidebarCollapsed && <span>About</span>}
-          </Link>
-        </Button>
+        <NavLink
+          href='/about'
+          icon={Info}
+          label='About'
+          active={pathname === '/about'}
+          iconOnly={sidebarCollapsed}
+        />
 
         {session?.user && (
           <Button

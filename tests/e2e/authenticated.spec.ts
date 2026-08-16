@@ -24,12 +24,10 @@ test('authenticated navigation opens About without an account call to action', a
 
   if (testInfo.project.name === 'mobile-chromium') {
     await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Lists', exact: true })).toBeVisible();
   }
 
-  const aboutLink =
-    testInfo.project.name === 'mobile-chromium' ?
-      page.getByRole('menuitem', { name: 'About', exact: true })
-    : page.getByRole('link', { name: 'About', exact: true });
+  const aboutLink = page.getByRole('link', { name: 'About', exact: true });
   await aboutLink.click();
   await expect(page).toHaveURL(/\/about$/);
   await expect(

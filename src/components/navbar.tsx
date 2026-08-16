@@ -3,20 +3,25 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { BookOpen, Home, Info, LogIn, LogOut, Menu, Settings, UserPlus } from 'lucide-react';
+import { useState } from 'react';
+import {
+  BookOpen,
+  Home,
+  Info,
+  ListIcon,
+  LogIn,
+  LogOut,
+  Menu,
+  Settings,
+  User,
+  UserPlus,
+} from 'lucide-react';
 
+import { NavLink } from '@/components/nav-link';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 interface NavbarProps {
   className?: string;
@@ -25,6 +30,9 @@ interface NavbarProps {
 export function Navbar({ className }: NavbarProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const closeMenu = () => setMenuOpen(false);
 
   return (
     <nav
@@ -40,103 +48,116 @@ export function Navbar({ className }: NavbarProps) {
         </Link>
 
         {status === 'loading' ?
-          <Skeleton className='h-9 w-24' />
-        : <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <Skeleton className='h-9 w-9' />
+        : <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
               <Button
                 variant='outline'
+                size='icon'
+                aria-label='Menu'
                 className='border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground'
               >
-                <Menu data-icon='inline-start' />
-                Menu
+                <Menu />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-56'>
-              {session?.user ?
-                <>
-                  <DropdownMenuLabel className='truncate'>
-                    {session.user.name || session.user.email || 'Account'}
-                  </DropdownMenuLabel>
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                      <Link href='/' aria-current={pathname === '/' ? 'page' : undefined}>
-                        <Home />
-                        Home
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href='/books'
-                        aria-current={pathname.startsWith('/books') ? 'page' : undefined}
-                      >
-                        <BookOpen />
-                        Library
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href='/account/settings'
-                        aria-current={pathname === '/account/settings' ? 'page' : undefined}
-                      >
-                        <Settings />
-                        Settings
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                      <Link href='/about' aria-current={pathname === '/about' ? 'page' : undefined}>
-                        <Info />
-                        About
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      variant='destructive'
-                      onClick={() => signOut({ callbackUrl: '/' })}
-                    >
-                      <LogOut />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </>
-              : <>
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href='/account/login'
-                        aria-current={pathname === '/account/login' ? 'page' : undefined}
-                      >
-                        <LogIn />
-                        Log In
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href='/account/register'
-                        aria-current={pathname === '/account/register' ? 'page' : undefined}
-                      >
-                        <UserPlus />
-                        Get Started
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem asChild>
-                      <Link href='/about' aria-current={pathname === '/about' ? 'page' : undefined}>
-                        <Info />
-                        About
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </>
-              }
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </SheetTrigger>
+            <SheetContent
+              aria-describedby={undefined}
+              className='border-sidebar-border bg-sidebar text-sidebar-foreground gap-0 p-0'
+            >
+              <div className='border-sidebar-border border-b px-4 py-4 pr-12'>
+                <SheetTitle className='font-serif text-xl font-bold'>Quillify</SheetTitle>
+                {session?.user && (
+                  <div className='text-sidebar-foreground/80 mt-2 flex items-center gap-2 text-sm'>
+                    <User className='size-4 shrink-0' />
+                    <span className='truncate'>
+                      {session.user.name || session.user.email || 'User'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <nav className='flex flex-1 flex-col gap-1 p-2' aria-label='Menu'>
+                {session?.user ?
+                  <>
+                    <NavLink
+                      href='/'
+                      icon={Home}
+                      label='Home'
+                      active={pathname === '/'}
+                      onClick={closeMenu}
+                      className='h-11'
+                    />
+                    <NavLink
+                      href='/books'
+                      icon={BookOpen}
+                      label='Library'
+                      active={pathname.startsWith('/books')}
+                      onClick={closeMenu}
+                      className='h-11'
+                    />
+                    <NavLink
+                      href='/lists'
+                      icon={ListIcon}
+                      label='Lists'
+                      active={pathname.startsWith('/lists')}
+                      onClick={closeMenu}
+                      className='h-11'
+                    />
+                    <NavLink
+                      href='/account/settings'
+                      icon={Settings}
+                      label='Settings'
+                      active={pathname === '/account/settings'}
+                      onClick={closeMenu}
+                      className='h-11'
+                    />
+                  </>
+                : <>
+                    <NavLink
+                      href='/account/login'
+                      icon={LogIn}
+                      label='Log In'
+                      active={pathname === '/account/login'}
+                      onClick={closeMenu}
+                      className='h-11'
+                    />
+                    <NavLink
+                      href='/account/register'
+                      icon={UserPlus}
+                      label='Get Started'
+                      active={pathname === '/account/register'}
+                      onClick={closeMenu}
+                      className='h-11'
+                    />
+                  </>
+                }
+              </nav>
+
+              <footer className='border-sidebar-border flex flex-col gap-1 border-t p-2'>
+                <NavLink
+                  href='/about'
+                  icon={Info}
+                  label='About'
+                  active={pathname === '/about'}
+                  onClick={closeMenu}
+                  className='h-11'
+                />
+                {session?.user && (
+                  <Button
+                    variant='ghost'
+                    onClick={() => {
+                      closeMenu();
+                      signOut({ callbackUrl: '/' });
+                    }}
+                    className='text-sidebar-destructive hover:bg-sidebar-destructive/20! hover:text-sidebar-destructive dark:hover:bg-sidebar-destructive/20! h-11 w-full justify-start gap-3 text-left'
+                  >
+                    <LogOut />
+                    Sign Out
+                  </Button>
+                )}
+              </footer>
+            </SheetContent>
+          </Sheet>
         }
       </div>
     </nav>

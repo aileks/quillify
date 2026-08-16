@@ -33,6 +33,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { GenreCombobox } from '@/components/genre-combobox';
+import { TagNamesInput } from '@/components/tag-names-input';
+import { api } from '@/trpc/react';
 import {
   BOOK_AUTHOR_MAX_LENGTH,
   BOOK_MAX_PAGE_COUNT,
@@ -84,6 +86,8 @@ export function BookForm({
     resolver: zodResolver(bookFormSchema),
     defaultValues,
   });
+  const { data: existingTags } = api.tags.list.useQuery();
+  const tagSuggestions = (existingTags ?? []).map(({ name }) => name);
   const titleValue = useWatch({ control: form.control, name: 'title' });
   const authorValue = useWatch({ control: form.control, name: 'author' });
   const selectedCoverId = useWatch({
@@ -246,6 +250,27 @@ export function BookForm({
                       onValueChange={field.onChange}
                       placeholder='Select a genre'
                       className='w-60'
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='tags'
+              render={({ field, fieldState }) => (
+                <FormItem data-invalid={fieldState.invalid}>
+                  <FormLabel>Tags</FormLabel>
+                  <FormControl>
+                    <TagNamesInput
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      suggestions={tagSuggestions}
+                      placeholder='Press Enter to add a tag'
+                      aria-invalid={fieldState.invalid}
+                      aria-label='Tags'
                     />
                   </FormControl>
                   <FormMessage />

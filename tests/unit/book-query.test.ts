@@ -12,6 +12,7 @@ describe('reading-list query state', () => {
       page: 1,
       search: '',
       genre: ['Fiction', 'History'],
+      tags: [],
       sortBy: 'createdAt',
       sortOrder: 'desc',
       status: undefined,
@@ -23,17 +24,19 @@ describe('reading-list query state', () => {
     expect(parseBookQueryParams(new URLSearchParams('isRead=false')).status).toBe('to_read');
   });
 
-  it('parses Next.js search parameter records with the same defaults', () => {
+  it('parses tag filters and Next.js search parameter records with the same defaults', () => {
     expect(
       parseBookQueryRecord({
         search: 'dune',
         genre: ['Science Fiction', 'ignored'],
+        tags: 'book-club,favorites',
         page: '2',
       })
     ).toEqual({
       page: 2,
       search: 'dune',
       genre: ['Science Fiction'],
+      tags: ['book-club', 'favorites'],
       sortBy: 'createdAt',
       sortOrder: 'desc',
       status: undefined,

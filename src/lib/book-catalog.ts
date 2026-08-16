@@ -30,6 +30,7 @@ export function catalogResultToBookFormValues(
     openLibraryWorkId: result.openLibraryWorkId,
     openLibraryEditionId: result.openLibraryEditionId,
     ownershipType: 'unknown',
+    tags: [],
     includeReadingDetails: false,
     readingStatus: 'to_read',
     readingFormat: '',

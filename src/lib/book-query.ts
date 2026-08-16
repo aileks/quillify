@@ -34,6 +34,7 @@ export function parseBookQueryParams(searchParams: SearchParamsReader) {
   const page = /^[1-9]\d*$/.test(pageParam) ? Math.min(parsedPage, Number.MAX_SAFE_INTEGER) : 1;
   const search = searchParams.get('search') ?? '';
   const genre = searchParams.get('genre')?.split(',').filter(Boolean) ?? [];
+  const tags = searchParams.get('tags')?.split(',').filter(Boolean) ?? [];
   const requestedSortBy = searchParams.get('sortBy');
   const requestedSortOrder = searchParams.get('sortOrder');
   const sortBy =
@@ -52,7 +53,7 @@ export function parseBookQueryParams(searchParams: SearchParamsReader) {
     : legacyIsReadParam === 'false' ? 'to_read'
     : undefined;
 
-  return { page, search, genre, sortBy, sortOrder, status };
+  return { page, search, genre, tags, sortBy, sortOrder, status };
 }
 
 export function parseBookQueryRecord(searchParams: BookQuerySearchParams) {

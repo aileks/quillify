@@ -40,6 +40,7 @@ const EMPTY_BOOK: BookFormValues = {
   openLibraryWorkId: null,
   openLibraryEditionId: null,
   ownershipType: 'unknown',
+  tags: [],
   includeReadingDetails: false,
   readingStatus: 'to_read',
   readingFormat: '',

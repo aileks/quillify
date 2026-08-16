@@ -40,6 +40,8 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GenreFilterSelect } from '@/components/genre-filter-select';
+import { TagFilterSelect } from '@/components/tag-filter-select';
+import { BulkListsDialog, BulkTagsDialog } from '@/components/bulk-organize-dialogs';
 import {
   READING_STATUS_PARAMS,
   parseBookQueryParams,
@@ -155,12 +157,15 @@ export function BooksClient({ subtitle }: BooksClientProps) {
   const [querySearch, setQuerySearch] = useState(initial.search);
   const [status, setStatus] = useState<ReadingStatus | undefined>(initial.status);
   const [genre, setGenre] = useState<string[]>(initial.genre);
+  const [tags, setTags] = useState<string[]>(initial.tags);
   const [sortBy, setSortBy] = useState<BookSortBy>(initial.sortBy);
   const [sortOrder, setSortOrder] = useState<BookSortOrder>(initial.sortOrder);
   const [page, setPage] = useState(initial.page);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBulkTagsOpen, setIsBulkTagsOpen] = useState(false);
+  const [isBulkListsOpen, setIsBulkListsOpen] = useState(false);
   const [selectedBookIds, setSelectedBookIds] = useState<Set<string>>(() => new Set());
   const pageSize = 12;
 
@@ -189,6 +194,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
     if (querySearch) params.set('search', querySearch);
     if (status !== undefined) params.set('status', READING_STATUS_PARAMS[status]);
     if (genre.length > 0) params.set('genre', genre.join(','));
+    if (tags.length > 0) params.set('tags', tags.join(','));
     if (sortBy !== 'createdAt') params.set('sortBy', sortBy);
     if (sortOrder !== 'desc') params.set('sortOrder', sortOrder);
     if (page > 1) params.set('page', String(page));
@@ -199,13 +205,14 @@ export function BooksClient({ subtitle }: BooksClientProps) {
     if (newUrl !== currentUrl) {
       window.history.replaceState(null, '', newUrl);
     }
-  }, [querySearch, status, genre, sortBy, sortOrder, page]);
+  }, [querySearch, status, genre, tags, sortBy, sortOrder, page]);
 
   const { data, isLoading, error, isFetching } = api.books.list.useQuery(
     {
       search: querySearch,
       status,
       genre,
+      tags,
       sortBy,
       sortOrder,
       page,
@@ -260,17 +267,19 @@ export function BooksClient({ subtitle }: BooksClientProps) {
   });
 
   // Filter helpers
-  const hasActiveFilters = search || status !== undefined || genre.length > 0;
+  const hasActiveFilters = search || status !== undefined || genre.length > 0 || tags.length > 0;
   const activeFilterCount = [
     search ? 1 : 0,
     status !== undefined ? 1 : 0,
     genre.length > 0 ? 1 : 0,
+    tags.length > 0 ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
 
   const clearFilters = () => {
     setSearch('');
     setStatus(undefined);
     setGenre([]);
+    setTags([]);
     resetPage();
   };
 
@@ -308,6 +317,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
         search: querySearch,
         status,
         genre,
+        tags,
         sortBy,
         sortOrder,
         page: currentPage + 1,
@@ -338,7 +348,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
           )}
 
           <Button asChild className='flex-1 rounded-sm sm:flex-none'>
-            <Link href='/books/new'>Add to List</Link>
+            <Link href='/books/new'>Add to Library</Link>
           </Button>
         </div>
       </div>
@@ -383,6 +393,13 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                   value={genre}
                   onValueChange={(v) => {
                     setGenre(v);
+                    resetPage();
+                  }}
+                />
+                <TagFilterSelect
+                  value={tags}
+                  onValueChange={(v) => {
+                    setTags(v);
                     resetPage();
                   }}
                 />
@@ -435,7 +452,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
           </div>
 
           {/* Desktop: Always visible grid */}
-          <div className='hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-6'>
+          <div className='hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-7'>
             {/* Search */}
             <div className='flex flex-col gap-2 sm:col-span-2 lg:col-span-2'>
               <Label htmlFor='reading-list-search'>Search</Label>
@@ -460,6 +477,18 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                 value={genre}
                 onValueChange={(v) => {
                   setGenre(v);
+                  resetPage();
+                }}
+              />
+            </div>
+
+            {/* Tag Filter */}
+            <div className='flex flex-col gap-2'>
+              <Label>Tags</Label>
+              <TagFilterSelect
+                value={tags}
+                onValueChange={(v) => {
+                  setTags(v);
                   resetPage();
                 }}
               />
@@ -561,7 +590,23 @@ export function BooksClient({ subtitle }: BooksClientProps) {
             <span className='text-muted-foreground text-sm'>{selectedBooks.length} selected</span>
           </div>
 
-          <div className='flex'>
+          <div className='flex flex-wrap items-center gap-2'>
+            <Button
+              variant='outline'
+              disabled={selectedBooks.length === 0}
+              onClick={() => setIsBulkTagsOpen(true)}
+              className='flex-1 sm:flex-none'
+            >
+              Tags
+            </Button>
+            <Button
+              variant='outline'
+              disabled={selectedBooks.length === 0}
+              onClick={() => setIsBulkListsOpen(true)}
+              className='flex-1 sm:flex-none'
+            >
+              Lists
+            </Button>
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button
@@ -842,6 +887,17 @@ export function BooksClient({ subtitle }: BooksClientProps) {
           </div>
         </nav>
       )}
+
+      <BulkTagsDialog
+        open={isBulkTagsOpen}
+        onOpenChange={setIsBulkTagsOpen}
+        selectedBookIds={selectedBooks.map(({ id }) => id)}
+      />
+      <BulkListsDialog
+        open={isBulkListsOpen}
+        onOpenChange={setIsBulkListsOpen}
+        selectedBookIds={selectedBooks.map(({ id }) => id)}
+      />
     </div>
   );
 }

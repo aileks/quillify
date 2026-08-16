@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, notFound, useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, BookmarkPlusIcon, BookmarkMinusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { api } from '@/trpc/react';
@@ -34,6 +34,13 @@ import {
   type ReadingPeriodFields,
 } from '@/lib/reading-lifecycle';
 import type { ReadingPeriod } from '@/types';
+import { UP_NEXT_LIMIT } from '@/lib/organization';
+
+function friendlyUpNextError(message: string, fallback: string) {
+  if (message === 'UP_NEXT_FULL') return 'Up Next holds five books. Remove one to add another.';
+  if (message === 'NOT_TO_READ') return 'Only books in To Read can join Up Next.';
+  return message || fallback;
+}
 
 interface BookDetailClientProps {
   bookId: string;
@@ -87,6 +94,30 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
   }, [searchParams]);
 
   const { data: book, isLoading, error } = api.books.getById.useQuery({ id: bookId });
+  const { data: upNext } = api.upNext.get.useQuery();
+
+  const isQueuedForUpNext = (upNext?.items ?? []).some((item) => item.book.id === bookId);
+  const upNextIsFull = (upNext?.items ?? []).length >= UP_NEXT_LIMIT;
+
+  const addToUpNext = api.upNext.add.useMutation({
+    onSuccess: () => {
+      toast.success('Added to Up Next');
+      void utils.upNext.get.invalidate();
+    },
+    onError: (mutationError) => {
+      toast.error(friendlyUpNextError(mutationError.message, 'Failed to add to Up Next'));
+    },
+  });
+
+  const removeFromUpNext = api.upNext.remove.useMutation({
+    onSuccess: () => {
+      toast.success('Removed from Up Next');
+      void utils.upNext.get.invalidate();
+    },
+    onError: (mutationError) => {
+      toast.error(friendlyUpNextError(mutationError.message, 'Failed to remove from Up Next'));
+    },
+  });
 
   // Handle 404 - book not found (after loading completes)
   if (!isLoading && error?.data?.code === 'NOT_FOUND') {
@@ -99,6 +130,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
       utils.books.getById.setData({ id: bookId }, updatedBook);
       void utils.books.list.invalidate();
       void utils.books.stats.invalidate();
+      void utils.upNext.get.invalidate();
       setIsEditing(false);
     },
     onError: (error) => {
@@ -116,6 +148,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
       setEditingPeriod(null);
       void utils.books.list.invalidate();
       void utils.books.stats.invalidate();
+      void utils.upNext.get.invalidate();
     },
     onError: (mutationError) => {
       toast.error(mutationError.message || 'Failed to update reading status');
@@ -161,6 +194,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
       openLibraryWorkId: data.openLibraryWorkId,
       openLibraryEditionId: data.openLibraryEditionId,
       ownershipType: data.ownershipType,
+      tags: data.tags,
       readingDetails: data.readingDetails,
     });
   }
@@ -225,6 +259,7 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
               openLibraryWorkId: book.openLibraryWorkId,
               openLibraryEditionId: book.openLibraryEditionId,
               ownershipType: book.ownershipType,
+              tags: book.tags,
               includeReadingDetails: true,
               readingStatus: book.currentReadingPeriod.status,
               readingFormat: book.currentReadingPeriod.format ?? '',
@@ -295,6 +330,21 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
                 </>
               )}
 
+              {book.tags.length > 0 && (
+                <>
+                  <dt className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
+                    Tags:
+                  </dt>
+                  <dd className='flex flex-wrap gap-1.5'>
+                    {book.tags.map((tag) => (
+                      <Badge key={tag} variant='outline' className='rounded-sm font-normal'>
+                        {tag}
+                      </Badge>
+                    ))}
+                  </dd>
+                </>
+              )}
+
               {book.createdAt && (
                 <>
                   <dt className='text-muted-foreground font-mono text-xs tracking-wider uppercase'>
@@ -349,6 +399,41 @@ export function BookDetailClient({ bookId, editSaying }: BookDetailClientProps) 
               >
                 Edit Book
               </Button>
+
+              {book.currentReadingPeriod.status === 'to_read' && (
+                <Button
+                  variant='outline'
+                  className='flex-1 sm:flex-none'
+                  disabled={
+                    isQueuedForUpNext ?
+                      removeFromUpNext.isPending
+                    : upNextIsFull || addToUpNext.isPending
+                  }
+                  title={
+                    !isQueuedForUpNext && upNextIsFull ?
+                      'Up Next holds five books. Remove one to add another.'
+                    : undefined
+                  }
+                  onClick={() => {
+                    if (isQueuedForUpNext) {
+                      removeFromUpNext.mutate({ bookId: book.id });
+                    } else {
+                      addToUpNext.mutate({ bookId: book.id });
+                    }
+                  }}
+                >
+                  {isQueuedForUpNext ?
+                    <>
+                      <BookmarkMinusIcon data-icon='inline-start' />
+                      {removeFromUpNext.isPending ? 'Removing...' : 'Remove from Up Next'}
+                    </>
+                  : <>
+                      <BookmarkPlusIcon data-icon='inline-start' />
+                      {addToUpNext.isPending ? 'Adding...' : 'Add to Up Next'}
+                    </>
+                  }
+                </Button>
+              )}
 
               <AlertDialog>
                 <AlertDialogTrigger asChild>

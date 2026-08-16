@@ -236,7 +236,7 @@ export function DataSettings() {
           <Button asChild className='w-fit'>
             <a href='/api/export' download>
               <Download data-icon='inline-start' />
-              Download JSON Backup
+              Download Backup
             </a>
           </Button>
           <p className='text-muted-foreground text-sm'>

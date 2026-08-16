@@ -9,6 +9,22 @@ export interface ReleaseManifestEntry {
 
 export const RELEASE_MANIFEST = [
   {
+    version: '2.2.1',
+    title: 'Fixes and polish',
+    notes: [
+      {
+        title: 'The Library backup saves correctly again.',
+        description:
+          'The Download Backup button on the Data tab in Account Settings now saves your backup file instead of an error page.',
+      },
+      {
+        title: 'Disabled buttons now look disabled.',
+        description:
+          'Buttons you cannot use yet appear dimmed and show a blocked cursor, so it is clearer which actions are available.',
+      },
+    ],
+  },
+  {
     version: '2.2.0',
     title: 'An organized Library',
     notes: [
@@ -34,7 +50,7 @@ export const RELEASE_MANIFEST = [
       },
       {
         title: 'Backups include your organization.',
-        description: 'Update data backups to include all the new features.',
+        description: 'Updated data backups to include tags, lists, and Up Next.',
       },
     ],
   },
@@ -93,4 +109,24 @@ export function getUnseenReleases(lastSeenReleaseVersion: string | null) {
   return RELEASE_MANIFEST.filter(
     (release) => compareSemanticVersions(release.version, lastSeenReleaseVersion) > 0
   );
+}
+
+/**
+ * Development-only release dialog preview: `1` previews every manifest entry,
+ * a semantic version previews exactly what a reader who last saw that version
+ * would receive. Returns null outside development or for other values.
+ */
+export function getReleaseNotesPreview(
+  parameter: string | null,
+  environment: string | undefined = process.env.NODE_ENV
+) {
+  if (environment !== 'development' || parameter === null) {
+    return null;
+  }
+
+  if (parameter === '1') {
+    return RELEASE_MANIFEST;
+  }
+
+  return parseSemanticVersion(parameter) ? getUnseenReleases(parameter) : null;
 }

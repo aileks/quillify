@@ -1,8 +1,18 @@
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
 import { auth } from '@/server/auth';
 import { db } from '@/server/db';
-import { bookImportSources, books, readingPeriods, users } from '@/server/db/schema';
+import {
+  bookImportSources,
+  bookTags,
+  books,
+  listEntries,
+  lists,
+  readingPeriods,
+  tags,
+  upNextEntries,
+  users,
+} from '@/server/db/schema';
 import { createLibraryBackup } from '@/server/services/library-export';
 
 const PRIVATE_HEADERS = {
@@ -32,7 +42,15 @@ export async function GET() {
     return Response.json({ error: 'Account not found' }, { status: 404, headers: PRIVATE_HEADERS });
   }
 
-  const [libraryBooks, libraryReadingPeriods, libraryImportSources] = await Promise.all([
+  const [
+    libraryBooks,
+    libraryReadingPeriods,
+    libraryImportSources,
+    libraryBookTags,
+    libraryLists,
+    libraryListEntries,
+    libraryUpNextEntries,
+  ] = await Promise.all([
     db
       .select({
         id: books.id,
@@ -77,6 +95,36 @@ export async function GET() {
       })
       .from(bookImportSources)
       .where(eq(bookImportSources.userId, userId)),
+    db
+      .select({ bookId: bookTags.bookId, name: tags.name })
+      .from(bookTags)
+      .innerJoin(tags, eq(bookTags.tagId, tags.id))
+      .innerJoin(books, eq(bookTags.bookId, books.id))
+      .where(eq(books.userId, userId)),
+    db
+      .select({
+        id: lists.id,
+        name: lists.name,
+        createdAt: lists.createdAt,
+        updatedAt: lists.updatedAt,
+      })
+      .from(lists)
+      .where(eq(lists.userId, userId)),
+    db
+      .select({
+        listId: listEntries.listId,
+        bookId: listEntries.bookId,
+        position: listEntries.position,
+      })
+      .from(listEntries)
+      .innerJoin(lists, eq(listEntries.listId, lists.id))
+      .where(eq(lists.userId, userId))
+      .orderBy(asc(listEntries.position)),
+    db
+      .select({ bookId: upNextEntries.bookId, position: upNextEntries.position })
+      .from(upNextEntries)
+      .where(eq(upNextEntries.userId, userId))
+      .orderBy(asc(upNextEntries.position)),
   ]);
 
   const backup = createLibraryBackup({
@@ -84,6 +132,10 @@ export async function GET() {
     books: libraryBooks,
     readingPeriods: libraryReadingPeriods,
     importSources: libraryImportSources,
+    bookTags: libraryBookTags,
+    lists: libraryLists,
+    listEntries: libraryListEntries,
+    upNextEntries: libraryUpNextEntries,
   });
   const date = new Date().toISOString().slice(0, 10);
 

@@ -43,11 +43,38 @@ interface ExportImportSource {
   createdAt: Date;
 }
 
+interface ExportBookTag {
+  bookId: string;
+  name: string;
+}
+
+interface ExportList {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ExportListEntry {
+  listId: string;
+  bookId: string;
+  position: number;
+}
+
+interface ExportUpNextEntry {
+  bookId: string;
+  position: number;
+}
+
 interface CreateLibraryBackupOptions {
   account: ExportAccount;
   books: ExportBook[];
   readingPeriods: ExportReadingPeriod[];
   importSources: ExportImportSource[];
+  bookTags: ExportBookTag[];
+  lists: ExportList[];
+  listEntries: ExportListEntry[];
+  upNextEntries: ExportUpNextEntry[];
   exportedAt?: Date;
 }
 
@@ -56,6 +83,10 @@ export function createLibraryBackup({
   books,
   readingPeriods,
   importSources,
+  bookTags,
+  lists,
+  listEntries,
+  upNextEntries,
   exportedAt = new Date(),
 }: CreateLibraryBackupOptions) {
   const readingPeriodsByBookId = new Map<
@@ -87,9 +118,24 @@ export function createLibraryBackup({
     importSourcesByBookId.set(bookId, bookSources);
   }
 
+  const tagsByBookId = new Map<string, string[]>();
+  for (const { bookId, name } of bookTags) {
+    const bookTagNames = tagsByBookId.get(bookId) ?? [];
+    bookTagNames.push(name);
+    tagsByBookId.set(bookId, bookTagNames);
+  }
+
+  const orderedBookIdsByListId = new Map<string, string[]>();
+  const entriesByAscendingPosition = [...listEntries].sort((a, b) => a.position - b.position);
+  for (const { listId, bookId } of entriesByAscendingPosition) {
+    const listBookIds = orderedBookIdsByListId.get(listId) ?? [];
+    listBookIds.push(bookId);
+    orderedBookIdsByListId.set(listId, listBookIds);
+  }
+
   return {
     format: 'quillify-backup' as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     exportedAt: exportedAt.toISOString(),
     account: {
       id: account.id,
@@ -114,8 +160,17 @@ export function createLibraryBackup({
       ownershipType: book.ownershipType,
       createdAt: book.createdAt.toISOString(),
       updatedAt: book.updatedAt.toISOString(),
+      tags: (tagsByBookId.get(book.id) ?? []).sort((a, b) => a.localeCompare(b)),
       readingPeriods: readingPeriodsByBookId.get(book.id) ?? [],
       importSources: importSourcesByBookId.get(book.id) ?? [],
     })),
+    lists: lists.map((list) => ({
+      id: list.id,
+      name: list.name,
+      createdAt: list.createdAt.toISOString(),
+      updatedAt: list.updatedAt.toISOString(),
+      bookIds: orderedBookIdsByListId.get(list.id) ?? [],
+    })),
+    upNext: [...upNextEntries].sort((a, b) => a.position - b.position).map(({ bookId }) => bookId),
   };
 }

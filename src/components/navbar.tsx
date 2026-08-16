@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
@@ -15,13 +16,14 @@ import {
   Settings,
   User,
   UserPlus,
+  XIcon,
 } from 'lucide-react';
 
 import { NavLink } from '@/components/nav-link';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 interface NavbarProps {
   className?: string;
@@ -62,10 +64,40 @@ export function Navbar({ className }: NavbarProps) {
             </SheetTrigger>
             <SheetContent
               aria-describedby={undefined}
-              className='border-sidebar-border bg-sidebar text-sidebar-foreground gap-0 p-0'
+              showCloseButton={false}
+              className='border-sidebar-border bg-sidebar text-sidebar-foreground w-64 gap-0 p-0'
             >
-              <div className='border-sidebar-border border-b px-4 py-4 pr-12'>
-                <SheetTitle className='font-serif text-xl font-bold'>Quillify</SheetTitle>
+              <div className='border-sidebar-border flex flex-col border-b px-4 py-4'>
+                <div className='flex items-center justify-between'>
+                  <SheetTitle>
+                    <Link
+                      href='/'
+                      onClick={closeMenu}
+                      aria-label='Quillify home'
+                      className='text-sidebar-foreground flex min-w-0 items-center gap-2 font-serif text-xl font-bold'
+                    >
+                      <Image
+                        src='/quill-logo.png'
+                        alt=''
+                        width={32}
+                        height={32}
+                        loading='eager'
+                        className='size-8 shrink-0'
+                      />
+                      <span className='truncate'>Quillify</span>
+                    </Link>
+                  </SheetTitle>
+                  <SheetClose asChild>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      aria-label='Close menu'
+                      className='text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-8 w-8 shrink-0'
+                    >
+                      <XIcon />
+                    </Button>
+                  </SheetClose>
+                </div>
                 {session?.user && (
                   <div className='text-sidebar-foreground/80 mt-2 flex items-center gap-2 text-sm'>
                     <User className='size-4 shrink-0' />
@@ -85,7 +117,6 @@ export function Navbar({ className }: NavbarProps) {
                       label='Home'
                       active={pathname === '/'}
                       onClick={closeMenu}
-                      className='h-11'
                     />
                     <NavLink
                       href='/books'
@@ -93,7 +124,6 @@ export function Navbar({ className }: NavbarProps) {
                       label='Library'
                       active={pathname.startsWith('/books')}
                       onClick={closeMenu}
-                      className='h-11'
                     />
                     <NavLink
                       href='/lists'
@@ -101,7 +131,6 @@ export function Navbar({ className }: NavbarProps) {
                       label='Lists'
                       active={pathname.startsWith('/lists')}
                       onClick={closeMenu}
-                      className='h-11'
                     />
                     <NavLink
                       href='/account/settings'
@@ -109,7 +138,6 @@ export function Navbar({ className }: NavbarProps) {
                       label='Settings'
                       active={pathname === '/account/settings'}
                       onClick={closeMenu}
-                      className='h-11'
                     />
                   </>
                 : <>
@@ -119,7 +147,6 @@ export function Navbar({ className }: NavbarProps) {
                       label='Log In'
                       active={pathname === '/account/login'}
                       onClick={closeMenu}
-                      className='h-11'
                     />
                     <NavLink
                       href='/account/register'
@@ -127,7 +154,6 @@ export function Navbar({ className }: NavbarProps) {
                       label='Get Started'
                       active={pathname === '/account/register'}
                       onClick={closeMenu}
-                      className='h-11'
                     />
                   </>
                 }
@@ -140,7 +166,6 @@ export function Navbar({ className }: NavbarProps) {
                   label='About'
                   active={pathname === '/about'}
                   onClick={closeMenu}
-                  className='h-11'
                 />
                 {session?.user && (
                   <Button
@@ -149,10 +174,10 @@ export function Navbar({ className }: NavbarProps) {
                       closeMenu();
                       signOut({ callbackUrl: '/' });
                     }}
-                    className='text-sidebar-destructive hover:bg-sidebar-destructive/20! hover:text-sidebar-destructive dark:hover:bg-sidebar-destructive/20! h-11 w-full justify-start gap-3 text-left'
+                    className='text-sidebar-destructive hover:bg-sidebar-destructive/20! hover:text-sidebar-destructive dark:hover:bg-sidebar-destructive/20! w-full justify-start gap-3 text-left'
                   >
                     <LogOut />
-                    Sign Out
+                    Log Out
                   </Button>
                 )}
               </footer>

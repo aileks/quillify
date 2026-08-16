@@ -223,7 +223,7 @@ export function Sidebar({ className, onResizingChange }: SidebarProps) {
             variant='ghost'
             onClick={() => signOut({ callbackUrl: '/' })}
             className={cn(
-              'text-sidebar-destructive hover:bg-sidebar-destructive/20! hover:text-sidebar-destructive dark:hover:bg-sidebar-destructive/20! w-full justify-start gap-3 text-left',
+              'text-sidebar-destructive hover:bg-sidebar-destructive/20! hover:text-sidebar-destructive! dark:hover:bg-sidebar-destructive/20! w-full justify-start gap-3 text-left',
               sidebarCollapsed && 'justify-center px-2'
             )}
             title={sidebarCollapsed ? 'Log Out' : undefined}

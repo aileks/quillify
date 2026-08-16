@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { RELEASE_MANIFEST } from '@/lib/releases';
+import { RELEASE_MANIFEST, getReleaseNotesPreview } from '@/lib/releases';
 import { api } from '@/trpc/react';
 
 const RELEASE_NOTES_PREVIEW_PARAMETER = 'previewReleaseNotes';
@@ -25,14 +25,13 @@ interface ReleaseNotesDialogProps {
 export function ReleaseNotesDialog({ isAuthenticated }: ReleaseNotesDialogProps) {
   const searchParams = useSearchParams();
   const [isDismissed, setIsDismissed] = useState(false);
-  const isDevelopmentPreview =
-    process.env.NODE_ENV === 'development' &&
-    searchParams.get(RELEASE_NOTES_PREVIEW_PARAMETER) === '1';
+  const previewReleases = getReleaseNotesPreview(searchParams.get(RELEASE_NOTES_PREVIEW_PARAMETER));
+  const isDevelopmentPreview = previewReleases !== null;
   const unseenReleases = api.releases.unseen.useQuery(undefined, {
     enabled: isAuthenticated && !isDevelopmentPreview,
   });
   const markSeen = api.releases.markSeen.useMutation();
-  const releases = isDevelopmentPreview ? RELEASE_MANIFEST : (unseenReleases.data?.releases ?? []);
+  const releases = previewReleases ?? unseenReleases.data?.releases ?? [];
   const isOpen = !isDismissed && releases.length > 0;
 
   const dismiss = () => {

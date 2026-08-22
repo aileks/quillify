@@ -12,7 +12,7 @@
 
 - `pnpm dev` - Turbopack development server
 - `pnpm build` - production build
-- `pnpm lint` - ESLint
+- `pnpm lint` - Oxlint
 - `pnpm typecheck` - TypeScript
 - `pnpm test` - Vitest
 - `pnpm test:e2e` - Playwright against the existing server

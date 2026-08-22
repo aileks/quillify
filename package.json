@@ -14,8 +14,8 @@
     "db:seed": "tsx scripts/seed.ts",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -61,6 +61,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@oxlint/plugins": "^1.79.0",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^25.9.5",
@@ -68,8 +69,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "drizzle-kit": "^0.31.10",
-    "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.1",
+    "oxlint": "^1.79.0",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.7.4",
     "tailwindcss": "^4.3.3",

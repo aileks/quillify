@@ -1,0 +1,13 @@
+# Agent tooling directories and the vendored Oxlint plugin are not application source.
+.agent/
+.agents/
+.claude/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.opencode/
+.pi/
+.roo/
+.windsurf/
+tools/oxlint/anti-slop/

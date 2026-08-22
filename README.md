@@ -59,7 +59,7 @@ openssl rand -base64 32
 | `pnpm dev`          | Start the Turbopack development server                    |
 | `pnpm build`        | Create a production build                                 |
 | `pnpm start`        | Run the production build                                  |
-| `pnpm lint`         | Run ESLint                                                |
+| `pnpm lint`         | Run Oxlint                                                |
 | `pnpm typecheck`    | Run TypeScript without emitting files                     |
 | `pnpm test`         | Run Vitest once                                           |
 | `pnpm test:watch`   | Run Vitest in watch mode                                  |

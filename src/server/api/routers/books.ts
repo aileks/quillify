@@ -348,7 +348,7 @@ export const booksRouter = createTRPCRouter({
         items: rows.map(({ book, currentReadingPeriod }) => ({
           ...book,
           currentReadingPeriod,
-        })) as BookWithCurrentPeriod[],
+        })) satisfies BookWithCurrentPeriod[],
         totalCount,
         page: effectivePage,
         pageSize,
@@ -436,7 +436,7 @@ export const booksRouter = createTRPCRouter({
 
       return {
         status: 'created' as const,
-        book: { ...inserted, currentReadingPeriod } as BookWithCurrentPeriod,
+        book: { ...inserted, currentReadingPeriod } satisfies BookWithCurrentPeriod,
       };
     });
   }),

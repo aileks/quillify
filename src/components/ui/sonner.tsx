@@ -9,6 +9,17 @@ import {
 } from 'lucide-react';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
+import type { CSSPropertiesWithVars } from '@/lib/utils';
+
+const toastStyle: CSSPropertiesWithVars<
+  '--normal-bg' | '--normal-text' | '--normal-border' | '--border-radius'
+> = {
+  '--normal-bg': 'var(--popover)',
+  '--normal-text': 'var(--popover-foreground)',
+  '--normal-border': 'var(--border)',
+  '--border-radius': 'var(--radius-sm)',
+};
+
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
@@ -39,14 +50,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         error: <OctagonXIcon className='size-4' />,
         loading: <Loader2Icon className='size-4 animate-spin' />,
       }}
-      style={
-        {
-          '--normal-bg': 'var(--popover)',
-          '--normal-text': 'var(--popover-foreground)',
-          '--normal-border': 'var(--border)',
-          '--border-radius': 'var(--radius-sm)',
-        } as React.CSSProperties
-      }
+      style={toastStyle}
       {...props}
     />
   );

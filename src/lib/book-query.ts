@@ -3,21 +3,31 @@ import type { ReadingStatus } from '@/lib/reading-lifecycle';
 export type BookSortBy = 'title' | 'author' | 'createdAt';
 export type BookSortOrder = 'asc' | 'desc';
 
-const STATUS_PARAMS: Record<string, ReadingStatus> = {
-  'to-read': 'to_read',
-  reading: 'reading',
-  paused: 'paused',
-  finished: 'finished',
-  'did-not-finish': 'did_not_finish',
-};
+/** Translate a `status` URL parameter into a reading status. */
+export function parseStatusParam(param: string | null | undefined): ReadingStatus | undefined {
+  switch (param) {
+    case 'to-read':
+      return 'to_read';
+    case 'reading':
+      return 'reading';
+    case 'paused':
+      return 'paused';
+    case 'finished':
+      return 'finished';
+    case 'did-not-finish':
+      return 'did_not_finish';
+    default:
+      return undefined;
+  }
+}
 
-export const READING_STATUS_PARAMS: Record<ReadingStatus, string> = {
+export const READING_STATUS_PARAMS = {
   to_read: 'to-read',
   reading: 'reading',
   paused: 'paused',
   finished: 'finished',
   did_not_finish: 'did-not-finish',
-};
+} satisfies Record<ReadingStatus, string>;
 
 interface SearchParamsReader {
   get(name: string): string | null;
@@ -25,8 +35,8 @@ interface SearchParamsReader {
 
 export type BookQuerySearchParams = Record<string, string | string[] | undefined>;
 
-const SORT_FIELDS = new Set<BookSortBy>(['title', 'author', 'createdAt']);
-const SORT_ORDERS = new Set<BookSortOrder>(['asc', 'desc']);
+const SORT_FIELDS = ['title', 'author', 'createdAt'] as const;
+const SORT_ORDERS = ['asc', 'desc'] as const;
 
 export function parseBookQueryParams(searchParams: SearchParamsReader) {
   const pageParam = searchParams.get('page') ?? '1';
@@ -38,20 +48,18 @@ export function parseBookQueryParams(searchParams: SearchParamsReader) {
   const requestedSortBy = searchParams.get('sortBy');
   const requestedSortOrder = searchParams.get('sortOrder');
   const sortBy =
-    requestedSortBy && SORT_FIELDS.has(requestedSortBy as BookSortBy) ?
-      (requestedSortBy as BookSortBy)
-    : 'createdAt';
+    (requestedSortBy ? SORT_FIELDS.find((field) => field === requestedSortBy) : undefined) ??
+    'createdAt';
   const sortOrder =
-    requestedSortOrder && SORT_ORDERS.has(requestedSortOrder as BookSortOrder) ?
-      (requestedSortOrder as BookSortOrder)
-    : 'desc';
+    (requestedSortOrder ? SORT_ORDERS.find((order) => order === requestedSortOrder) : undefined) ??
+    'desc';
   const statusParam = searchParams.get('status');
   const legacyIsReadParam = searchParams.get('isRead');
   const status =
-    statusParam ? STATUS_PARAMS[statusParam]
-    : legacyIsReadParam === 'true' ? 'finished'
+    parseStatusParam(statusParam) ??
+    (legacyIsReadParam === 'true' ? 'finished'
     : legacyIsReadParam === 'false' ? 'to_read'
-    : undefined;
+    : undefined);
 
   return { page, search, genre, tags, sortBy, sortOrder, status };
 }

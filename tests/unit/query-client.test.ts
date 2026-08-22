@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { shouldRetryQuery } from '@/trpc/query-client';
 
 function createTRPCError(code: string) {
-  return {
+  return Object.assign(new Error('request failed'), {
     data: {
       code,
       httpStatus: 500,
     },
-  };
+  });
 }
 
 describe('query retry policy', () => {

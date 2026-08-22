@@ -18,27 +18,27 @@ export const readingStatusSchema = z.enum(READING_STATUSES);
 export const readingFormatSchema = z.enum(READING_FORMATS);
 export const ownershipTypeSchema = z.enum(OWNERSHIP_TYPES);
 
-export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
+export const READING_STATUS_LABELS = {
   to_read: 'To Read',
   reading: 'Reading',
   paused: 'Paused',
   finished: 'Finished',
   did_not_finish: 'Did Not Finish',
-};
+} satisfies Record<ReadingStatus, string>;
 
-export const READING_FORMAT_LABELS: Record<ReadingFormat, string> = {
+export const READING_FORMAT_LABELS = {
   print: 'Print',
   ebook: 'Ebook',
   audiobook: 'Audiobook',
-};
+} satisfies Record<ReadingFormat, string>;
 
-export const OWNERSHIP_TYPE_LABELS: Record<OwnershipType, string> = {
+export const OWNERSHIP_TYPE_LABELS = {
   unknown: 'Unknown',
   owned: 'Owned',
   borrowed: 'Borrowed',
   library: 'Library',
   subscription: 'Subscription',
-};
+} satisfies Record<OwnershipType, string>;
 
 const calendarDateSchema = z
   .string()
@@ -84,13 +84,18 @@ export function startsNewReadingPeriod(
   return isTerminalReadingStatus(currentStatus) && !isTerminalReadingStatus(nextStatus);
 }
 
+export interface ReadingDates {
+  startedOn: string | null;
+  endedOn: string | null;
+}
+
 export function getReadingDatesAfterStatusChange(
   currentStatus: ReadingStatus,
   nextStatus: ReadingStatus,
   startedOn: string | null,
   endedOn: string | null,
   referenceDate = new Date()
-): { startedOn: string | null; endedOn: string | null } {
+): ReadingDates {
   if (nextStatus === 'to_read') {
     return { startedOn: null, endedOn: null };
   }

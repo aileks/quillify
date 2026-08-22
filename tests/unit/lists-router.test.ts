@@ -9,76 +9,34 @@ vi.mock('@/server/db', () => ({
 }));
 
 import { listsRouter } from '@/server/api/routers/lists';
+import {
+  createScriptedDatabase,
+  createTestCaller,
+  sequenceSelect,
+} from '../support/router-harness';
 
-type ListsRouterContext = Parameters<typeof listsRouter.createCaller>[0];
-
-function createSession() {
-  return {
-    user: {
-      id: 'user-1',
-      email: 'reader@example.com',
-      emailVerified: true,
-    },
-    expires: new Date(Date.now() + 60_000).toISOString(),
-  };
-}
-
-function queryResult(rows: readonly unknown[]) {
-  return Object.assign(Promise.resolve(rows), {
-    orderBy: vi.fn(async () => rows),
-  });
-}
-
-type LazyRows = unknown[] | (() => unknown[]);
-
-interface SelectChain {
-  where: () => ReturnType<typeof queryResult>;
-  innerJoin: () => SelectChain;
-}
-
-function sequenceSelect(results: readonly LazyRows[]) {
-  let index = 0;
-  return vi.fn(() => {
-    const result = results[index] ?? [];
-    index += 1;
-    const rows = typeof result === 'function' ? result() : result;
-    const chain: SelectChain = {
-      where: () => queryResult(rows),
-      innerJoin: () => chain,
-    };
-    return { from: () => chain };
-  });
-}
-
-function createCaller(database: object) {
-  return listsRouter.createCaller({
-    db: database,
-    session: createSession(),
-    headers: new Headers(),
-  } as unknown as ListsRouterContext);
-}
+type ListEntry = { id: string; listId: string; bookId: string; position: number };
 
 const ownedList = { id: 'list-1', userId: 'user-1', name: 'Book club picks' };
-const entries = [
+const entries: ListEntry[] = [
   { id: 'entry-1', listId: 'list-1', bookId: 'book-1', position: 1 },
   { id: 'entry-2', listId: 'list-1', bookId: 'book-2', position: 2 },
 ];
 
 describe('lists router reordering', () => {
   it('moves an entry down by swapping positions', async () => {
-    const positionUpdates: Array<Record<string, unknown>> = [];
-    const database = {
+    const positionUpdates: Partial<ListEntry>[] = [];
+    const database = createScriptedDatabase({
       select: sequenceSelect([() => [ownedList], () => entries]),
       update: vi.fn(() => ({
-        set: vi.fn((values: Record<string, unknown>) => {
+        set: vi.fn((values: Partial<ListEntry>) => {
           positionUpdates.push(values);
           return { where: vi.fn(async () => []) };
         }),
       })),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
+    });
 
-    await createCaller(database).moveEntry({
+    await createTestCaller(listsRouter.createCaller, database).moveEntry({
       id: 'list-1',
       entryId: 'entry-1',
       direction: 'down',
@@ -88,15 +46,18 @@ describe('lists router reordering', () => {
   });
 
   it('leaves the first entry untouched when moving up', async () => {
-    const database = {
+    const database = createScriptedDatabase({
       select: sequenceSelect([() => [ownedList], () => entries]),
       update: vi.fn(() => ({
         set: vi.fn(() => ({ where: vi.fn(async () => []) })),
       })),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
+    });
 
-    await createCaller(database).moveEntry({ id: 'list-1', entryId: 'entry-1', direction: 'up' });
+    await createTestCaller(listsRouter.createCaller, database).moveEntry({
+      id: 'list-1',
+      entryId: 'entry-1',
+      direction: 'up',
+    });
 
     expect(database.update).not.toHaveBeenCalled();
   });

@@ -9,6 +9,7 @@ import { Navbar } from '@/components/navbar';
 import { Sidebar, COLLAPSED_WIDTH } from '@/components/sidebar';
 import { EmailVerificationBanner } from '@/components/email-verification-banner';
 import { ReleaseNotesDialog } from '@/components/release-notes-dialog';
+import type { CSSPropertiesWithVars } from '@/lib/utils';
 import {
   useUIStore,
   useUIStoreHydrated,
@@ -97,8 +98,13 @@ export function LayoutShell({ children }: LayoutShellProps) {
     }
   };
 
-  // Calculate current sidebar width based on collapsed state
+  // Calculate current sidebar width based on collapse state
   const currentSidebarWidth = sidebarCollapsed ? COLLAPSED_WIDTH : sidebarWidth;
+
+  // Only apply margin on md+ screens; CSS handles mobile reset
+  const sidebarWidthStyle: CSSPropertiesWithVars<'--sidebar-width'> = {
+    '--sidebar-width': showSidebar ? `${currentSidebarWidth}px` : '0px',
+  };
 
   // Show verification banner if conditions are met
   const showVerificationBanner =
@@ -120,14 +126,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
       {/* Email verification banner */}
       {showVerificationBanner && (
-        <div
-          className='md:ml-[var(--sidebar-width)]'
-          style={
-            {
-              '--sidebar-width': showSidebar ? `${currentSidebarWidth}px` : '0px',
-            } as React.CSSProperties
-          }
-        >
+        <div className='md:ml-[var(--sidebar-width)]' style={sidebarWidthStyle}>
           <EmailVerificationBanner email={userEmail} onDismiss={handleBannerDismiss} />
         </div>
       )}
@@ -139,12 +138,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
       <main
         id='main-content'
         className={`min-h-screen ${!isResizing ? 'transition-[margin] duration-200 ease-out md:transition-[margin]' : ''}`}
-        style={
-          {
-            // Only apply margin on md+ screens; CSS handles mobile reset
-            '--sidebar-width': showSidebar ? `${currentSidebarWidth}px` : '0px',
-          } as React.CSSProperties
-        }
+        style={sidebarWidthStyle}
       >
         {children}
       </main>

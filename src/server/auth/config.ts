@@ -1,10 +1,10 @@
 import { type DefaultSession, type NextAuthConfig } from 'next-auth';
+import type { JWT } from 'next-auth/jwt';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
 
 import { db } from '@/server/db';
 import { createCaller } from '@/server/api/root';
-import type { AuthUser } from '@/types';
 import { users } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -30,11 +30,18 @@ declare module 'next-auth' {
     } & DefaultSession['user'];
   }
 
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
+  interface User {
+    rememberMe?: boolean;
+    requiresEmailVerification?: boolean;
+  }
 }
+
+/** Session token claims our sign-in flow writes onto the JWT. */
+type SessionToken = JWT & {
+  id?: string;
+  rememberMe?: boolean;
+  emailVerified?: boolean;
+};
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -120,22 +127,21 @@ export const authConfig = {
   ],
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
+      // SAFETY: sign-in writes these claims before any later callback reads them.
+      const sessionToken = token as SessionToken;
+
       // On log in, store rememberMe preference and check verification
       if (user && trigger === 'signIn') {
-        token.id = user.id;
-        // Store rememberMe as a custom property on the token
-        (token as { rememberMe?: boolean }).rememberMe = (user as AuthUser).rememberMe ?? false;
+        sessionToken.id = user.id;
+        sessionToken.rememberMe = user.rememberMe ?? false;
 
         // Store email verified status based on requiresEmailVerification flag from authorize
         // If requiresEmailVerification is true, email is NOT verified
-        const requiresVerification = (user as AuthUser & { requiresEmailVerification?: boolean })
-          .requiresEmailVerification;
-        (token as { emailVerified?: boolean }).emailVerified = !requiresVerification;
+        sessionToken.emailVerified = !user.requiresEmailVerification;
 
         // Set custom expiry based on rememberMe
         const now = Math.floor(Date.now() / 1000);
-        const rememberMe = (token as { rememberMe?: boolean }).rememberMe;
-        if (rememberMe) {
+        if (sessionToken.rememberMe) {
           // 30 days
           token.exp = now + 30 * 24 * 60 * 60;
         } else {
@@ -145,17 +151,17 @@ export const authConfig = {
       }
 
       // Refresh token fields after explicit session update() calls
-      if (token.id && trigger === 'update') {
+      if (sessionToken.id && trigger === 'update') {
         try {
           const userRecord = await db.query.users.findFirst({
-            where: eq(users.id, token.id as string),
+            where: eq(users.id, sessionToken.id),
             columns: { name: true, email: true, emailVerifiedAt: true },
           });
 
           if (userRecord) {
             token.name = userRecord.name;
             token.email = userRecord.email;
-            (token as { emailVerified?: boolean }).emailVerified = !!userRecord.emailVerifiedAt;
+            sessionToken.emailVerified = !!userRecord.emailVerifiedAt;
           }
         } catch (error) {
           // Log but don't fail session updates
@@ -165,17 +171,16 @@ export const authConfig = {
 
       // For unverified users, check if they've verified since login
       // This allows the session to update without requiring re-login
-      const emailVerified = (token as { emailVerified?: boolean }).emailVerified;
-      if (token.id && emailVerified === false) {
+      if (sessionToken.id && sessionToken.emailVerified === false) {
         try {
           const userRecord = await db.query.users.findFirst({
-            where: eq(users.id, token.id as string),
+            where: eq(users.id, sessionToken.id),
             columns: { emailVerifiedAt: true },
           });
 
           if (userRecord?.emailVerifiedAt) {
             // User has verified their email - update the token
-            (token as { emailVerified?: boolean }).emailVerified = true;
+            sessionToken.emailVerified = true;
           }
         } catch (error) {
           // Log but don't fail - just keep the current state
@@ -189,16 +194,20 @@ export const authConfig = {
       // Allow all sign-ins - email verification is handled via in-app notice, not login blocking
       return true;
     },
-    session: ({ session, token }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: token.id as string,
-        name: token.name,
-        email: token.email,
-        emailVerified: (token as { emailVerified?: boolean }).emailVerified ?? false,
-      },
-    }),
+    session: ({ session, token }) => {
+      // SAFETY: the jwt callback sets these claims on every sign-in.
+      const sessionToken = token as SessionToken;
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: sessionToken.id ?? session.user.id,
+          name: token.name,
+          email: token.email,
+          emailVerified: sessionToken.emailVerified ?? false,
+        },
+      };
+    },
   },
   session: {
     strategy: 'jwt',

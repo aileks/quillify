@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import {
   compareSemanticVersions,
@@ -50,9 +51,9 @@ describe('release manifest', () => {
   });
 
   it('matches the package version to the newest release', () => {
-    const packageJson = JSON.parse(
-      readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')
-    ) as { version: string };
+    const packageJson = z
+      .object({ version: z.string() })
+      .parse(JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')));
     expect(packageJson.version).toBe(CURRENT_RELEASE_VERSION);
   });
 });

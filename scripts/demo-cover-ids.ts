@@ -1,4 +1,9 @@
-export const DEMO_COVER_IDS: Readonly<Record<string, string>> = {
+/** Open Library cover IDs keyed by demo book title. */
+interface DemoCoverIdByTitle {
+  readonly [title: string]: string;
+}
+
+export const DEMO_COVER_IDS: DemoCoverIdByTitle = {
   'Treasure Island': '13859660',
   'The Call of the Wild': '12393037',
   'Robinson Crusoe': '368541',

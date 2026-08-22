@@ -25,6 +25,7 @@ type FormFieldContextValue<
   name: TName;
 };
 
+// SAFETY: the FormField provider always supplies the value before useFormField reads it.
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
 const FormField = <
@@ -67,6 +68,7 @@ type FormItemContextValue = {
   id: string;
 };
 
+// SAFETY: the FormItem provider always supplies the value before useFormField reads it.
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
 
 function FormItem({ className, ...props }: React.ComponentProps<'div'>) {

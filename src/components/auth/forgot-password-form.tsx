@@ -37,11 +37,11 @@ type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 export function ForgotPasswordForm() {
   const [isSuccess, setIsSuccess] = React.useState(false);
 
-  const form = useForm({
+  const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: '',
-    } as ForgotPasswordFormValues,
+    },
   });
 
   const requestReset = api.auth.requestPasswordReset.useMutation({

@@ -124,9 +124,12 @@ function getTextSimilarity(left: string, right: string): number {
 }
 
 function parsePublicationYear(publicationDate: string | string[] | undefined): number | null {
-  const values = typeof publicationDate === 'string' ? [publicationDate] : publicationDate;
+  const values =
+    Array.isArray(publicationDate) ? publicationDate
+    : publicationDate === undefined ? []
+    : [publicationDate];
 
-  for (const value of values ?? []) {
+  for (const value of values) {
     const matchedYear = value.match(/\b\d{4}\b/)?.[0];
     if (!matchedYear) {
       continue;
@@ -160,8 +163,13 @@ function getSearchResultScore(
   return titleSimilarity * 100 + authorSimilarity * 60;
 }
 
+/** Unvalidated JSON body of an Open Library search response; docs are parsed per document. */
+export interface OpenLibrarySearchEnvelope {
+  docs?: unknown;
+}
+
 export function normalizeOpenLibrarySearchResponse(
-  response: unknown,
+  response: OpenLibrarySearchEnvelope,
   input: OpenLibrarySearchInput
 ): OpenLibrarySearchResult[] {
   const parsedResponse = searchResponseSchema.safeParse(response);
@@ -234,7 +242,7 @@ export function normalizeOpenLibrarySearchResponse(
 }
 
 export function normalizeOpenLibraryCatalogSearchResponse(
-  response: unknown
+  response: OpenLibrarySearchEnvelope
 ): OpenLibraryCatalogSearchResult[] {
   const parsedResponse = searchResponseSchema.safeParse(response);
   if (!parsedResponse.success) {
@@ -304,7 +312,7 @@ async function fetchOpenLibrarySearch(
     fetchImplementation?: FetchImplementation;
     timeoutMs?: number;
   }
-): Promise<unknown> {
+): Promise<OpenLibrarySearchEnvelope> {
   const searchUrl = new URL(OPEN_LIBRARY_SEARCH_URL);
   searchUrl.searchParams.set('q', query);
   searchUrl.searchParams.set('limit', String(OPEN_LIBRARY_SEARCH_LIMIT));

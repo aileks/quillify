@@ -54,7 +54,7 @@ export function TagNamesInput({
 
   React.useEffect(() => {
     const onClickOutside = (event: MouseEvent) => {
-      if (!wrapperRef.current?.contains(event.target as Node)) {
+      if (event.target instanceof Node && !wrapperRef.current?.contains(event.target)) {
         setIsFocused(false);
       }
     };

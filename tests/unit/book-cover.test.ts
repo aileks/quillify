@@ -1,4 +1,4 @@
-import { createElement } from 'react';
+import { createElement, type ComponentProps } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -6,7 +6,7 @@ vi.mock('next/image', async () => {
   const react = await import('react');
 
   return {
-    default: (imageProps: { fill?: boolean; onError?: () => void; [key: string]: unknown }) => {
+    default: (imageProps: ComponentProps<'img'> & { fill?: boolean }) => {
       const { fill, onError, ...props } = imageProps;
       void fill;
       void onError;

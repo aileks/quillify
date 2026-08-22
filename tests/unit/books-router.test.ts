@@ -9,46 +9,11 @@ vi.mock('@/server/db', () => ({
 }));
 
 import { booksRouter } from '@/server/api/routers/books';
-
-type BooksRouterContext = Parameters<typeof booksRouter.createCaller>[0];
-
-function createSession() {
-  return {
-    user: {
-      id: 'user-1',
-      email: 'reader@example.com',
-      emailVerified: true,
-    },
-    expires: new Date(Date.now() + 60_000).toISOString(),
-  };
-}
-
-function queryResult(rows: readonly unknown[]) {
-  return Object.assign(Promise.resolve(rows), {
-    orderBy: vi.fn(async () => rows),
-  });
-}
-
-type LazyRows = unknown[] | (() => unknown[]);
-
-interface SelectChain {
-  where: () => ReturnType<typeof queryResult>;
-  innerJoin: () => SelectChain;
-}
-
-function sequenceSelect(results: readonly LazyRows[]) {
-  let index = 0;
-  return vi.fn(() => {
-    const result = results[index] ?? [];
-    index += 1;
-    const rows = typeof result === 'function' ? result() : result;
-    const chain: SelectChain = {
-      where: () => queryResult(rows),
-      innerJoin: () => chain,
-    };
-    return { from: () => chain };
-  });
-}
+import {
+  createScriptedDatabase,
+  createTestCaller,
+  sequenceSelect,
+} from '../support/router-harness';
 
 describe('books router cover persistence', () => {
   it('returns likely matches without writing until a separate edition is confirmed', async () => {
@@ -61,22 +26,12 @@ describe('books router cover persistence', () => {
       isbn13: '9780141441146',
       openLibraryEditionId: 'OL22731948M',
     };
-    const database = {
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => queryResult([existingBook])),
-        })),
-      })),
+    const database = createScriptedDatabase({
+      select: sequenceSelect([[existingBook]]),
       insert: vi.fn(),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
-    const caller = booksRouter.createCaller({
-      db: database,
-      session: createSession(),
-      headers: new Headers(),
-    } as unknown as BooksRouterContext);
+    });
 
-    const result = await caller.create({
+    const result = await createTestCaller(booksRouter.createCaller, database).create({
       duplicateAction: 'review',
       book: {
         title: 'Jane Eyre',
@@ -97,8 +52,6 @@ describe('books router cover persistence', () => {
   });
 
   it('creates a book with its selected cover', async () => {
-    let insertedValues: Record<string, unknown> | undefined;
-    let insertedPeriodValues: Record<string, unknown> | undefined;
     const createdBook = {
       id: 'book-1',
       userId: 'user-1',
@@ -128,22 +81,15 @@ describe('books router cover persistence', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    const insertedRows: Array<typeof createdBook | typeof currentReadingPeriod> = [];
     let insertCount = 0;
-    const database = {
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => queryResult([{ id: 'user-1', emailVerifiedAt: new Date() }])),
-        })),
-      })),
+    const database = createScriptedDatabase({
+      select: sequenceSelect([[{ id: 'user-1', emailVerifiedAt: new Date() }]]),
       insert: vi.fn(() => {
         insertCount += 1;
         return {
-          values: vi.fn((values: Record<string, unknown>) => {
-            if (insertCount === 1) {
-              insertedValues = values;
-            } else {
-              insertedPeriodValues = values;
-            }
+          values: vi.fn((values: typeof createdBook | typeof currentReadingPeriod) => {
+            insertedRows.push(values);
             const returned = insertCount === 1 ? createdBook : currentReadingPeriod;
             return {
               returning: vi.fn(async () => [returned]),
@@ -151,15 +97,9 @@ describe('books router cover persistence', () => {
           }),
         };
       }),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
-    const caller = booksRouter.createCaller({
-      db: database,
-      session: createSession(),
-      headers: new Headers(),
-    } as unknown as BooksRouterContext);
+    });
 
-    await caller.create({
+    await createTestCaller(booksRouter.createCaller, database).create({
       duplicateAction: 'create_separate_edition',
       book: {
         title: 'Jane Eyre',
@@ -177,7 +117,7 @@ describe('books router cover persistence', () => {
       },
     });
 
-    expect(insertedValues).toMatchObject({
+    expect(insertedRows[0]).toMatchObject({
       coverSource: 'open_library',
       coverSourceId: '8235363',
       ownershipType: 'unknown',
@@ -186,11 +126,11 @@ describe('books router cover persistence', () => {
       openLibraryWorkId: 'OL123W',
       openLibraryEditionId: 'OL456M',
     });
-    expect(insertedPeriodValues).toMatchObject({ bookId: 'book-1', status: 'to_read' });
+    expect(insertedRows[1]).toMatchObject({ bookId: 'book-1', status: 'to_read' });
   });
 
   it('updates a book with an explicitly selected cover', async () => {
-    let updatedValues: Record<string, unknown> | undefined;
+    let updatedValues: { coverSource?: string | null; coverSourceId?: string | null } | undefined;
     const existingBook = {
       id: 'book-1',
       userId: 'user-1',
@@ -216,7 +156,7 @@ describe('books router cover persistence', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    const database = {
+    const database = createScriptedDatabase({
       select: sequenceSelect([
         () => [existingBook],
         () => [existingBook],
@@ -224,7 +164,7 @@ describe('books router cover persistence', () => {
         () => [],
       ]),
       update: vi.fn(() => ({
-        set: vi.fn((values: Record<string, unknown>) => {
+        set: vi.fn((values: { coverSource?: string | null; coverSourceId?: string | null }) => {
           updatedValues = values;
           return {
             where: vi.fn(() => ({
@@ -238,15 +178,9 @@ describe('books router cover persistence', () => {
           };
         }),
       })),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
-    const caller = booksRouter.createCaller({
-      db: database,
-      session: createSession(),
-      headers: new Headers(),
-    } as unknown as BooksRouterContext);
+    });
 
-    await caller.update({
+    await createTestCaller(booksRouter.createCaller, database).update({
       id: 'book-1',
       coverSource: 'open_library',
       coverSourceId: '8235363',
@@ -288,8 +222,8 @@ describe('books router reading lifecycle', () => {
       updatedAt: new Date(),
     };
     let savedPeriod = currentPeriod;
-    let updatedValues: Record<string, unknown> | undefined;
-    const database = {
+    let updatedValues: Partial<typeof currentPeriod> | undefined;
+    const database = createScriptedDatabase({
       select: sequenceSelect([
         () => [book],
         () => [savedPeriod],
@@ -299,7 +233,7 @@ describe('books router reading lifecycle', () => {
         () => [],
       ]),
       update: vi.fn(() => ({
-        set: vi.fn((values: Record<string, unknown>) => {
+        set: vi.fn((values: Partial<typeof currentPeriod>) => {
           updatedValues = values;
           return {
             where: vi.fn(() => ({
@@ -311,15 +245,9 @@ describe('books router reading lifecycle', () => {
           };
         }),
       })),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
-    const caller = booksRouter.createCaller({
-      db: database,
-      session: createSession(),
-      headers: new Headers(),
-    } as unknown as BooksRouterContext);
+    });
 
-    const result = await caller.transitionStatus({
+    const result = await createTestCaller(booksRouter.createCaller, database).transitionStatus({
       bookId: 'book-1',
       status: 'paused',
       format: 'print',
@@ -345,8 +273,8 @@ describe('books router reading lifecycle', () => {
     };
     let savedBook = book;
     let savedPeriod = currentPeriod;
-    const updatedValues: Record<string, unknown>[] = [];
-    const database = {
+    const updatedValues: Array<Partial<typeof book> | Partial<typeof currentPeriod>> = [];
+    const database = createScriptedDatabase({
       select: sequenceSelect([
         () => [savedBook],
         () => [savedPeriod],
@@ -356,7 +284,7 @@ describe('books router reading lifecycle', () => {
         () => [],
       ]),
       update: vi.fn(() => ({
-        set: vi.fn((values: Record<string, unknown>) => {
+        set: vi.fn((values: Partial<typeof book> | Partial<typeof currentPeriod>) => {
           updatedValues.push(values);
           return {
             where: vi.fn(() => ({
@@ -373,15 +301,9 @@ describe('books router reading lifecycle', () => {
           };
         }),
       })),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
-    const caller = booksRouter.createCaller({
-      db: database,
-      session: createSession(),
-      headers: new Headers(),
-    } as unknown as BooksRouterContext);
+    });
 
-    await caller.update({
+    await createTestCaller(booksRouter.createCaller, database).update({
       id: 'book-1',
       ownershipType: 'library',
       readingDetails: {
@@ -420,8 +342,8 @@ describe('books router reading lifecycle', () => {
       startedOn: '2026-08-11',
       endedOn: null,
     };
-    let insertedValues: Record<string, unknown> | undefined;
-    const database = {
+    let insertedValues: Partial<typeof newPeriod> | undefined;
+    const database = createScriptedDatabase({
       select: sequenceSelect([
         () => [book],
         () => [currentPeriod],
@@ -434,20 +356,14 @@ describe('books router reading lifecycle', () => {
         set: vi.fn(() => ({ where: vi.fn(async () => []) })),
       })),
       insert: vi.fn(() => ({
-        values: vi.fn((values: Record<string, unknown>) => {
+        values: vi.fn((values: Partial<typeof newPeriod>) => {
           insertedValues = values;
           return { returning: vi.fn(async () => [newPeriod]) };
         }),
       })),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
-    const caller = booksRouter.createCaller({
-      db: database,
-      session: createSession(),
-      headers: new Headers(),
-    } as unknown as BooksRouterContext);
+    });
 
-    const result = await caller.transitionStatus({
+    const result = await createTestCaller(booksRouter.createCaller, database).transitionStatus({
       bookId: 'book-1',
       status: 'reading',
       format: 'ebook',
@@ -476,8 +392,8 @@ describe('books router reading lifecycle', () => {
       updatedAt: new Date(),
     };
     let savedPeriod = currentPeriod;
-    let updatedValues: Record<string, unknown> | undefined;
-    const database = {
+    let updatedValues: Partial<typeof currentPeriod> | undefined;
+    const database = createScriptedDatabase({
       select: sequenceSelect([
         () => [book],
         () => [savedPeriod],
@@ -487,7 +403,7 @@ describe('books router reading lifecycle', () => {
         () => [],
       ]),
       update: vi.fn(() => ({
-        set: vi.fn((values: Record<string, unknown>) => {
+        set: vi.fn((values: Partial<typeof currentPeriod>) => {
           updatedValues = values;
           return {
             where: vi.fn(() => ({
@@ -500,15 +416,9 @@ describe('books router reading lifecycle', () => {
         }),
       })),
       insert: vi.fn(),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
-    const caller = booksRouter.createCaller({
-      db: database,
-      session: createSession(),
-      headers: new Headers(),
-    } as unknown as BooksRouterContext);
+    });
 
-    const result = await caller.transitionStatus({
+    const result = await createTestCaller(booksRouter.createCaller, database).transitionStatus({
       bookId: 'book-1',
       status: 'did_not_finish',
       format: 'print',
@@ -533,7 +443,7 @@ describe('books router reading lifecycle', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    const database = {
+    const database = createScriptedDatabase({
       select: sequenceSelect([
         () => [book],
         () => [currentPeriod],
@@ -549,15 +459,9 @@ describe('books router reading lifecycle', () => {
         })),
       })),
       delete: vi.fn(() => ({ where: vi.fn(async () => []) })),
-      transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(database)),
-    };
-    const caller = booksRouter.createCaller({
-      db: database,
-      session: createSession(),
-      headers: new Headers(),
-    } as unknown as BooksRouterContext);
+    });
 
-    await caller.transitionStatus({
+    await createTestCaller(booksRouter.createCaller, database).transitionStatus({
       bookId: 'book-1',
       status: 'reading',
       format: null,

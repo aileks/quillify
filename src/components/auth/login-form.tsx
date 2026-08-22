@@ -34,7 +34,7 @@ import {
 const loginSchema = z.object({
   email: z.email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
-  rememberMe: z.boolean().default(false),
+  rememberMe: z.boolean(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -67,13 +67,13 @@ export function LoginForm({ callbackUrl = '/', errorParam, emailParam, verified 
     }
   }, [verified]);
 
-  const form = useForm({
+  const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',
       rememberMe: false,
-    } as LoginFormValues,
+    },
   });
 
   const onSubmit = async (data: LoginFormValues) => {

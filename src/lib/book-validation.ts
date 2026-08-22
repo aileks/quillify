@@ -53,7 +53,7 @@ function validateCoverSelection(
   context: z.core.$RefinementCtx
 ) {
   const hasSource = values.coverSource === BOOK_COVER_SOURCE;
-  const hasSourceId = typeof values.coverSourceId === 'string';
+  const hasSourceId = values.coverSourceId != null;
 
   if (hasSource === hasSourceId) {
     return;

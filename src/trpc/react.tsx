@@ -8,6 +8,7 @@ import { useState } from 'react';
 import SuperJSON from 'superjson';
 
 import type { AppRouter } from '@/server/api/root';
+import { isBrowser } from '@/lib/is-browser';
 import { createQueryClient } from './query-client';
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
@@ -17,7 +18,7 @@ let clientQueryClientSingleton: QueryClient | undefined = undefined;
  * but creates fresh instances on server for each request to avoid data leakage.
  */
 const getQueryClient = () => {
-  if (typeof window === 'undefined') {
+  if (!isBrowser) {
     // Server: always make a new query client to avoid sharing state between requests
     return createQueryClient();
   }
@@ -57,6 +58,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 
             // Skip logging NOT_FOUND errors (handled gracefully by the app)
             if (op.direction === 'down' && op.result instanceof Error) {
+              // SAFETY: the instanceof check narrowed op.result to the tRPC client error.
               const trpcError = op.result as TRPCClientError<AppRouter>;
               if (trpcError.data?.code === 'NOT_FOUND') {
                 return false;
@@ -67,7 +69,10 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
         }),
         httpBatchStreamLink({
           transformer: SuperJSON,
-          url: getBaseUrl() + '/api/trpc',
+          // Relative on purpose: only the browser fetches through this provider, so
+          // the URL always resolves against the current origin. Revisit this before
+          // adding server-side prefetching through the provider.
+          url: '/api/trpc',
           headers: () => {
             const headers = new Headers();
             headers.set('x-trpc-source', 'nextjs-react');
@@ -85,10 +90,4 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       </api.Provider>
     </QueryClientProvider>
   );
-}
-
-function getBaseUrl() {
-  if (typeof window !== 'undefined') return window.location.origin;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return `http://localhost:${process.env.PORT ?? 3000}`;
 }

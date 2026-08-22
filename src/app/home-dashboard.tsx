@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UpNextPanel } from '@/components/up-next-panel';
-import { READING_STATUS_LABELS } from '@/lib/reading-lifecycle';
+import { READING_STATUSES, READING_STATUS_LABELS } from '@/lib/reading-lifecycle';
 
 interface HomeDashboardProps {
   initialUserName: string;
@@ -234,10 +234,12 @@ export function HomeDashboard({ initialUserName, subtitle }: HomeDashboardProps)
                     Status
                   </span>
                   <div className='flex flex-wrap gap-x-3 gap-y-1 text-sm'>
-                    {Object.entries(statusCounts).map(([status, count]) => (
-                      <span key={status}>
-                        {READING_STATUS_LABELS[status as keyof typeof READING_STATUS_LABELS]}{' '}
-                        <span className='text-muted-foreground'>({count})</span>
+                    {READING_STATUSES.map((readingStatus) => (
+                      <span key={readingStatus}>
+                        {READING_STATUS_LABELS[readingStatus]}{' '}
+                        <span className='text-muted-foreground'>
+                          ({statusCounts[readingStatus]})
+                        </span>
                       </span>
                     ))}
                   </div>

@@ -32,11 +32,12 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
  */
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
-  errorFormatter({ shape, error }) {
+  // oxlint-disable-next-line anti-slop/no-shape-in-symbol-names -- tRPC's errorFormatter API names this property `shape`.
+  errorFormatter({ shape: errorBody, error }) {
     return {
-      ...shape,
+      ...errorBody,
       data: {
-        ...shape.data,
+        ...errorBody.data,
         zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
     };

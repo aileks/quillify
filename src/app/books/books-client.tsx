@@ -45,6 +45,7 @@ import { BulkListsDialog, BulkTagsDialog } from '@/components/bulk-organize-dial
 import {
   READING_STATUS_PARAMS,
   parseBookQueryParams,
+  parseStatusParam,
   type BookSortBy,
   type BookSortOrder,
 } from '@/lib/book-query';
@@ -406,7 +407,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
                 <Select
                   value={status ?? 'all'}
                   onValueChange={(value) => {
-                    setStatus(value === 'all' ? undefined : (value as ReadingStatus));
+                    setStatus(parseStatusParam(value));
                     resetPage();
                   }}
                 >
@@ -500,7 +501,7 @@ export function BooksClient({ subtitle }: BooksClientProps) {
               <Select
                 value={status ?? 'all'}
                 onValueChange={(value) => {
-                  setStatus(value === 'all' ? undefined : (value as ReadingStatus));
+                  setStatus(parseStatusParam(value));
                   resetPage();
                 }}
               >

@@ -129,6 +129,15 @@ export default defineConfig({
   },
   overrides: [
     {
+      // Tests may mock modules to stop import side effects (the pg pool in
+      // `@/server/db`, NextAuth initialization, the `server-only` guard).
+      // Dependencies under test are still injected through `createCaller`.
+      files: ['tests/**'],
+      rules: {
+        'anti-slop/no-module-mocking': 'off',
+      },
+    },
+    {
       files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
       rules: {
         'constructor-super': 'off',

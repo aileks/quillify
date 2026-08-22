@@ -4,7 +4,12 @@ export function hashOpaqueToken(rawToken: string): string {
   return createHash('sha256').update(rawToken).digest('hex');
 }
 
-export function createOpaqueToken(): { rawToken: string; tokenHash: string } {
+export interface OpaqueToken {
+  rawToken: string;
+  tokenHash: string;
+}
+
+export function createOpaqueToken(): OpaqueToken {
   const rawToken = randomBytes(32).toString('hex');
 
   return {

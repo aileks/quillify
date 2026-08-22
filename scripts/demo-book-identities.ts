@@ -5,7 +5,12 @@ interface DemoBookIdentity {
   openLibraryEditionId?: string;
 }
 
-export const DEMO_BOOK_IDENTITIES: Readonly<Record<string, DemoBookIdentity>> = {
+/** Stable ISBNs and Open Library IDs keyed by demo book title. */
+interface DemoBookIdentityByTitle {
+  readonly [title: string]: DemoBookIdentity;
+}
+
+export const DEMO_BOOK_IDENTITIES: DemoBookIdentityByTitle = {
   'Ways of Seeing': {
     isbn10: '0140135154',
     isbn13: '9780140135152',

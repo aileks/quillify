@@ -2647,13 +2647,10 @@ async function seed() {
     }
 
     // Count genres
-    const genreCounts = DEMO_BOOKS_TO_SEED.reduce(
-      (acc, book) => {
-        acc[book.genre] = (acc[book.genre] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
+    const genreCounts: Record<string, number> = {};
+    for (const book of DEMO_BOOKS_TO_SEED) {
+      genreCounts[book.genre] = (genreCounts[book.genre] ?? 0) + 1;
+    }
 
     console.log('\nSeeding complete!');
     console.log(`\nDemo credentials:`);

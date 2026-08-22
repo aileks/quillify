@@ -8,6 +8,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { api } from '@/trpc/react';
 import { useNotificationStore, useVerificationStore } from '@/stores';
+import { isBrowser } from '@/lib/is-browser';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ResendVerification from '@/components/auth/resend-verification';
@@ -72,7 +73,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 // Get initial tab from URL hash
 function getInitialTab(isVerified: boolean): string {
-  if (typeof window === 'undefined') return 'profile';
+  if (!isBrowser) return 'profile';
   const hash = window.location.hash.replace('#', '');
   if (hash === 'verification' && !isVerified) return 'verification';
   if (hash === 'account') return 'account';

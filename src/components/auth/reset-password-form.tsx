@@ -62,12 +62,12 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     token,
   });
 
-  const form = useForm({
+  const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
       password: '',
       confirmPassword: '',
-    } as ResetPasswordFormValues,
+    },
   });
 
   const resetPassword = api.auth.resetPassword.useMutation({

@@ -25,7 +25,7 @@ describe('book validation', () => {
       openLibraryWorkId: 'OL123W',
       openLibraryEditionId: 'OL456M',
       ownershipType: 'unknown' as const,
-      tags: [] as string[],
+      tags: [],
       includeReadingDetails: false,
       readingStatus: 'to_read' as const,
       readingFormat: '' as const,

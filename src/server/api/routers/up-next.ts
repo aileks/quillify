@@ -33,7 +33,7 @@ export const upNextRouter = createTRPCRouter({
     return {
       items: rows.map(({ position, book, currentReadingPeriod }) => ({
         position,
-        book: { ...book, currentReadingPeriod } as BookWithCurrentPeriod,
+        book: { ...book, currentReadingPeriod } satisfies BookWithCurrentPeriod,
       })),
     };
   }),

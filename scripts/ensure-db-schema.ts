@@ -19,7 +19,7 @@ async function ensureDatabaseSchema() {
   }
 }
 
-ensureDatabaseSchema().catch((error: unknown) => {
+ensureDatabaseSchema().catch((error) => {
   console.error(error instanceof Error ? error.message : 'Failed to create database schema');
   process.exitCode = 1;
 });

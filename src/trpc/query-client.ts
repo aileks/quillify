@@ -1,6 +1,5 @@
 import { defaultShouldDehydrateQuery, QueryClient } from '@tanstack/react-query';
 import SuperJSON from 'superjson';
-import type { TRPCErrorShape } from '@/types';
 
 const TRANSIENT_ERROR_CODES = new Set([
   'INTERNAL_SERVER_ERROR',
@@ -10,11 +9,16 @@ const TRANSIENT_ERROR_CODES = new Set([
   'GATEWAY_TIMEOUT',
 ]);
 
-export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+/** The part of a serialized tRPC client error the retry policy reads. */
+interface TRPCQueryError {
+  data?: { code?: string };
+}
+
+export function shouldRetryQuery(failureCount: number, error: Error): boolean {
   if (failureCount >= 1) return false;
 
-  const trpcError = error as TRPCErrorShape;
-  const code = trpcError.data?.code;
+  // SAFETY: tRPC client errors are Error instances carrying the code on `data`.
+  const code = (error as TRPCQueryError).data?.code;
 
   return code === undefined || TRANSIENT_ERROR_CODES.has(code);
 }

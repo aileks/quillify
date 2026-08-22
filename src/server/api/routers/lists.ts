@@ -151,7 +151,7 @@ export const listsRouter = createTRPCRouter({
             ...book,
             currentReadingPeriod,
             tags: tagNamesByBookId.get(book.id) ?? [],
-          } as BookWithCurrentPeriod & { tags: string[] },
+          } satisfies BookWithCurrentPeriod & { tags: string[] },
         })),
       };
     }),

@@ -204,7 +204,7 @@ export function DataSettings() {
               id='goodreads-csv'
               type='file'
               accept='.csv,text/csv'
-              className='file:bg-secondary file:text-secondary-foreground hover:file:bg-secondary/80 file:mr-3 file:cursor-pointer file:rounded-sm file:px-2.5'
+              className='file:border-foreground/10 file:bg-secondary file:text-secondary-foreground hover:file:bg-secondary/80 overflow-hidden p-0 pr-3 leading-[calc(var(--spacing)*9-2px)] file:mr-3 file:h-[calc(var(--spacing)*9-2px)] file:cursor-pointer file:items-center file:border-r file:px-3'
               onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
               disabled={previewImport.isPending}
             />

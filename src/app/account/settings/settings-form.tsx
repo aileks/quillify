@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,7 +8,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { api } from '@/trpc/react';
 import { useNotificationStore, useVerificationStore } from '@/stores';
-import { isBrowser } from '@/lib/is-browser';
+import { displayNameSchema } from '@/lib/display-name';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ResendVerification from '@/components/auth/resend-verification';
@@ -38,11 +38,7 @@ import {
 import { DataSettings } from './data-settings';
 
 const nameFormSchema = z.object({
-  name: z
-    .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(25, 'Name must be at most 25 characters')
-    .regex(/^[a-zA-Z0-9 ]+$/, 'Name can only contain letters, numbers, and spaces'),
+  name: displayNameSchema,
 });
 
 const emailFormSchema = z.object({
@@ -71,10 +67,18 @@ type NameFormValues = z.infer<typeof nameFormSchema>;
 type EmailFormValues = z.infer<typeof emailFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
-// Get initial tab from URL hash
-function getInitialTab(isVerified: boolean): string {
-  if (!isBrowser) return 'profile';
-  const hash = window.location.hash.replace('#', '');
+function subscribeToUrlHash(onHashChange: () => void) {
+  window.addEventListener('hashchange', onHashChange);
+  return () => window.removeEventListener('hashchange', onHashChange);
+}
+
+/** Tab named by the URL hash. The server render has no hash, so it always gets 'profile'. */
+function useTabFromUrlHash(isVerified: boolean): string {
+  const hash = useSyncExternalStore(
+    subscribeToUrlHash,
+    () => window.location.hash.replace('#', ''),
+    () => ''
+  );
   if (hash === 'verification' && !isVerified) return 'verification';
   if (hash === 'account') return 'account';
   if (hash === 'data') return 'data';
@@ -87,6 +91,8 @@ export function SettingsForm() {
   const currentName = session?.user?.name ?? '';
   const isVerified = session?.user?.emailVerified === true;
   const resetVerificationState = useVerificationStore((state) => state.resetVerificationState);
+  const tabFromUrlHash = useTabFromUrlHash(isVerified);
+  const [selectedTab, setSelectedTab] = useState<string>();
 
   // Delete account state
   const [deletePassword, setDeletePassword] = useState('');
@@ -127,7 +133,8 @@ export function SettingsForm() {
 
   const updateName = api.auth.updateName.useMutation({
     onSuccess: async () => {
-      await update();
+      // update() only re-reads the user from the database when it is given an argument.
+      await update({});
       toast.success('Name updated successfully');
     },
     onError: (error) => {
@@ -136,24 +143,14 @@ export function SettingsForm() {
   });
 
   const updateEmail = api.auth.updateEmail.useMutation({
-    onSuccess: async (result, variables) => {
+    onSuccess: async () => {
       const userId = session?.user?.id;
       if (userId) {
         resetVerificationState(userId);
       }
 
-      if (session?.user) {
-        await update({
-          ...session,
-          user: {
-            ...session.user,
-            email: result.email ?? variables.newEmail.trim(),
-            emailVerified: false,
-          },
-        });
-      } else {
-        await update();
-      }
+      // update() only re-reads the user from the database when it is given an argument.
+      await update({});
 
       toast.success('Email updated. Please verify your new email address.');
       emailForm.reset();
@@ -231,7 +228,11 @@ export function SettingsForm() {
         <h1 className='text-3xl font-bold tracking-tight sm:text-4xl'>Account Settings</h1>
       </header>
 
-      <Tabs defaultValue={getInitialTab(isVerified)} className='space-y-6'>
+      <Tabs
+        value={selectedTab ?? tabFromUrlHash}
+        onValueChange={setSelectedTab}
+        className='space-y-6'
+      >
         <TabsList className='w-full justify-start'>
           <TabsTrigger value='profile'>Profile</TabsTrigger>
           <TabsTrigger value='account'>Account</TabsTrigger>

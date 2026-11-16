@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 import { api } from '@/trpc/react';
+import { displayNameSchema } from '@/lib/display-name';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -41,7 +42,12 @@ const registerSchema = z
         'Password must contain at least one uppercase letter, one lowercase letter, and one number'
       ),
     confirmPassword: z.string(),
-    name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+    name: z
+      .string()
+      .refine(
+        (name) => name.trim() === '' || displayNameSchema.safeParse(name).success,
+        'Name must be 2-25 characters using only letters, numbers, and spaces'
+      ),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
@@ -77,7 +83,7 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
       await registerMutation.mutateAsync({
         email: data.email,
         password: data.password,
-        name: data.name || undefined,
+        name: data.name.trim() || undefined,
       });
 
       const result = await signIn('credentials', {
@@ -125,13 +131,10 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
               name='name'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Name (optional)</FormLabel>
                   <FormControl>
                     <Input placeholder='John Doe' {...field} disabled={isLoading} />
                   </FormControl>
-                  <FormDescription>
-                    Use at least 8 characters with uppercase, lowercase, and a number.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -170,6 +173,9 @@ export function RegisterForm({ callbackUrl = '/' }: RegisterFormProps) {
                       disabled={isLoading}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Use at least 8 characters with uppercase, lowercase, and a number.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

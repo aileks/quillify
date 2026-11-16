@@ -3,7 +3,8 @@ import { TRPCError } from '@trpc/server';
 import bcrypt from 'bcryptjs';
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc';
 import { users, passwordResetTokens, emailVerificationTokens } from '@/server/db/schema';
-import { eq, and, gt, desc } from 'drizzle-orm';
+import { eq, and, gt, desc, sql } from 'drizzle-orm';
+import { displayNameSchema } from '@/lib/display-name';
 import { sendEmail } from '@/lib/email';
 import {
   getPasswordResetEmailHtml,
@@ -30,8 +31,13 @@ const registerSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       'Password must contain at least one uppercase letter, one lowercase letter, and one number'
     ),
-  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  name: displayNameSchema.optional(),
 });
+
+/** Matches a user by email without regard to letter case, so one address cannot hold two accounts. */
+function emailMatches(email: string) {
+  return eq(sql`lower(${users.email})`, email.trim().toLowerCase());
+}
 
 const loginSchema = z.object({
   email: z.email('Invalid email address'),
@@ -53,7 +59,7 @@ export const authRouter = createTRPCRouter({
 
     // Check if user already exists
     const existingUser = await ctx.db.query.users.findFirst({
-      where: eq(users.email, email),
+      where: emailMatches(email),
     });
 
     if (existingUser) {
@@ -157,7 +163,7 @@ export const authRouter = createTRPCRouter({
 
     // Find user by email
     const user = await ctx.db.query.users.findFirst({
-      where: eq(users.email, email),
+      where: emailMatches(email),
     });
 
     if (!user) {
@@ -257,7 +263,7 @@ export const authRouter = createTRPCRouter({
       let existingUser;
       try {
         existingUser = await ctx.db.query.users.findFirst({
-          where: eq(users.email, newEmail),
+          where: emailMatches(newEmail),
         });
       } catch (error: unknown) {
         console.error('Error checking email:', error instanceof Error ? error.message : error);
@@ -430,12 +436,7 @@ export const authRouter = createTRPCRouter({
   updateName: protectedProcedure
     .input(
       z.object({
-        name: z
-          .string()
-          .min(2, 'Name must be at least 2 characters')
-          .max(25, 'Name must be at most 25 characters')
-          .regex(/^[a-zA-Z0-9 ]+$/, 'Name can only contain letters, numbers, and spaces')
-          .transform((val) => val.trim()),
+        name: displayNameSchema,
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -474,7 +475,7 @@ export const authRouter = createTRPCRouter({
 
       // Find user by email
       const user = await ctx.db.query.users.findFirst({
-        where: eq(users.email, email),
+        where: emailMatches(email),
       });
 
       // Always return success to prevent email enumeration
@@ -672,7 +673,7 @@ export const authRouter = createTRPCRouter({
 
       // Find user by email
       const user = await ctx.db.query.users.findFirst({
-        where: eq(users.email, email),
+        where: emailMatches(email),
       });
 
       // Always return success to prevent email enumeration
